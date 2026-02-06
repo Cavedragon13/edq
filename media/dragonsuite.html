@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragonsuite v2 - Project Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="/media/favicon.svg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #0d1b2a 100%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .header {
+            background: rgba(20, 20, 30, 0.9);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .header-left h1 {
+            font-size: 1.6em;
+            margin-bottom: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        body.dark-mode .header-left h1 {
+            background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .header-left p {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+
+        body.dark-mode .header-left p {
+            color: #9ca3af;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .network-info {
+            text-align: right;
+            font-size: 0.8em;
+            color: #6b7280;
+        }
+
+        body.dark-mode .network-info {
+            color: #9ca3af;
+        }
+
+        .network-info strong {
+            color: #374151;
+        }
+
+        body.dark-mode .network-info strong {
+            color: #e0e0e0;
+        }
+
+        .theme-toggle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .theme-toggle {
+            background: linear-gradient(135deg, #4a5568 0%, #374151 100%);
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(180deg) scale(1.1);
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .refresh-btn.spinning span {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .category-section {
+            margin-bottom: 25px;
+        }
+
+        .category-title {
+            color: white;
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            padding-left: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        body.dark-mode .category-title {
+            color: #e2e8f0;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .service-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .service-card {
+            background: rgba(25, 25, 35, 0.95);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .service-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+
+        body.dark-mode .service-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
+        }
+
+        .card-header {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        body.dark-mode .card-header {
+            border-bottom-color: rgba(99, 102, 241, 0.15);
+        }
+
+        .service-icon {
+            font-size: 1.6em;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border-radius: 10px;
+        }
+
+        body.dark-mode .service-icon {
+            background: linear-gradient(135deg, #2d2d40 0%, #3d3d55 100%);
+        }
+
+        .service-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .service-name {
+            font-size: 1em;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        body.dark-mode .service-name {
+            color: #f3f4f6;
+        }
+
+        .service-description {
+            font-size: 0.8em;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        body.dark-mode .service-description {
+            color: #9ca3af;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .header-qr {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .header-qr:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .status-running {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            animation: pulse-green 2s infinite;
+        }
+
+        .status-stopped {
+            background: #6b7280;
+            box-shadow: 0 0 6px rgba(107, 114, 128, 0.3);
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .card-body {
+            padding: 12px 16px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+        }
+
+        .info-label {
+            color: #6b7280;
+        }
+
+        body.dark-mode .info-label {
+            color: #9ca3af;
+        }
+
+        .info-value {
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        body.dark-mode .info-value {
+            color: #e0e0e0;
+        }
+
+        .info-value a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .info-value a:hover {
+            text-decoration: underline;
+        }
+
+        body.dark-mode .info-value a {
+            color: #a78bfa;
+        }
+
+        .git-info {
+            background: #f3f4f6;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        body.dark-mode .git-info {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .git-hash {
+            font-family: monospace;
+            background: #e5e7eb;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #4b5563;
+            font-size: 0.9em;
+        }
+
+        body.dark-mode .git-hash {
+            background: rgba(99, 102, 241, 0.2);
+            color: #c4b5fd;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        body.dark-mode .card-actions {
+            border-top-color: rgba(99, 102, 241, 0.15);
+            background: rgba(15, 15, 25, 0.5);
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-start:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-stop:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-stop:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-qr {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        body.dark-mode .btn-qr {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        .btn-qr:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-copy {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        body.dark-mode .btn-copy {
+            background: rgba(99, 102, 241, 0.2);
+            color: #e0e0e0;
+        }
+
+        .btn-copy:hover {
+            background: #d1d5db;
+        }
+
+        body.dark-mode .btn-copy:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-copy.copied {
+            background: #10b981;
+            color: white;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(30, 30, 40, 0.95);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 2000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .toast.info {
+            border-left: 4px solid #667eea;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            max-width: 350px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        body.dark-mode .modal {
+            background: #1e1e2e;
+            color: #e0e0e0;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal h3 {
+            margin-bottom: 8px;
+            color: #1f2937;
+            font-size: 1.1em;
+        }
+
+        body.dark-mode .modal h3 {
+            color: #f3f4f6;
+        }
+
+        .modal p {
+            color: #6b7280;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        body.dark-mode .modal p {
+            color: #9ca3af;
+        }
+
+        .modal img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .modal-close {
+            background: #e5e7eb;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+        }
+
+        body.dark-mode .modal-close {
+            background: rgba(99, 102, 241, 0.2);
+            color: #e0e0e0;
+        }
+
+        .modal-close:hover {
+            background: #d1d5db;
+        }
+
+        body.dark-mode .modal-close:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        body.dark-mode .loading-spinner {
+            border-color: #4a5568;
+            border-top-color: #a78bfa;
+        }
+
+        .empty-state {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        body.dark-mode .empty-state {
+            background: rgba(25, 25, 35, 0.95);
+            color: #9ca3af;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        body.dark-mode .empty-state h3 {
+            color: #e0e0e0;
+        }
+
+        /* Hidden textarea for clipboard fallback */
+        .clipboard-textarea {
+            position: fixed;
+            left: -9999px;
+            top: 0;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .network-info {
+                text-align: center;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-actions {
+                flex-wrap: wrap;
+            }
+
+            .action-btn {
+                min-width: calc(50% - 4px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1>Dragonsuite v2</h1>
+                <p>AI Project Dashboard</p>
+            </div>
+            <div class="header-right">
+                <div class="network-info">
+                    <div><strong>Local:</strong> <span id="localUrl">-</span></div>
+                    <div><strong>Network:</strong> <span id="networkUrl">-</span></div>
+                </div>
+                <button class="refresh-btn" id="refreshBtn" title="Refresh status">
+                    <span>&#8635;</span> Refresh
+                </button>
+                <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">&#127769;</button>
+            </div>
+        </div>
+
+        <div id="servicesContainer">
+            <div class="empty-state">
+                <div class="loading-spinner"></div>
+                <h3>Loading services...</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Hidden textarea for clipboard fallback -->
+    <textarea class="clipboard-textarea" id="clipboardFallback"></textarea>
+
+    <!-- QR Code Modal -->
+    <div class="modal-overlay" id="qrModal">
+        <div class="modal">
+            <h3 id="qrModalTitle">Service QR Code</h3>
+            <p id="qrModalUrl">-</p>
+            <img id="qrModalImage" src="" alt="QR Code">
+            <br>
+            <button class="modal-close" id="qrModalClose">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Theme Management
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        // Load saved theme, default to dark
+        const savedTheme = localStorage.getItem('dragonsuite-theme');
+        if (savedTheme === 'light') {
+            themeToggle.innerHTML = '&#127769;'; // Moon
+        } else {
+            body.classList.add('dark-mode');
+            themeToggle.innerHTML = '&#9728;'; // Sun
+            if (!savedTheme) {
+                localStorage.setItem('dragonsuite-theme', 'dark');
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            themeToggle.innerHTML = isDark ? '&#9728;' : '&#127769;';
+            localStorage.setItem('dragonsuite-theme', isDark ? 'dark' : 'light');
+        });
+
+        // Category icons and order (image/vision first, then video/3d, audio, segmentation)
+        const categoryOrder = ['image', 'video', '3d', 'audio', 'segmentation', 'llm'];
+        const categoryIcons = {
+            'image': '&#128444;',
+            'video': '&#127916;',
+            '3d': '&#129513;',
+            'audio': '&#127911;',
+            'segmentation': '&#127919;',
+            'llm': '&#129302;',
+            'default': '&#128187;'
+        };
+        const categoryNames = {
+            'image': 'Image / Vision',
+            'video': 'Video',
+            '3d': '3D',
+            'audio': 'Audio / TTS / Music',
+            'segmentation': 'Segmentation / Matting',
+            'llm': 'Language Models'
+        };
+
+        // State
+        let services = [];
+        let localIp = '127.0.0.1';
+
+        // DOM Elements
+        const servicesContainer = document.getElementById('servicesContainer');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const localUrlEl = document.getElementById('localUrl');
+        const networkUrlEl = document.getElementById('networkUrl');
+        const toast = document.getElementById('toast');
+        const clipboardFallback = document.getElementById('clipboardFallback');
+
+        // Modal elements
+        const qrModal = document.getElementById('qrModal');
+        const qrModalTitle = document.getElementById('qrModalTitle');
+        const qrModalUrl = document.getElementById('qrModalUrl');
+        const qrModalImage = document.getElementById('qrModalImage');
+        const qrModalClose = document.getElementById('qrModalClose');
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Copy to clipboard with fallback for non-HTTPS
+        async function copyToClipboard(text) {
+            // Try modern API first
+            if (navigator.clipboard && window.isSecureContext) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    // Fall through to fallback
+                }
+            }
+
+            // Fallback for non-HTTPS contexts
+            try {
+                clipboardFallback.value = text;
+                clipboardFallback.style.left = '0';
+                clipboardFallback.select();
+                clipboardFallback.setSelectionRange(0, 99999);
+                const success = document.execCommand('copy');
+                clipboardFallback.style.left = '-9999px';
+                return success;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Fetch status
+        async function fetchStatus() {
+            refreshBtn.classList.add('spinning');
+
+            try {
+                const response = await fetch('/api/status');
+                if (!response.ok) throw new Error('Failed to fetch status');
+
+                const data = await response.json();
+                localIp = data.local_ip;
+                services = data.services;
+
+                localUrlEl.textContent = `http://localhost:8100`;
+                networkUrlEl.textContent = `http://${localIp}:8100`;
+
+                renderServices();
+            } catch (error) {
+                console.error('Error fetching status:', error);
+                servicesContainer.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading services</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                refreshBtn.classList.remove('spinning');
+            }
+        }
+
+        // Fetch git info for a service
+        async function fetchGitInfo(serviceId) {
+            try {
+                const response = await fetch(`/api/git/${serviceId}`);
+                if (!response.ok) return null;
+                const data = await response.json();
+                return data.git;
+            } catch {
+                return null;
+            }
+        }
+
+        // Start a service
+        async function startService(serviceId, btn) {
+            btn.disabled = true;
+            btn.innerHTML = '&#8987; Starting...';
+
+            try {
+                const response = await fetch(`/api/start/${serviceId}`, { method: 'POST' });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast(data.message, data.status === 'already_running' ? 'info' : 'success');
+                    // Refresh status after a short delay to allow service to start
+                    setTimeout(fetchStatus, 2000);
+                } else {
+                    showToast(data.detail || 'Failed to start service', 'error');
+                }
+            } catch (error) {
+                showToast('Failed to start service: ' + error.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '&#9654; Start';
+        }
+
+        // Stop a service
+        async function stopService(serviceId, btn) {
+            btn.disabled = true;
+            btn.innerHTML = '&#8987; Stopping...';
+
+            try {
+                const response = await fetch(`/api/stop/${serviceId}`, { method: 'POST' });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast(data.message, 'success');
+                    setTimeout(fetchStatus, 1000);
+                } else {
+                    showToast(data.detail || 'Failed to stop service', 'error');
+                }
+            } catch (error) {
+                showToast('Failed to stop service: ' + error.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '&#9632; Stop';
+        }
+
+        // Render services by category (video first)
+        function renderServices() {
+            if (services.length === 0) {
+                servicesContainer.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No services configured</h3>
+                        <p>Add services to /srv/containers/edq/config/dragonsuite.json</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by category
+            const categories = {};
+            services.forEach(service => {
+                const cat = service.category || 'other';
+                if (!categories[cat]) categories[cat] = [];
+                categories[cat].push(service);
+            });
+
+            // Sort categories by predefined order
+            const sortedCategories = Object.keys(categories).sort((a, b) => {
+                const aIndex = categoryOrder.indexOf(a);
+                const bIndex = categoryOrder.indexOf(b);
+                if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+                if (aIndex === -1) return 1;
+                if (bIndex === -1) return -1;
+                return aIndex - bIndex;
+            });
+
+            // Render
+            let html = '';
+            for (const category of sortedCategories) {
+                const categoryServices = categories[category];
+                const icon = categoryIcons[category] || categoryIcons.default;
+                const name = categoryNames[category] || category.charAt(0).toUpperCase() + category.slice(1);
+                html += `
+                    <div class="category-section">
+                        <div class="category-title">
+                            <span>${icon}</span>
+                            <span>${name}</span>
+                        </div>
+                        <div class="services-grid">
+                            ${categoryServices.map(s => renderServiceCard(s)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            servicesContainer.innerHTML = html;
+
+            // Fetch git info for services with project paths
+            services.forEach(service => {
+                if (service.project_path) {
+                    fetchGitInfo(service.id).then(gitInfo => {
+                        if (gitInfo && gitInfo.hash) {
+                            const gitEl = document.getElementById(`git-${service.id}`);
+                            if (gitEl) {
+                                gitEl.innerHTML = `
+                                    <span>&#128205;</span>
+                                    <span class="git-hash">${gitInfo.hash}</span>
+                                    <span>${gitInfo.branch}</span>
+                                    <span style="color: #9ca3af; margin-left: auto; font-size: 0.9em;">${gitInfo.last_commit}</span>
+                                `;
+                                gitEl.style.display = 'flex';
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        // Render a single service card
+        function renderServiceCard(service) {
+            const statusClass = service.running ? 'status-running' : 'status-stopped';
+            const statusText = service.running ? 'Running' : 'Stopped';
+            const icon = service.icon || '&#128187;';
+
+            const urlDisplay = service.url
+                ? `<a href="${service.url}" target="_blank">${service.url}</a>`
+                : '<span style="color: #9ca3af;">N/A</span>';
+
+            const portDisplay = service.port || 'N/A';
+
+            // Determine which buttons to show
+            const hasLaunchCommand = !!service.launch_command;
+            const hasPort = !!service.port;
+
+            let actionButtons = '';
+
+            // Always show Start and Stop buttons (disable based on state)
+            if (hasLaunchCommand) {
+                const startDisabled = service.running ? 'disabled' : '';
+                const stopDisabled = service.running ? '' : 'disabled';
+                actionButtons += `<button class="action-btn btn-start" onclick="startService('${service.id}', this)" ${startDisabled}>&#9654; Start</button>`;
+                if (hasPort) {
+                    actionButtons += `<button class="action-btn btn-stop" onclick="stopService('${service.id}', this)" ${stopDisabled}>&#9632; Stop</button>`;
+                }
+            }
+
+            // QR code in header (small, clickable)
+            const headerQR = hasPort
+                ? `<img class="header-qr" src="/api/qrcode/${service.id}" alt="QR" onclick="showQR('${service.id}', '${service.name}')" title="Click for larger QR">`
+                : '';
+
+            return `
+                <div class="service-card" data-id="${service.id}">
+                    <div class="card-header">
+                        <div class="service-icon">${icon}</div>
+                        <div class="service-info">
+                            <div class="service-name">${service.name}</div>
+                            <div class="service-description">${service.description || ''}</div>
+                        </div>
+                        ${headerQR}
+                        <div class="status-indicator ${statusClass}" title="${statusText}"></div>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">Port</span>
+                            <span class="info-value">${portDisplay}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">URL</span>
+                            <span class="info-value">${urlDisplay}</span>
+                        </div>
+                        <div class="git-info" id="git-${service.id}" style="display: none;"></div>
+                    </div>
+                    <div class="card-actions">
+                        ${actionButtons}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show QR code modal
+        function showQR(serviceId, serviceName) {
+            const service = services.find(s => s.id === serviceId);
+            if (!service) return;
+
+            qrModalTitle.textContent = serviceName;
+            qrModalUrl.textContent = service.url;
+            qrModalImage.src = `/api/qrcode/${serviceId}`;
+            qrModal.classList.add('active');
+        }
+
+        // Close modal
+        qrModalClose.addEventListener('click', () => {
+            qrModal.classList.remove('active');
+        });
+
+        qrModal.addEventListener('click', (e) => {
+            if (e.target === qrModal) {
+                qrModal.classList.remove('active');
+            }
+        });
+
+        // Copy URL to clipboard
+        async function copyUrl(url, btn) {
+            const success = await copyToClipboard(url);
+            if (success) {
+                btn.innerHTML = '&#10003; Copied!';
+                btn.classList.add('copied');
+                showToast('URL copied to clipboard', 'success');
+                setTimeout(() => {
+                    btn.innerHTML = '&#128203; Copy URL';
+                    btn.classList.remove('copied');
+                }, 2000);
+            } else {
+                showToast('Failed to copy to clipboard', 'error');
+            }
+        }
+
+        // Refresh button
+        refreshBtn.addEventListener('click', fetchStatus);
+
+        // Auto-refresh every 30 seconds
+        setInterval(fetchStatus, 30000);
+
+        // Initial load
+        fetchStatus();
+
+        console.log('Dragonsuite v2 loaded');
+    </script>
+</body>
+</html>

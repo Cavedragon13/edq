@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "created": "2026-02-04T00:08:44.776447",
+    "last_modified": "2026-02-04T00:08:57.039902",
+    "total_words": 5,
+    "current_week": 1,
+    "current_day": "Fri"
+  },
+  "words": [
+    {
+      "id": "reluctant",
+      "word": "reluctant",
+      "spelling": "R-E-L-U-C-T-A-N-T",
+      "micro_context_en": "you don't really want to",
+      "week": 1,
+      "day": "Mon",
+      "added": "2026-02-04T00:08:44.776473",
+      "translations": {
+        "es": null,
+        "vi": null,
+        "id": null
+      },
+      "translation_status": "pending"
+    },
+    {
+      "id": "mundane",
+      "word": "mundane",
+      "spelling": "M-U-N-D-A-N-E",
+      "micro_context_en": "boring, everyday stuff",
+      "week": 1,
+      "day": "Tue",
+      "added": "2026-02-04T00:08:49.675348",
+      "translations": {
+        "es": null,
+        "vi": null,
+        "id": null
+      },
+      "translation_status": "pending"
+    },
+    {
+      "id": "ambiguous",
+      "word": "ambiguous",
+      "spelling": "A-M-B-I-G-U-O-U-S",
+      "micro_context_en": "unclear, could mean different things",
+      "week": 1,
+      "day": "Wed",
+      "added": "2026-02-04T00:08:53.373912",
+      "translations": {
+        "es": null,
+        "vi": null,
+        "id": null
+      },
+      "translation_status": "pending"
+    },
+    {
+      "id": "meticulous",
+      "word": "meticulous",
+      "spelling": "M-E-T-I-C-U-L-O-U-S",
+      "micro_context_en": "very careful about small details",
+      "week": 1,
+      "day": "Thu",
+      "added": "2026-02-04T00:08:56.984682",
+      "translations": {
+        "es": null,
+        "vi": null,
+        "id": null
+      },
+      "translation_status": "pending"
+    },
+    {
+      "id": "ephemeral",
+      "word": "ephemeral",
+      "spelling": "E-P-H-E-M-E-R-A-L",
+      "micro_context_en": "lasting for a very short time",
+      "week": 1,
+      "day": "Fri",
+      "added": "2026-02-04T00:08:57.039885",
+      "translations": {
+        "es": null,
+        "vi": null,
+        "id": null
+      },
+      "translation_status": "pending"
+    }
+  ]
+}

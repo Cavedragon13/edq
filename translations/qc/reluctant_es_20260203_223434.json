@@ -1,0 +1,20 @@
+{
+  "word_id": "reluctant",
+  "target_lang": "es",
+  "original_en": "you don't really want to",
+  "translation_a": "no quieres de verdad",
+  "translation_b": "No realmente quieres",
+  "backtrans_a": "I don't really want it.",
+  "backtrans_b": "Don't really want",
+  "evaluation": {
+    "decision": "needs_review",
+    "confidence": 75,
+    "selected": "B",
+    "reason": "Translator A changes subject from you to I, altering meaning. Translator B preserves structure and tone better.",
+    "risks": "Meaning shift in A's translation."
+  },
+  "decision": "needs_review",
+  "selected": "B",
+  "timestamp": "2026-02-03T22:34:34.594996",
+  "retry": false
+}

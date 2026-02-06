@@ -1,0 +1,20 @@
+{
+  "word_id": "reluctant",
+  "target_lang": "es",
+  "original_en": "you don't really want to",
+  "translation_a": "No quieres realmente",
+  "translation_b": "No realmente quieres.",
+  "backtrans_a": "You don't really want it.",
+  "backtrans_b": "You don't really want.",
+  "evaluation": {
+    "decision": "approved",
+    "confidence": 90,
+    "selected": "A",
+    "reason": "Translator A's translation preserves the original meaning better by including 'it', which makes the sentence complete. While both translations are neutral and appropriate, A provides a more accurate back-translation.",
+    "risks": "Minor concern with Translator B omitting the object, potentially affecting completeness."
+  },
+  "decision": "approved",
+  "selected": "A",
+  "timestamp": "2026-02-04T00:10:16.991822",
+  "retry": false
+}

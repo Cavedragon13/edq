@@ -1,0 +1,20 @@
+{
+  "word_id": "mundane",
+  "target_lang": "es",
+  "original_en": "boring, everyday stuff",
+  "translation_a": "aburrido, cosas cotidianas",
+  "translation_b": "Asunto cotidiano.",
+  "backtrans_a": "boring, everyday things",
+  "backtrans_b": "Daily matter.",
+  "evaluation": {
+    "decision": "approved",
+    "confidence": 85,
+    "selected": "A",
+    "reason": "Translator A preserves the original meaning well and matches the tone, while Translator B slightly changes the nuance.",
+    "risks": "none"
+  },
+  "decision": "approved",
+  "selected": "A",
+  "timestamp": "2026-02-04T00:12:09.011211",
+  "retry": false
+}

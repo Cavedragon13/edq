@@ -1,0 +1,69 @@
+╔════════════════════════════════════════════════════════════════╗
+║         Wan2.2-Animate-14B Quick Start Guide                  ║
+╚════════════════════════════════════════════════════════════════╝
+
+🎯 RECOMMENDED: Use Cloud Service (Fast & Free)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Run this command:
+    python3 ~/launch-wan-cloud.py
+
+This opens the official HuggingFace Gradio interface in your browser.
+No installation needed, runs on powerful cloud GPUs!
+
+
+💻 ALTERNATIVE: Local Installation (For Experimentation)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  WARNING: Your 16GB VRAM may be insufficient. Expect slow performance
+    or failures with longer videos.
+
+Step 1 - Install (one time, requires sudo):
+    bash ~/setup-wan-animate.sh
+
+Step 2 - Run interface:
+    cd ~/wan-animate
+    source venv/bin/activate
+    python ~/gradio_app.py
+
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Full guide: ~/README-WAN-ANIMATE.md
+
+
+📁 FILES CREATED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+~/setup-wan-animate.sh    - Installation script
+~/gradio_app.py           - Local Gradio interface
+~/launch-wan-cloud.py     - Cloud service launcher (RECOMMENDED)
+~/README-WAN-ANIMATE.md   - Complete documentation
+
+
+🎬 WHAT THIS MODEL DOES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Two modes:
+
+1. ANIMATION MODE
+   Input:  Video with human motion + Character image
+   Output: Character mimicking the motion from video
+
+2. REPLACEMENT MODE
+   Input:  Video with character + New character image
+   Output: Original character replaced with new one
+
+
+💡 TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Use short videos (5-15 seconds)
+✓ Lower resolutions work better (720p or less)
+✓ Cloud service is MUCH faster than local
+✓ First run takes longer (model loading)
+
+
+🔗 LINKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Model: https://huggingface.co/Wan-AI/Wan2.2-Animate-14B
+Space: https://huggingface.co/spaces/Wan-AI/Wan2.2-Animate
+GitHub: https://github.com/Wan-Video/Wan2.2
+
+
+════════════════════════════════════════════════════════════════

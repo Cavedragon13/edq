@@ -1,0 +1,20 @@
+{
+  "word_id": "mundane",
+  "target_lang": "es",
+  "original_en": "boring, everyday stuff",
+  "translation_a": "aburrido, cosas de la vida cotidiana",
+  "translation_b": "Estándares cotidianos",
+  "backtrans_a": "Boring, everyday life things",
+  "backtrans_b": "Daily Standards",
+  "evaluation": {
+    "decision": "needs_review",
+    "confidence": 70,
+    "selected": "A",
+    "reason": "Translator A's translation is more accurate as it maintains the original meaning of 'boring, everyday stuff' through 'aburrido, cosas de la vida cotidiana', while Translator B's 'Estándares cotidianos' shifts the meaning towards 'daily standards', which does not fully capture the original intent.",
+    "risks": "Translator B might mislead the context by implying standards rather than ordinary boring things."
+  },
+  "decision": "needs_review",
+  "selected": "A",
+  "timestamp": "2026-02-04T00:10:33.330369",
+  "retry": false
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "reluctant",
+    "word": "reluctant",
+    "micro_context_en": "you don't really want to"
+  },
+  {
+    "id": "mundane",
+    "word": "mundane",
+    "micro_context_en": "boring, everyday stuff"
+  },
+  {
+    "id": "ambiguous",
+    "word": "ambiguous",
+    "micro_context_en": "unclear, could mean different things"
+  },
+  {
+    "id": "meticulous",
+    "word": "meticulous",
+    "micro_context_en": "very careful about small details"
+  },
+  {
+    "id": "ephemeral",
+    "word": "ephemeral",
+    "micro_context_en": "lasting for a very short time"
+  }
+]

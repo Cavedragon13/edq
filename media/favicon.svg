@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="dragonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Dragon head -->
+  <circle cx="50" cy="50" r="45" fill="url(#dragonGrad)"/>
+
+  <!-- Eyes -->
+  <ellipse cx="38" cy="42" rx="6" ry="8" fill="#fff"/>
+  <ellipse cx="62" cy="42" rx="6" ry="8" fill="#fff"/>
+  <circle cx="38" cy="44" r="3" fill="#1a1a2e"/>
+  <circle cx="62" cy="44" r="3" fill="#1a1a2e"/>
+
+  <!-- Nostrils -->
+  <ellipse cx="43" cy="58" rx="2" ry="3" fill="#1a1a2e" opacity="0.5"/>
+  <ellipse cx="57" cy="58" rx="2" ry="3" fill="#1a1a2e" opacity="0.5"/>
+
+  <!-- Horns -->
+  <path d="M 25 30 Q 20 15 22 10" stroke="#764ba2" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M 75 30 Q 80 15 78 10" stroke="#764ba2" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- Scales/spikes on head -->
+  <circle cx="50" cy="25" r="3" fill="#8b5cf6" opacity="0.7"/>
+  <circle cx="45" cy="28" r="2.5" fill="#8b5cf6" opacity="0.6"/>
+  <circle cx="55" cy="28" r="2.5" fill="#8b5cf6" opacity="0.6"/>
+</svg>

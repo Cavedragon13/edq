@@ -1,0 +1,17 @@
+[
+  {
+    "id": "reluctant",
+    "word": "reluctant",
+    "micro_context_en": "you don't really want to"
+  },
+  {
+    "id": "mundane",
+    "word": "mundane",
+    "micro_context_en": "boring, everyday stuff"
+  },
+  {
+    "id": "ambiguous",
+    "word": "ambiguous",
+    "micro_context_en": "unclear, could mean different things"
+  }
+]

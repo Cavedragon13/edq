@@ -1,0 +1,20 @@
+{
+  "word_id": "meticulous",
+  "target_lang": "es",
+  "original_en": "very careful about small details",
+  "translation_a": "Muy atento a los pequeños detalles",
+  "translation_b": "Muy cuidadoso con detalles pequeños.",
+  "backtrans_a": "Very attentive to small details.",
+  "backtrans_b": "Very careful with small details.",
+  "evaluation": {
+    "decision": "needs_review",
+    "confidence": 85,
+    "selected": "B",
+    "reason": "Translator A uses 'atento' (attentive) instead of 'cuidadoso' (careful), which slightly alters the meaning. Translator B's version better preserves the original meaning.",
+    "risks": "none"
+  },
+  "decision": "needs_review",
+  "selected": "B",
+  "timestamp": "2026-02-04T00:12:35.301916",
+  "retry": false
+}

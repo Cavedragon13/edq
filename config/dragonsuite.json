@@ -1,0 +1,266 @@
+{
+  "services": [
+    {
+      "id": "dragonsight4",
+      "name": "Dragonsight 4",
+      "description": "Vision AI + Smart Naming + Metadata",
+      "category": "image",
+      "port": 8080,
+      "path": "/",
+      "icon": "&#128009;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonsight.sh",
+      "project_path": null,
+      "features": [
+        "Vision AI",
+        "Smart Name",
+        "Metadata"
+      ],
+      "stop_command": "pkill -f \"dragonsight_server.py\" || true"
+    },
+    {
+      "id": "dragonflux-klein",
+      "name": "DragonFlux Klein",
+      "description": "Image Generation + LoRA Support",
+      "category": "image",
+      "port": 8001,
+      "path": null,
+      "icon": "&#128444;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_flux2_klein.sh",
+      "project_path": null,
+      "features": [
+        "Image Gen",
+        "LoRA"
+      ]
+    },
+    {
+      "id": "zimage-base",
+      "name": "Z-Image Base",
+      "description": "Alibaba 6B T2I + CFG + Negative Prompts",
+      "category": "image",
+      "port": 8011,
+      "path": null,
+      "icon": "&#129412;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_zimage.sh",
+      "project_path": null,
+      "features": [
+        "Image Gen",
+        "CFG",
+        "Neg Prompts",
+        "LoRA"
+      ]
+    },
+    {
+      "id": "realesrgan",
+      "name": "Real-ESRGAN",
+      "description": "AI Image Upscaling + Face Enhancement",
+      "category": "image",
+      "port": 8010,
+      "path": null,
+      "icon": "&#128200;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_realesrgan.sh",
+      "project_path": null,
+      "features": [
+        "Upscale",
+        "Face Enhance",
+        "Anime"
+      ]
+    },
+    {
+      "id": "dragonart-studio",
+      "name": "DragonArt Studio",
+      "description": "Gemini 3 Pro AI Editor + Veo 3.1 Video",
+      "category": "image",
+      "port": 8015,
+      "path": null,
+      "icon": "&#127912;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonart.sh",
+      "project_path": "/srv/containers/edq/projects/dragonart-studio",
+      "features": [
+        "72 Edit Modes",
+        "Style Transfer",
+        "Veo Video"
+      ],
+      "stop_command": "pkill -f \"dragonart_server.py\" || true"
+    },
+    {
+      "id": "wan2gp",
+      "name": "WanGP2",
+      "description": "Video Generation + Multiple Models",
+      "category": "video",
+      "port": 8002,
+      "path": null,
+      "icon": "&#127909;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_wan2gp.sh",
+      "project_path": "/srv/containers/edq/projects/Wan2GP",
+      "features": [
+        "Video Gen",
+        "Multi-Model"
+      ]
+    },
+    {
+      "id": "liveportrait",
+      "name": "LivePortrait",
+      "description": "Portrait Animation + Expression Transfer",
+      "category": "video",
+      "port": 8006,
+      "path": null,
+      "icon": "&#127917;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_liveportrait.sh",
+      "project_path": "/srv/containers/edq/projects/LivePortrait",
+      "features": [
+        "Portrait Anim",
+        "Expression",
+        "Animals"
+      ]
+    },
+    {
+      "id": "hunyuan3d",
+      "name": "Hunyuan3D-2",
+      "description": "Image to 3D + Texture Synthesis",
+      "category": "3d",
+      "port": 8007,
+      "path": null,
+      "icon": "&#129513;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_hunyuan3d.sh",
+      "project_path": "/srv/containers/edq/projects/hunyuan3d",
+      "features": [
+        "Image to 3D",
+        "Texture"
+      ]
+    },
+    {
+      "id": "qwen3-tts",
+      "name": "Qwen3-TTS",
+      "description": "TTS + Voice Cloning + Voice Design (3 modes)",
+      "category": "audio",
+      "port": 8009,
+      "path": null,
+      "icon": "&#128483;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_qwen3_tts.sh",
+      "project_path": "/srv/containers/edq/projects/qwen3-tts",
+      "features": [
+        "TTS",
+        "Voice Clone",
+        "Voice Design"
+      ]
+    },
+    {
+      "id": "qwen3-audiobook",
+      "name": "Qwen3 Audiobook",
+      "description": "Document to Audiobook (PDF/EPUB/DOCX/TXT)",
+      "category": "audio",
+      "port": 8014,
+      "path": null,
+      "icon": "&#128214;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_qwen3_audiobook.sh",
+      "project_path": null,
+      "features": [
+        "PDF",
+        "EPUB",
+        "Voice Clone"
+      ]
+    },
+    {
+      "id": "fish-speech",
+      "name": "Fish Speech",
+      "description": "TTS + Voice Cloning + Emotion Control",
+      "category": "audio",
+      "port": 8003,
+      "path": null,
+      "icon": "&#128032;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_fish_speech.sh",
+      "project_path": "/srv/containers/edq/projects/fish-speech",
+      "features": [
+        "TTS",
+        "Voice Clone",
+        "Emotions"
+      ]
+    },
+    {
+      "id": "heartmula",
+      "name": "HeartMuLa",
+      "description": "Lyrics to Song + Style Tags + Sections",
+      "category": "audio",
+      "port": 8004,
+      "path": null,
+      "icon": "&#127925;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_heartmula.sh",
+      "project_path": "/srv/containers/edq/projects/heartmula",
+      "features": [
+        "Music Gen",
+        "Style Tags",
+        "Sections"
+      ]
+    },
+    {
+      "id": "sam2",
+      "name": "SAM 2.1",
+      "description": "Image + Video Segmentation + Auto Masks",
+      "category": "segmentation",
+      "port": 8005,
+      "path": null,
+      "icon": "&#127919;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_sam2.sh",
+      "project_path": "/srv/containers/edq/projects/sam2",
+      "features": [
+        "Image Seg",
+        "Video Track",
+        "Auto Mask"
+      ]
+    },
+    {
+      "id": "rembg",
+      "name": "Rembg",
+      "description": "AI Background Removal + Multiple Models",
+      "category": "segmentation",
+      "port": 8012,
+      "path": null,
+      "icon": "&#9986;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_rembg.sh",
+      "project_path": null,
+      "features": [
+        "BG Remove",
+        "Alpha PNG",
+        "Multi-Model"
+      ]
+    },
+    {
+      "id": "qwen-image-layered",
+      "name": "Qwen Image Layered",
+      "description": "Image Layer Decomposition + PPTX Export",
+      "category": "segmentation",
+      "port": 8013,
+      "path": null,
+      "icon": "&#128444;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_qwen_image_layered.sh",
+      "project_path": null,
+      "features": [
+        "Layer Decomp",
+        "RGBA Export",
+        "PPTX"
+      ]
+    }
+  ],
+  "categories": {
+    "image": {
+      "name": "Image / Vision",
+      "icon": "&#128444;"
+    },
+    "video": {
+      "name": "Video Generation",
+      "icon": "&#127916;"
+    },
+    "3d": {
+      "name": "3D Generation",
+      "icon": "&#129513;"
+    },
+    "audio": {
+      "name": "Audio / TTS / Music",
+      "icon": "&#128266;"
+    },
+    "segmentation": {
+      "name": "Segmentation / Matting",
+      "icon": "&#127919;"
+    }
+  }
+}

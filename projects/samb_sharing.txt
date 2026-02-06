@@ -1,0 +1,111 @@
+
+ ▐▛███▜▌   Claude Code v2.1.19
+▝▜█████▛▘  Opus 4.5 · Claude Pro
+  ▘▘ ▝▝    /srv/containers/edq/projects
+
+❯ /clear 
+  ⎿  (no content)
+
+❯ most of my assets are synched on the Macs in iCloud. I can mount the      
+  shared drives from here, but how do I mount the iCloud downloads folder   
+  on uDragon permanently?                                                   
+
+● The most reliable approach is to share the iCloud folder from your Mac via SMB
+   and mount it on Linux. Here's how:
+
+  On your Mac(s)
+
+  1. Enable File Sharing:
+    - System Settings → General → Sharing → File Sharing (ON)
+    - Click the i next to File Sharing
+    - Add your iCloud Drive folder: ~/Library/Mobile 
+  Documents/com~apple~CloudDocs/
+    - Or specifically Downloads: ~/Downloads/ if that's what syncs
+  2. Note your Mac's IP (or use hostname like macbook.local)
+
+  On uDragon (Linux)
+
+  1. Install CIFS utilities:
+  sudo apt install cifs-utils
+
+  2. Create mount point:
+  sudo mkdir -p /mnt/icloud
+
+  3. Create credentials file (more secure than putting password in fstab):
+  sudo nano /etc/smbcredentials
+  Add:
+  username=your_mac_username
+  password=your_mac_password
+  Then secure it:
+  sudo chmod 600 /etc/smbcredentials
+
+  4. Add to /etc/fstab for permanent mount:
+  //MAC_IP_OR_HOSTNAME/iCloud /mnt/icloud cifs credentials=/etc/smbcredentials,u
+  id=1000,gid=1000,iocharset=utf8,nofail,_netdev 0 0
+
+  5. Mount it:
+  sudo mount -a
+
+  Key options explained
+
+  - nofail - Boot won't fail if Mac is offline
+  - _netdev - Wait for network before mounting
+  - uid=1000,gid=1000 - Files owned by your user (check with id)
+
+  Want me to help you identify the exact share name from your Mac, or check what
+   network shares are already visible from uDragon?
+ ▐▛███▜▌   Claude Code v2.1.19
+▝▜█████▛▘  Opus 4.5 · Claude Pro
+  ▘▘ ▝▝    /srv/containers/edq/projects
+
+❯ /clear 
+  ⎿  (no content)
+
+❯ most of my assets are synched on the Macs in iCloud. I can mount the      
+  shared drives from here, but how do I mount the iCloud downloads folder   
+  on uDragon permanently?                                                   
+
+● The most reliable approach is to share the iCloud folder from your Mac via SMB
+   and mount it on Linux. Here's how:
+
+  On your Mac(s)
+
+  1. Enable File Sharing:
+    - System Settings → General → Sharing → File Sharing (ON)
+    - Click the i next to File Sharing
+    - Add your iCloud Drive folder: ~/Library/Mobile 
+  Documents/com~apple~CloudDocs/
+    - Or specifically Downloads: ~/Downloads/ if that's what syncs
+  2. Note your Mac's IP (or use hostname like macbook.local)
+
+  On uDragon (Linux)
+
+  1. Install CIFS utilities:
+  sudo apt install cifs-utils
+
+  2. Create mount point:
+  sudo mkdir -p /mnt/icloud
+
+  3. Create credentials file (more secure than putting password in fstab):
+  sudo nano /etc/smbcredentials
+  Add:
+  username=your_mac_username
+  password=your_mac_password
+  Then secure it:
+  sudo chmod 600 /etc/smbcredentials
+
+  4. Add to /etc/fstab for permanent mount:
+  //MAC_IP_OR_HOSTNAME/iCloud /mnt/icloud cifs credentials=/etc/smbcredentials,u
+  id=1000,gid=1000,iocharset=utf8,nofail,_netdev 0 0
+
+  5. Mount it:
+  sudo mount -a
+
+  Key options explained
+
+  - nofail - Boot won't fail if Mac is offline
+  - _netdev - Wait for network before mounting
+  - uid=1000,gid=1000 - Files owned by your user (check with id)
+
+  Want me to help you identify the exact share name from your Mac, or check what
+   network shares are already visible from uDragon?

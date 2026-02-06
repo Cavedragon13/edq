@@ -1,0 +1,20 @@
+{
+  "word_id": "ephemeral",
+  "target_lang": "es",
+  "original_en": "lasting for a very short time",
+  "translation_a": "que dura un muy corto tiempo",
+  "translation_b": "Durando un tiempo muy breve.",
+  "backtrans_a": "It lasts for a very short time.",
+  "backtrans_b": "Lasting a very short time.",
+  "evaluation": {
+    "decision": "approved",
+    "confidence": 85,
+    "selected": "A",
+    "reason": "Both translations accurately convey the original meaning. Translator A's version is slightly more direct and clear.",
+    "risks": "none"
+  },
+  "decision": "approved",
+  "selected": "A",
+  "timestamp": "2026-02-04T00:12:56.604163",
+  "retry": false
+}

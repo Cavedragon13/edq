@@ -1,0 +1,74 @@
+╔════════════════════════════════════════════════════════════════╗
+║      Wan2.2-Animate-14B Setup Guide (RTX 5070 Ti 16GB)       ║
+╚════════════════════════════════════════════════════════════════╝
+
+🎯 RECOMMENDED: GGUF Quantized Version (Works on 16GB!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ WILL RUN on your RTX 5070 Ti (16GB VRAM)
+✅ Good quality with Q4/Q5 quantization
+✅ Fully local and private
+
+Run this command:
+    bash ~/setup-wan-gguf.sh
+
+Choose option 3 (Q4_K_S) or 4 (Q5_K_S) when prompted.
+
+Then start ComfyUI:
+    cd ~/comfyui-wan/ComfyUI
+    source ../venv/bin/activate
+    python main.py
+
+Open: http://localhost:8188
+
+
+🌐 ALTERNATIVE: Cloud Service (Fastest)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+No installation, runs on powerful cloud GPUs
+
+Run this command:
+    python3 ~/launch-wan-cloud.py
+
+
+📊 COMPARISON
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Option                  VRAM      Speed       Quality    Setup
+────────────────────────────────────────────────────────────────
+GGUF Q4_K_S (Local)     10.6 GB   Medium      Good       Medium
+GGUF Q5_K_S (Local)     12.3 GB   Medium      Better     Medium
+Cloud Service           0 GB      Fast        Best       Easy
+Full Model              45+ GB    N/A         N/A        Won't fit
+
+
+📁 FILES AVAILABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+~/setup-wan-gguf.sh          ⭐ GGUF setup (RECOMMENDED)
+~/launch-wan-cloud.py        🌐 Cloud launcher
+~/WAN-SETUP-COMPARISON.md    📖 Detailed comparison
+~/setup-wan-animate.sh       ⚠️  Full model (won't fit in 16GB)
+~/gradio_app.py              ⚠️  Full model interface
+
+
+🎬 WHAT THIS DOES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANIMATION MODE:
+  Video (person dancing) + Character image = Animated character
+
+REPLACEMENT MODE:
+  Video (with character) + New character = Replaced character
+
+
+💡 TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Start with Q4_K_S quantization (good quality, 10.6 GB)
+✓ Use Q5_K_S if you want better quality (12.3 GB)
+✓ Short videos work better (5-15 seconds)
+✓ First run takes longer (model loading)
+
+
+🔗 LINKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GGUF: https://huggingface.co/QuantStack/Wan2.2-Animate-14B-GGUF
+Cloud: https://huggingface.co/spaces/Wan-AI/Wan2.2-Animate
+
+
+════════════════════════════════════════════════════════════════

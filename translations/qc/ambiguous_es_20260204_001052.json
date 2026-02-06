@@ -1,0 +1,20 @@
+{
+  "word_id": "ambiguous",
+  "target_lang": "es",
+  "original_en": "unclear, could mean different things",
+  "translation_a": "Ambiguo, puede significar diferentes cosas.",
+  "translation_b": "{EXPRESIÓN} puede significar diferentes cosas.",
+  "backtrans_a": "Ambiguous, it can mean different things.",
+  "backtrans_b": "{EXPRESIÓN} can mean different things.",
+  "evaluation": {
+    "decision": "approved",
+    "confidence": 90,
+    "selected": "A",
+    "reason": "Translator A's translation accurately conveys the original meaning and is complete without placeholders.",
+    "risks": "none"
+  },
+  "decision": "approved",
+  "selected": "A",
+  "timestamp": "2026-02-04T00:10:52.346946",
+  "retry": false
+}

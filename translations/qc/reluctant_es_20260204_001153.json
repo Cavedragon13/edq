@@ -1,0 +1,20 @@
+{
+  "word_id": "reluctant",
+  "target_lang": "es",
+  "original_en": "you don't really want to",
+  "translation_a": "no quieres realmente",
+  "translation_b": "no realmente quiere.",
+  "backtrans_a": "You don't really want it.",
+  "backtrans_b": "doesn't really want",
+  "evaluation": {
+    "decision": "needs_review",
+    "confidence": 75,
+    "selected": "A",
+    "reason": "Both translations preserve meaning but differ structurally. Translator A's structure is more common and direct.",
+    "risks": "Translator B's placement of 'realmente' may alter emphasis slightly."
+  },
+  "decision": "needs_review",
+  "selected": "A",
+  "timestamp": "2026-02-04T00:11:53.584752",
+  "retry": false
+}

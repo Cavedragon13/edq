@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(python3:*)",
+      "Bash(pgrep:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(chmod:*)",
+      "Bash(netstat:*)",
+      "Bash(ss:*)",
+      "Bash(echo:*)",
+      "Bash(ollama list:*)",
+      "Bash(sudo pkill:*)",
+      "Bash(OLLAMA_MODELS=/srv/containers/edq/models/ollama ollama list:*)",
+      "Bash(bash:*)",
+      "Bash(/srv/containers/edq/venv_florence2/bin/pip install:*)"
+    ]
+  }
+}

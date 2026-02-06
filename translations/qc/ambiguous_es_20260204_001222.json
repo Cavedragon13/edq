@@ -1,0 +1,20 @@
+{
+  "word_id": "ambiguous",
+  "target_lang": "es",
+  "original_en": "unclear, could mean different things",
+  "translation_a": "No claro, puede significar diferentes cosas",
+  "translation_b": "vago, podría significar diferentes cosas",
+  "backtrans_a": "It's not clear, it could mean different things.",
+  "backtrans_b": "Lazy, could mean different things.",
+  "evaluation": {
+    "decision": "approved",
+    "confidence": 90,
+    "selected": "A",
+    "reason": "Translator A correctly preserves the meaning of 'unclear' as 'No claro,' while Translator B uses 'vago,' which conveys a different tone and meaning ('lazy').",
+    "risks": "none"
+  },
+  "decision": "approved",
+  "selected": "A",
+  "timestamp": "2026-02-04T00:12:22.918927",
+  "retry": false
+}
