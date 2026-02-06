@@ -1,0 +1,14 @@
+[Unit]
+Description=Dragonsuite Git Snapshot Before Shutdown
+DefaultDependencies=no
+Before=shutdown.target reboot.target halt.target
+
+[Service]
+Type=oneshot
+User=edq
+WorkingDirectory=/srv/containers/edq
+ExecStart=/srv/containers/edq/scripts/git_snapshot.sh
+TimeoutStartSec=30
+
+[Install]
+WantedBy=halt.target reboot.target shutdown.target
