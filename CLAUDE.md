@@ -310,6 +310,36 @@ This is a personal AI development environment focused on video generation, visio
 - **Location**: `projects/llama.cpp/`
 - **Purpose**: GGUF model inference for quantized models
 
+### 18. Dragonart Studio (Image Transformation)
+- **Location**: `projects/dragonart-studio/`
+- **Tech Stack**: React + TypeScript + Vite
+- **Purpose**: Professional AI-powered image transformation tool with 70+ edit modes
+- **Features**:
+  - Image-to-image transformation with prompt control
+  - 70+ edit modes: Trading cards, movie posters, magazine covers, comic art, etc.
+  - Multi-model support: Gemini 3 Pro, Gemini 3 Flash, GPT-Image-1
+  - Video generation: Veo 3.1, Veo 3.1 Fast, Sora-2
+  - Session management with undo/redo history
+  - Reference image support for style transfer
+  - Automatic aspect ratio cropping per mode
+  - Export sessions as HTML galleries
+- **Key Modes**:
+  - **Trading Cards**: MTG, Sports (7 types), Non-Sports (10 vintage styles)
+  - **Posters**: Horror, Fantasy, Sci-Fi, Wanted
+  - **Magazines**: Harper's, Syrens, Joxtrap, Freestyle (20 genres)
+  - **Comic Art**: Pages, Splash panels, Covers
+  - **Transformations**: Diorama, Action Figure, Puppet, Pin-up
+  - **Art Styles**: Anime, Watercolor, Gothic, Illustration
+- **Models Available**:
+  - Gemini 3 Pro → Veo 3.1 (best quality, all 70+ modes)
+  - Gemini 3 Flash → Veo 3.1 Fast (faster, good quality)
+  - GPT-Image-1 → Sora-2 (OpenAI models)
+- **Important Notes**:
+  - Uses React with TypeScript strict mode
+  - State management via useState + useCallback hooks
+  - All edit mode dropdowns have conditional sub-selectors (sports, genres, styles)
+  - Prompts designed for fair use (no trademarked names in templates)
+
 ## Common Development Tasks
 
 ### Working with the Dashboard
@@ -557,6 +587,75 @@ launcher-root/
 └── pinokio.json  # Metadata
 ```
 
+### Working with Dragonart Studio
+
+**Location:** `cd /srv/containers/edq/projects/dragonart-studio`
+
+**IMPORTANT: Production Deployment**
+Dragonart Studio runs as a production service on port 8015, managed by the Dragonsuite Dashboard:
+- **Production URL:** `http://192.168.7.226:8015`
+- **Server:** `scripts/dragonart_server.py` (Python HTTP server)
+- **Launch:** `bash scripts/start_dragonart.sh` (auto-builds if needed)
+- **Dashboard:** Integrated into Dragonsuite on port 8100
+
+**Making Changes:**
+```bash
+# Option 1: Development (faster iteration)
+cd /srv/containers/edq/projects/dragonart-studio
+npm run dev  # Vite dev server on random port (3000+)
+
+# Option 2: Production deployment (for dashboard)
+npm run build  # Build to dist/
+bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
+```
+
+**CRITICAL:** Type changes (types.ts) and constant changes (constants.ts) require `npm run build` to take effect in production. The dev server hot-reloads, but production serves static built files from `dist/`.
+
+**Key considerations:**
+- React + TypeScript app with strict mode enabled
+- Uses Gemini 3 Pro / Flash API (requires Google Cloud API key in `/srv/containers/edq/.env`)
+- All state managed via React hooks (useState, useCallback, useEffect)
+- Image processing happens client-side before API calls
+- Sessions auto-save to localStorage with compression
+- **Always rebuild after TypeScript/React changes before deploying to production**
+
+**Common workflows:**
+
+1. **Adding a new edit mode:**
+   - Add mode to `EditMode` type in `types.ts`
+   - Create prompt template in `constants.ts`
+   - Add to `MODE_CONFIGS` in `components/ControlPanel.tsx`
+   - Add case in `getPromptForMode()` switch statement
+   - If needs aspect ratio: add to `ASPECT_RATIO_MAP` in `App.tsx`
+
+2. **Adding a dropdown selector (like Non-Sports Card styles):**
+   - Create new type in `types.ts` (e.g., `NonSportsCardStyle`)
+   - Add state in `App.tsx`: `const [style, setStyle] = useState<Type>('default')`
+   - Pass to ControlPanel props and add to function parameters
+   - Add conditional dropdown in ControlPanel using `{editMode === 'mode' && (...)}`
+   - Add to `getPromptForMode` parameters and use in prompt building
+   - **CRITICAL:** Add new state variable to `handleGenerateClick` dependency array!
+
+3. **Debugging state sync issues:**
+   - Check useCallback dependency arrays include ALL state variables used
+   - Missing dependencies cause stale closure bugs (dropdown changes don't apply)
+   - Add console.log in handleGenerateClick to verify current state values
+   - React StrictMode causes double-renders (normal in dev, not production)
+
+4. **Fair use / content filtering:**
+   - Avoid trademarked names in prompts ("Star Wars" → "classic sci-fi movie")
+   - Use generic style descriptors ("Marvel" → "superhero comic style")
+   - Keep prompt_snippets focused on visual aesthetics, not brand names
+
+**Troubleshooting:**
+- **Changes not appearing:** Rebuild with `npm run build` and restart via dashboard or launch script
+- **API errors:** Check Google Cloud API key has billing enabled in `/srv/containers/edq/.env`
+- **Content filtering:** Review prompts for trademarked names (use generic descriptors)
+- **State not updating:** Check useCallback/useEffect dependency arrays for missing dependencies
+- **Aspect ratio issues:** Verify mode is in ASPECT_RATIO_MAP in `App.tsx`
+- **Session not saving:** Check localStorage isn't full (browser quota ~5-10MB)
+- **Server conflicts:** Don't run dev server when production server is running on port 8015
+
 ## Architecture Patterns
 
 ### Python Script Structure
@@ -665,6 +764,54 @@ clear_gpu_memory()
 - Use 640px resolution when possible (vs 1024px)
 - Limit video length for video generation
 - Add user-facing warnings about hardware limits in UI
+
+### React State Management Pattern (Dragonart Studio)
+
+**CRITICAL: useCallback Dependency Arrays**
+
+When creating callbacks that use state variables, **ALL** state variables must be in the dependency array:
+
+```typescript
+const handleGenerateClick = useCallback(async () => {
+  const prompt = getPromptForMode({
+    mode: editMode,
+    sport: sportType,
+    console: consoleType,
+    magazineGenre: magazineGenre,
+    nonSportsCardStyle: nonSportsCardStyle,  // ← Must be in deps!
+  });
+  // ...
+}, [editMode, sportType, consoleType, magazineGenre, nonSportsCardStyle]);
+//  ↑ ALL state variables used in callback MUST be here ↑
+```
+
+**Common Bug:** Missing state in dependency array causes stale closures:
+- Symptom: Dropdown selection takes 2-3 clicks to apply
+- Cause: Callback captures old state value, not current
+- Fix: Add missing state variable to dependency array
+
+**Debugging Pattern:**
+```typescript
+const handleGenerateClick = useCallback(async () => {
+  console.log('Current state:', { editMode, sportType, nonSportsCardStyle });
+  // ↑ Verify all values are current, not stale
+}, [editMode, sportType, nonSportsCardStyle]);
+```
+
+**State Flow for Dropdowns:**
+```
+User changes dropdown
+    ↓
+onChange={(e) => setState(e.target.value)}
+    ↓
+Parent state updates (App.tsx)
+    ↓
+Callback recreated with new state (due to dependency array)
+    ↓
+Next Generate click uses current state ✓
+```
+
+**Without dependency:** Callback keeps old state until something else causes re-render ✗
 
 ## API Keys & Environment Variables
 
