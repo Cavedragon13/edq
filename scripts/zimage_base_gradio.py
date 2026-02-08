@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Z-Image Base - Gradio Interface
-Alibaba Tongyi's 6B parameter text-to-image model with CFG and negative prompt support
+Z-Image Base + Turbo ControlNet - Gradio Interface
+Alibaba Tongyi's 6B parameter text-to-image model with:
+- Base model: CFG and negative prompt support
+- Turbo model: 8-step fast inference with ControlNet Union 2.1
 Optimized for RTX 5070 Ti (16GB VRAM)
 """
 
@@ -11,15 +13,29 @@ from pathlib import Path
 import os
 from datetime import datetime
 from PIL import Image
+import numpy as np
+import cv2
 
 # Configuration
-MODEL_ID = "Tongyi-MAI/Z-Image"
+MODEL_ID_BASE = "Tongyi-MAI/Z-Image"
+MODEL_ID_TURBO = "Tongyi-MAI/Z-Image-Turbo"
+CONTROLNET_MODEL_ID = "alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1"
 OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/zimage"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # LoRA directory
 LORA_DIR = Path(os.path.expanduser("~/models/loras/zimage"))
 LORA_DIR.mkdir(parents=True, exist_ok=True)
+
+# ControlNet condition types
+CONTROLNET_CONDITIONS = [
+    "None",
+    "Canny (Edge Detection)",
+    "Depth (Depth Maps)",
+    "Pose (Human Pose)",
+    "HED (Holistic Edges)",
+    "MLSD (Line Segments)"
+]
 
 # Aspect ratio presets
 ASPECT_RATIOS = {
@@ -34,7 +50,10 @@ ASPECT_RATIOS = {
 }
 
 # Global pipeline state
-pipe = None
+pipe_base = None
+pipe_turbo = None
+controlnet = None
+current_model = "Base"
 loaded_loras = []
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
@@ -79,40 +98,139 @@ def get_available_loras():
     return loras
 
 
-def load_pipeline():
-    """Lazy load the Z-Image pipeline with memory optimizations"""
-    global pipe
+def preprocess_control_image(image: Image.Image, condition_type: str) -> Image.Image:
+    """Preprocess control image based on condition type"""
+    if condition_type == "None" or not image:
+        return None
 
-    if pipe is not None:
-        return pipe
+    # Convert PIL to numpy
+    img_array = np.array(image)
 
-    print(f"Loading Z-Image Base model...")
-    try:
-        from diffusers import ZImagePipeline
+    # Convert RGB to BGR for OpenCV
+    if len(img_array.shape) == 3 and img_array.shape[2] == 3:
+        img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
 
-        # Memory optimization (expandable_segments is superior to max_split_size_mb)
-        os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+    if "Canny" in condition_type:
+        # Canny edge detection
+        gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY) if len(img_array.shape) == 3 else img_array
+        edges = cv2.Canny(gray, 50, 150)
+        processed = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
 
-        pipe = ZImagePipeline.from_pretrained(MODEL_ID, torch_dtype=dtype)
+    elif "HED" in condition_type:
+        # For HED, we'll use Canny as fallback (proper HED requires model)
+        gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY) if len(img_array.shape) == 3 else img_array
+        edges = cv2.Canny(gray, 100, 200)
+        processed = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
 
-        # Use sequential CPU offload to fit in 16GB VRAM
-        pipe.enable_sequential_cpu_offload()
+    elif "Depth" in condition_type:
+        # Simple depth estimation using grayscale
+        gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY) if len(img_array.shape) == 3 else img_array
+        depth = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX)
+        processed = cv2.cvtColor(depth, cv2.COLOR_GRAY2RGB)
 
-        # VAE optimizations
-        if hasattr(pipe, 'vae'):
-            pipe.vae.enable_slicing()
-            pipe.vae.enable_tiling()
+    elif "MLSD" in condition_type:
+        # Line segment detection using HoughLines
+        gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY) if len(img_array.shape) == 3 else img_array
+        edges = cv2.Canny(gray, 50, 150)
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=80, minLineLength=30, maxLineGap=10)
+        line_img = np.zeros_like(img_array)
+        if lines is not None:
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                cv2.line(line_img, (x1, y1), (x2, y2), (255, 255, 255), 2)
+        processed = line_img
 
-        print("Z-Image Base loaded with CPU offloading + VAE optimizations")
-    except Exception as e:
-        print(f"Failed to load model: {e}")
-        raise
-    return pipe
+    else:
+        # Pose or unknown - return original
+        processed = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB) if len(img_array.shape) == 3 else img_array
+
+    return Image.fromarray(processed)
+
+
+def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
+    """Lazy load the Z-Image pipeline with memory optimizations
+
+    Args:
+        model_type: "Base" or "Turbo"
+        use_controlnet: Whether to load ControlNet (only for Turbo)
+    """
+    global pipe_base, pipe_turbo, controlnet, current_model
+
+    # Memory optimization (expandable_segments is superior to max_split_size_mb)
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
+    if model_type == "Base":
+        if pipe_base is not None:
+            current_model = "Base"
+            return pipe_base
+
+        print(f"Loading Z-Image Base model...")
+        try:
+            from diffusers import ZImagePipeline
+
+            pipe_base = ZImagePipeline.from_pretrained(MODEL_ID_BASE, torch_dtype=dtype)
+
+            # Use sequential CPU offload to fit in 16GB VRAM
+            pipe_base.enable_sequential_cpu_offload()
+
+            # VAE optimizations
+            if hasattr(pipe_base, 'vae'):
+                pipe_base.vae.enable_slicing()
+                pipe_base.vae.enable_tiling()
+
+            print("Z-Image Base loaded with CPU offloading + VAE optimizations")
+            current_model = "Base"
+            return pipe_base
+        except Exception as e:
+            print(f"Failed to load Base model: {e}")
+            raise
+
+    else:  # Turbo
+        if use_controlnet:
+            # NOTE: ControlNet support pending diffusers update
+            # ZImageControlNetPipeline not yet available in diffusers 0.36.0
+            # For now, return error message
+            raise NotImplementedError(
+                "ControlNet support requires diffusers with ZImageControlNetPipeline support.\n"
+                "Currently available: ZImagePipeline only.\n"
+                "Workaround: Use VideoX-Fun repository (https://github.com/aigc-apps/VideoX-Fun) or wait for diffusers update.\n"
+                "For now, use Turbo mode without ControlNet for 8-step fast inference."
+            )
+
+        else:
+            # Load regular Turbo pipeline (no ControlNet)
+            if pipe_turbo is not None and controlnet is None:
+                current_model = "Turbo"
+                return pipe_turbo
+
+            print(f"Loading Z-Image Turbo model...")
+            try:
+                from diffusers import ZImagePipeline
+
+                pipe_turbo = ZImagePipeline.from_pretrained(MODEL_ID_TURBO, torch_dtype=dtype)
+
+                # Use sequential CPU offload to fit in 16GB VRAM
+                pipe_turbo.enable_sequential_cpu_offload()
+
+                # VAE optimizations
+                if hasattr(pipe_turbo, 'vae'):
+                    pipe_turbo.vae.enable_slicing()
+                    pipe_turbo.vae.enable_tiling()
+
+                print("Z-Image Turbo loaded with CPU offloading + VAE optimizations")
+                current_model = "Turbo"
+                return pipe_turbo
+            except Exception as e:
+                print(f"Failed to load Turbo model: {e}")
+                raise
 
 
 def apply_lora(lora_name, lora_scale=1.0):
-    """Load and apply a LoRA"""
-    global pipe, loaded_loras
+    """Load and apply a LoRA to the current pipeline"""
+    global pipe_base, pipe_turbo, loaded_loras, current_model
+
+    # Get current pipeline
+    pipe = pipe_base if current_model == "Base" else pipe_turbo
 
     if pipe is None:
         return "Load model first"
@@ -145,6 +263,10 @@ def apply_lora(lora_name, lora_scale=1.0):
 def generate_image(
     prompt: str,
     negative_prompt: str,
+    model_type: str,
+    controlnet_condition: str,
+    control_image: Image.Image,
+    controlnet_scale: float,
     aspect_ratio: str,
     width: int,
     height: int,
@@ -155,15 +277,20 @@ def generate_image(
     lora_scale: float,
     progress=gr.Progress()
 ):
-    """Generate an image from text prompt"""
+    """Generate an image from text prompt with optional ControlNet guidance"""
     if not prompt or prompt.strip() == "":
-        return None, "Please enter a prompt"
+        return None, None, "Please enter a prompt"
+
+    # Validate ControlNet settings
+    use_controlnet = controlnet_condition != "None" and control_image is not None
+    if use_controlnet and model_type != "Turbo":
+        return None, None, "ControlNet is only available with Turbo model"
 
     progress(0, desc="Loading model...")
     try:
-        pipeline = load_pipeline()
+        pipeline = load_pipeline(model_type, use_controlnet)
     except Exception as e:
-        return None, f"Failed to load model: {str(e)}"
+        return None, None, f"Failed to load model: {str(e)}"
 
     # Apply LoRA if selected
     if lora_name and lora_name != "None":
@@ -182,20 +309,40 @@ def generate_image(
         seed = torch.randint(0, 2**32, (1,)).item()
     generator = torch.Generator(device="cpu").manual_seed(int(seed))
 
+    # Preprocess control image if using ControlNet
+    processed_control = None
+    if use_controlnet:
+        progress(0.15, desc="Processing control image...")
+        processed_control = preprocess_control_image(control_image, controlnet_condition)
+        if processed_control:
+            # Resize to match target dimensions
+            processed_control = processed_control.resize((width, height), Image.LANCZOS)
+
     progress(0.2, desc="Generating image...")
     try:
         gen_kwargs = {
             "prompt": prompt,
             "height": height,
             "width": width,
-            "guidance_scale": guidance_scale,
             "num_inference_steps": num_inference_steps,
             "generator": generator,
         }
 
-        # Add negative prompt if provided (Z-Image Base supports this)
-        if negative_prompt and negative_prompt.strip():
+        # Turbo model uses CFG=1.0 for 8-step mode (recommended)
+        # Note: Recent diffusers issue with guidance_scale>1 for ControlNet
+        if model_type == "Turbo" and num_inference_steps == 8:
+            gen_kwargs["guidance_scale"] = 1.0  # Fixed for 8-step turbo
+        else:
+            gen_kwargs["guidance_scale"] = guidance_scale
+
+        # Add negative prompt if provided and not using Turbo 8-step
+        if negative_prompt and negative_prompt.strip() and not (model_type == "Turbo" and num_inference_steps == 8):
             gen_kwargs["negative_prompt"] = negative_prompt
+
+        # Add ControlNet parameters
+        if use_controlnet and processed_control:
+            gen_kwargs["control_image"] = processed_control
+            gen_kwargs["controlnet_conditioning_scale"] = controlnet_scale
 
         # Add LoRA scale
         if loaded_loras and lora_scale != 1.0:
@@ -208,20 +355,31 @@ def generate_image(
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_prompt = "".join(c for c in prompt[:50] if c.isalnum() or c in " -_").strip()
         safe_prompt = safe_prompt.replace(" ", "_")
+        model_suffix = f"_{model_type.lower()}"
+        controlnet_suffix = f"_cn-{controlnet_condition.split()[0].lower()}" if use_controlnet else ""
         lora_suffix = f"_lora-{Path(lora_name).stem}" if lora_name and lora_name != "None" else ""
-        filename = f"{timestamp}_{safe_prompt}{lora_suffix}.png"
+        filename = f"{timestamp}_{safe_prompt}{model_suffix}{controlnet_suffix}{lora_suffix}.png"
         filepath = OUTPUT_DIR / filename
         image.save(filepath)
 
+        # Build status message
+        model_info = f"{model_type} model"
+        if use_controlnet:
+            model_info += f" + {controlnet_condition} (scale: {controlnet_scale})"
         lora_info = f"\nLoRA: {lora_name} (scale: {lora_scale})" if loaded_loras else ""
-        neg_info = f"\nNegative: {negative_prompt[:50]}..." if negative_prompt and negative_prompt.strip() else ""
+        neg_info = f"\nNegative: {negative_prompt[:50]}..." if negative_prompt and negative_prompt.strip() and gen_kwargs.get("negative_prompt") else ""
+
         progress(1.0, desc="Done!")
-        return image, f"Generated | {width}x{height} | CFG: {guidance_scale} | Steps: {num_inference_steps}\nSaved: {filepath}\nSeed: {seed}{lora_info}{neg_info}"
+        status_msg = f"Generated | {model_info}\n{width}x{height} | CFG: {gen_kwargs['guidance_scale']} | Steps: {num_inference_steps}\nSaved: {filepath}\nSeed: {seed}{lora_info}{neg_info}"
+
+        return image, processed_control, status_msg
 
     except torch.cuda.OutOfMemoryError:
-        return None, "Out of GPU memory. Try a smaller resolution."
+        return None, None, "Out of GPU memory. Try a smaller resolution or close other GPU services."
     except Exception as e:
-        return None, f"Generation failed: {str(e)}"
+        import traceback
+        traceback.print_exc()
+        return None, None, f"Generation failed: {str(e)}"
 
 
 def refresh_loras():
@@ -237,6 +395,27 @@ def update_dimensions(aspect_ratio):
         w, h = ASPECT_RATIOS[aspect_ratio]
         return gr.update(value=w, interactive=False), gr.update(value=h, interactive=False)
     return gr.update(interactive=True), gr.update(interactive=True)
+
+
+def update_model_settings(model_type):
+    """Update UI settings when model type changes"""
+    if model_type == "Turbo":
+        return {
+            num_steps: gr.update(value=8, info="Turbo: 8 steps recommended for fast inference"),
+            guidance_scale: gr.update(value=1.0, info="Turbo 8-step: Fixed at 1.0 (CFG disabled)"),
+            negative_prompt: gr.update(info="Not used in Turbo 8-step mode"),
+        }
+    else:  # Base
+        return {
+            num_steps: gr.update(value=30, info="Base: 30 steps default for quality"),
+            guidance_scale: gr.update(value=7.0, info="Base: 7-10 recommended"),
+            negative_prompt: gr.update(info="Helps refine output and avoid unwanted elements"),
+        }
+
+
+def toggle_control_output(controlnet_condition):
+    """Show/hide processed control image output"""
+    return gr.update(visible=(controlnet_condition != "None"))
 
 
 # Custom CSS
@@ -265,13 +444,21 @@ footer {
 """
 
 # Build Gradio interface
-with gr.Blocks(title="Z-Image Base") as app:
+with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
 
-    gr.HTML('<div class="dragon-header">Z-Image Base</div>')
-    gr.HTML('<div class="dragon-subtitle">Alibaba Tongyi 6B Text-to-Image with CFG + Negative Prompts</div>')
+    gr.HTML('<div class="dragon-header">Z-Image Base + Turbo ControlNet</div>')
+    gr.HTML('<div class="dragon-subtitle">Alibaba Tongyi 6B Text-to-Image | Base (30-step CFG) or Turbo (8-step + ControlNet Union 2.1)</div>')
 
     with gr.Row():
         with gr.Column(scale=1):
+            # Model selector
+            model_type = gr.Radio(
+                choices=["Base", "Turbo"],
+                value="Base",
+                label="Model",
+                info="Base: 30-step with CFG and negative prompts | Turbo: 8-step fast inference with ControlNet"
+            )
+
             # Prompt
             prompt_input = gr.Textbox(
                 label="Prompt",
@@ -279,12 +466,51 @@ with gr.Blocks(title="Z-Image Base") as app:
                 lines=3
             )
 
-            # Negative prompt (Z-Image Base feature!)
+            # Negative prompt (Base model feature)
             negative_prompt = gr.Textbox(
-                label="Negative Prompt",
+                label="Negative Prompt (Base model only)",
                 placeholder="blurry, low quality, distorted, deformed, ugly, bad anatomy...",
                 lines=2
             )
+
+            # ControlNet section (Turbo only) - Coming Soon
+            with gr.Accordion("🚧 ControlNet Settings (Coming Soon)", open=False) as controlnet_accordion:
+                gr.Markdown("""
+                **ControlNet Union 2.1 support is planned but not yet available.**
+
+                Waiting for diffusers to add `ZImageControlNetPipeline` support (currently not in v0.36.0).
+
+                **Planned features:**
+                - Multi-condition control: Canny (edges), Depth, Pose, HED, MLSD
+                - 15+ layer blocks for professional-grade spatial control
+                - Controlnet scale adjustment (0.65-1.0)
+
+                **Workaround:** Use [VideoX-Fun repository](https://github.com/aigc-apps/VideoX-Fun) for immediate ControlNet access.
+
+                For now, enjoy 8-step fast inference with Turbo mode! 🚀
+                """)
+
+                controlnet_condition = gr.Dropdown(
+                    choices=CONTROLNET_CONDITIONS,
+                    value="None",
+                    label="Control Condition",
+                    info="[Disabled] Waiting for diffusers support",
+                    interactive=False
+                )
+
+                control_image = gr.Image(
+                    label="Control Image [Disabled - Waiting for diffusers support]",
+                    type="pil",
+                    sources=["upload", "clipboard"],
+                    interactive=False
+                )
+
+                controlnet_scale = gr.Slider(
+                    minimum=0.0, maximum=1.0, value=0.8, step=0.05,
+                    label="ControlNet Scale",
+                    info="[Disabled] Waiting for diffusers support",
+                    interactive=False
+                )
 
             # Aspect ratio
             with gr.Row():
@@ -327,12 +553,12 @@ with gr.Blocks(title="Z-Image Base") as app:
                 guidance_scale = gr.Slider(
                     minimum=1.0, maximum=15.0, value=7.0, step=0.5,
                     label="CFG Scale",
-                    info="Higher = closer to prompt (7-10 recommended)"
+                    info="Base: 7-10 recommended | Turbo: Fixed at 1.0 for 8-step mode"
                 )
                 num_steps = gr.Slider(
-                    minimum=10, maximum=50, value=30, step=1,
+                    minimum=1, maximum=50, value=30, step=1,
                     label="Inference Steps",
-                    info="More steps = higher quality (30 default)"
+                    info="Base: 30 default | Turbo: 8 recommended for fast inference"
                 )
                 seed_input = gr.Number(
                     value=-1,
@@ -344,35 +570,71 @@ with gr.Blocks(title="Z-Image Base") as app:
 
         with gr.Column(scale=1):
             output_image = gr.Image(label="Generated Image", type="pil")
-            status_output = gr.Textbox(label="Status", lines=4, interactive=False)
+            processed_control_output = gr.Image(label="Processed Control Image", type="pil", visible=False)
+            status_output = gr.Textbox(label="Status", lines=6, interactive=False)
 
     # Example prompts
     gr.Examples(
         examples=[
-            ["A majestic dragon with emerald scales perched on a mountain peak, golden sunset lighting", "blurry, low quality, deformed"],
-            ["Portrait of an elegant woman with flowing silver hair, photorealistic, studio lighting", "cartoon, anime, ugly, distorted"],
-            ["A cyberpunk cityscape at night with neon signs and flying cars, rain-slicked streets", "daytime, sunny, empty streets"],
-            ["Enchanted forest with bioluminescent mushrooms and a crystal clear stream", "dark, scary, dead trees"],
-            ["A steampunk mechanical dragon made of brass gears and copper pipes", "organic, natural, simple"],
+            ["A majestic dragon with emerald scales perched on a mountain peak, golden sunset lighting", "blurry, low quality, deformed", "Base"],
+            ["Portrait of an elegant woman with flowing silver hair, photorealistic, studio lighting", "cartoon, anime, ugly, distorted", "Base"],
+            ["A cyberpunk cityscape at night with neon signs and flying cars, rain-slicked streets", "", "Turbo"],
+            ["Enchanted forest with bioluminescent mushrooms and a crystal clear stream", "", "Turbo"],
+            ["A steampunk mechanical dragon made of brass gears and copper pipes", "organic, natural, simple", "Base"],
         ],
-        inputs=[prompt_input, negative_prompt],
+        inputs=[prompt_input, negative_prompt, model_type],
         label="Example Prompts"
     )
 
     gr.Markdown(f"""
     ---
-    **Z-Image Base Features:** CFG scaling, negative prompts, superior photorealism, accurate hands & text rendering
+    ### Model Comparison
 
-    **Tips:** CFG 7-10 recommended | 30 steps for quality | Negative prompts help refine output
+    **✅ Base Model (Tongyi-MAI/Z-Image)** - Available Now
+    - 30-step inference with CFG scaling (7-10 recommended)
+    - Negative prompt support
+    - Superior photorealism, accurate hands & text rendering
+    - ~20-30 seconds per image
+    - Production ready
+
+    **✅ Turbo Model (8-step Fast Inference)** - Available Now
+    - 8-step fast inference (CFG fixed at 1.0 for optimal results)
+    - Up to 4x faster than Base model
+    - ~5-10 seconds per image
+    - Perfect for rapid iteration and prototyping
+
+    **🚧 ControlNet Union 2.1** - Coming Soon
+    - Waiting for diffusers v0.37+ with `ZImageControlNetPipeline` support
+    - Planned: Multi-condition control (Canny, Depth, Pose, HED, MLSD)
+    - Planned: Professional-grade spatial control with 15+ layer blocks
+    - **Workaround:** Use [VideoX-Fun](https://github.com/aigc-apps/VideoX-Fun) for immediate ControlNet access
 
     **Output:** `{OUTPUT_DIR}` | **LoRAs:** `{LORA_DIR}`
+
+    **Resources:**
+    - [Z-Image Base](https://huggingface.co/Tongyi-MAI/Z-Image) | [Z-Image Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo)
+    - [ControlNet Union 2.1](https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1) (Requires VideoX-Fun)
+    - [Z-Image Blog](https://gaga.art/blog/z-image-base/)
+    - [Tutorial](https://medium.com/@furkangozukara/z-image-turbo-lora-training-with-ai-toolkit-and-z-image-controlnet-full-tutorial-for-highest-4323800177f7)
     """)
 
     # Event handlers
+    model_type.change(
+        fn=update_model_settings,
+        inputs=[model_type],
+        outputs=[num_steps, guidance_scale, negative_prompt]
+    )
+
     aspect_ratio.change(
         fn=update_dimensions,
         inputs=[aspect_ratio],
         outputs=[width_input, height_input]
+    )
+
+    controlnet_condition.change(
+        fn=toggle_control_output,
+        inputs=[controlnet_condition],
+        outputs=[processed_control_output]
     )
 
     refresh_btn.click(
@@ -383,24 +645,39 @@ with gr.Blocks(title="Z-Image Base") as app:
     generate_btn.click(
         fn=generate_image,
         inputs=[
-            prompt_input, negative_prompt, aspect_ratio, width_input, height_input,
+            prompt_input, negative_prompt, model_type, controlnet_condition, control_image, controlnet_scale,
+            aspect_ratio, width_input, height_input,
             guidance_scale, num_steps, seed_input, lora_dropdown, lora_scale
         ],
-        outputs=[output_image, status_output]
+        outputs=[output_image, processed_control_output, status_output]
     )
 
     prompt_input.submit(
         fn=generate_image,
         inputs=[
-            prompt_input, negative_prompt, aspect_ratio, width_input, height_input,
+            prompt_input, negative_prompt, model_type, controlnet_condition, control_image, controlnet_scale,
+            aspect_ratio, width_input, height_input,
             guidance_scale, num_steps, seed_input, lora_dropdown, lora_scale
         ],
-        outputs=[output_image, status_output]
+        outputs=[output_image, processed_control_output, status_output]
     )
 
 
 if __name__ == "__main__":
-    print("Z-Image Base - Alibaba Tongyi Text-to-Image Generator")
+    print("=" * 80)
+    print("Z-Image Base + Turbo ControlNet - Alibaba Tongyi Text-to-Image Generator")
+    print("=" * 80)
+    print()
+    print("Available Models:")
+    print(f"  • Base Model: {MODEL_ID_BASE}")
+    print(f"    - 30-step inference with CFG and negative prompts")
+    print(f"    - Superior photorealism and text rendering")
+    print()
+    print(f"  • Turbo Model: {MODEL_ID_TURBO}")
+    print(f"    - 8-step fast inference (4x faster)")
+    print(f"    - ControlNet Union 2.1 with multi-condition support")
+    print(f"    - Conditions: Canny, Depth, Pose, HED, MLSD")
+    print()
     print(f"Output directory: {OUTPUT_DIR}")
     print(f"LoRA directory: {LORA_DIR}")
     print(f"Device: {device} | Dtype: {dtype}")
@@ -409,16 +686,22 @@ if __name__ == "__main__":
     if torch.cuda.is_available():
         print(f"GPU: {torch.cuda.get_device_name(0)}")
         print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+        print()
+        print("NOTE: Models use sequential CPU offloading to fit in 16GB VRAM")
+        print("      Close other GPU services if you encounter OOM errors")
     else:
-        print("Warning: CUDA not available, using CPU (very slow)")
+        print("⚠️  WARNING: CUDA not available, using CPU (very slow)")
 
     print()
+    print("=" * 80)
     print("Launching on http://0.0.0.0:8011")
     print("LAN access: http://192.168.7.226:8011")
+    print("=" * 80)
     print()
 
     app.launch(
         server_name="0.0.0.0",
         server_port=8011,
-        share=False
+        share=False,
+        css=custom_css
     )

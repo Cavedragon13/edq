@@ -240,23 +240,38 @@ This is a personal AI development environment focused on video generation, visio
 - **Requirements**: ~4GB VRAM
 - **Output**: `~/ai_generated/realesrgan/`
 
-### 13. Z-Image Base (Text-to-Image)
+### 13. Z-Image Base + Turbo (Text-to-Image)
+
 - **Script**: `scripts/zimage_base_gradio.py`
 - **Launcher**: `scripts/start_zimage.sh`
 - **Port**: 8011
 - **Venv**: `venv_zimage`
-- **Purpose**: Alibaba Tongyi's 6B parameter text-to-image model
-- **Model**: Tongyi-MAI/Z-Image (Apache 2.0 license)
+- **Purpose**: Alibaba Tongyi's 6B parameter text-to-image with dual model support
+- **Models**:
+  - **Base**: Tongyi-MAI/Z-Image (Apache 2.0 license) ✅ Available
+    - 30-step inference with CFG scaling (7-10 recommended)
+    - Negative prompt support
+    - Superior photorealism, hands, text rendering
+  - **Turbo**: Tongyi-MAI/Z-Image-Turbo ✅ Available
+    - 8-step fast inference (4x faster than Base)
+    - CFG fixed at 1.0 for optimal results
+    - ~5-10 seconds per image
+  - **ControlNet Union 2.1**: 🚧 Coming Soon (Pending diffusers v0.37+)
+    - Planned: Multi-condition control (Canny, Depth, Pose, HED, MLSD)
+    - Planned: Professional-grade spatial control (15+ layer blocks)
+    - Workaround: Use [VideoX-Fun](https://github.com/aigc-apps/VideoX-Fun) repository
 - **Features**:
-  - CFG scale control (unlike Turbo variant)
-  - Negative prompt support
-  - Superior photorealism, hands, text rendering
+  - Model selector (Base vs Turbo)
   - LoRA support from `~/models/loras/zimage/`
   - Multiple aspect ratio presets
+  - Control image preprocessing (ready for ControlNet when available)
 - **Web UI**: `http://192.168.7.226:8011`
-- **Requirements**: ~13-14GB VRAM (bf16)
+- **Requirements**: ~13-14GB VRAM (bf16) with CPU offloading
 - **Output**: `~/ai_generated/zimage/`
-- **Tips**: CFG 7-10 recommended, 30 steps for quality
+- **Tips**:
+  - **Base mode**: CFG 7-10, 30 steps, use negative prompts
+  - **Turbo mode**: 8 steps (CFG fixed at 1.0), ~5-10 seconds per image
+  - **ControlNet**: Infrastructure ready, waiting for diffusers library support
 
 ### 14. Qwen-Image-Layered (Layer Decomposition)
 - **Script**: `scripts/qwen_image_layered_gradio.py`
@@ -522,6 +537,47 @@ bash scripts/start_realesrgan.sh
 - Face enhancement adds GFPGAN (~500MB additional download)
 - Output saves to `~/ai_generated/realesrgan/`
 - Anime model works best for illustrations/anime art
+
+### Working with Z-Image Base + Turbo ControlNet
+
+**Launch:**
+```bash
+cd /srv/containers/edq
+bash scripts/start_zimage.sh
+```
+
+**Access at:** `http://192.168.7.226:8011`
+
+**Key considerations:**
+
+- Dual model support: Base (30-step CFG) or Turbo (8-step fast)
+- **Base model features (✅ Available):**
+  - CFG scaling 7-10 recommended
+  - Negative prompt support
+  - 30 steps for quality output
+  - Superior photorealism and text rendering
+  - ~20-30 seconds per image
+- **Turbo model features (✅ Available):**
+  - 8-step fast inference (4x faster)
+  - CFG fixed at 1.0 for optimal 8-step results
+  - Perfect for rapid iteration and prototyping
+  - ~5-10 seconds per image
+- **ControlNet Union 2.1 (🚧 Coming Soon):**
+  - Infrastructure ready but waiting for diffusers v0.37+ support
+  - `ZImageControlNetPipeline` not yet available in diffusers 0.36.0
+  - Workaround: Use [VideoX-Fun repository](https://github.com/aigc-apps/VideoX-Fun) for immediate ControlNet access
+  - Planned: Multi-condition control (Canny, Depth, Pose, HED, MLSD)
+  - Planned: Professional-grade spatial control (15+ layer blocks)
+- **LoRA support (✅ Available):**
+  - Place LoRA files in `~/models/loras/zimage/`
+  - Works with both Base and Turbo models
+  - Adjust LoRA scale 0.0-2.0 (1.0 default)
+- First launch downloads Base model (~12GB) on-demand
+- Turbo model (~12GB) downloads when first used
+- Output saves to `~/ai_generated/zimage/`
+- Uses CPU offloading to fit in 16GB VRAM
+- Close other GPU services if you encounter OOM errors
+- opencv-python installed for future ControlNet preprocessing
 
 ### Working with Qwen-Image-Layered
 
@@ -858,6 +914,15 @@ const googleKey = process.env.GOOGLE_API_KEY;
 - **User**: edq
 - **Date**: 2026-02-01
 
+### Network Shares (SMB/Samba)
+
+- **[downloads]** - `/home/edq/Downloads` (ai_generated files, temp downloads)
+- **[ai_media]** - `/home/edq/ai_generated` (output from all AI services)
+- **[knowledge-base]** - `/home/edq/knowledge-base` (Obsidian vault with Dragonsuite docs)
+  - Symlink following enabled (`wide links = yes`)
+  - Mac/LAN access: `smb://192.168.7.226/knowledge-base`
+  - Read/write access for user `edq`
+
 ## Important Notes
 
 ### Pinokio Development
@@ -1001,3 +1066,226 @@ See `media/dragonsight4.html` for reference implementation with:
 ### Future Additions (reserved ports)
 - 8888: Jupyter Notebook
 - Additional tools: assign next available 800x port
+
+## Lessons Learned & Best Practices (2026-02-08)
+
+### MCP Image Generation
+
+**Issue**: MCP Hugging Face GPU quota can be exceeded
+**Solution**: Use local Dragonsuite tools instead
+- MCP external services have limited GPU time quotas
+- When quota exceeded, fall back to local Z-Image Base (port 8011) or DragonFlux Klein (port 8001)
+- Local tools are always available when user has exited other GPU services
+
+**Calling Local Gradio APIs Programmatically**:
+```python
+from gradio_client import Client
+
+# Connect to local service
+client = Client("http://127.0.0.1:8011/")
+
+# Call API endpoint
+result = client.predict(
+    prompt="your prompt",
+    width=1200,
+    height=640,  # Must be divisible by 16 for diffusion models
+    guidance_scale=7.5,
+    num_inference_steps=30,
+    api_name="/generate_image"
+)
+
+# Result is typically (image_path, status_message)
+image_path = result[0]
+```
+
+**Key Requirements**:
+- Dimensions must be divisible by 16 for diffusion models (e.g., 640 not 630)
+- Use `127.0.0.1` not external IP for local services
+- Check service is running first (see port list)
+
+### API Key Management
+
+**Central Location**: `/srv/containers/edq/.env`
+
+**Key Format Patterns**:
+- OpenAI: `sk-proj-...` (project keys)
+- Anthropic: `sk-ant-api03-...` (API keys)
+- Hugging Face: `hf_...` (user tokens)
+- Groq: `gsk_...` (API keys)
+- GitHub: `github_pat_...` (personal access tokens)
+- Supabase: `sb_publishable_` / `sb_secret_` (dual keys)
+- FAL: `UUID:hash` format
+- KLING: Uses Access Key + Secret Key (two separate values)
+
+**Free Tier Gotchas**:
+- **Replicate**: Requires credit card even for free tier
+- **Together AI**: Requires credit card even for free tier
+- **Note**: Add "Requires CC" to comments when applicable
+
+**URL Corrections**:
+- KLING API: `https://app.klingai.com/global/dev/api-key` (not `klingai.com/api`)
+- Always verify API documentation URLs when adding new services
+
+### Image Generation Best Practices
+
+**Social Media Assets**:
+- og-preview.png standard: 1200×630px
+- Closest diffusion-compatible: 1200×640px (divisible by 16)
+- Use Z-Image Base for text rendering (better than FLUX for readable text)
+
+**Prompt Structure for Social Cards**:
+```
+Professional social media preview card design.
+[Background description with hex colors].
+Center: [main visual element with specific colors].
+[Icon/symbol positions and descriptions].
+Top: [text in quotes] "MAIN TITLE" in [style].
+Bottom: [text in quotes] "Subtitle text" in [style].
+Clean modern [aesthetic], high contrast, [effects].
+```
+
+**Negative Prompts for Text Quality**:
+```
+blurry text, unreadable text, low contrast, cluttered,
+messy, amateur, pixelated, distorted text, watermark
+```
+
+### Git Workflow Enhancements
+
+**Commit Message Structure** (from interactive-games project):
+- Short title in imperative mood
+- Detailed explanation with bullet points
+- Features list
+- Technical details
+- Co-Authored-By tag for AI assistance
+
+**Launch Checklist Pattern**:
+- Create comprehensive `LAUNCH_CHECKLIST.md` with automated test results
+- Document what was tested and what's production-ready
+- Include manual testing recommendations (non-blocking)
+- Provide risk assessment matrix
+- Clear sign-off and approval status
+
+### Web Development Standards Update
+
+**Performance Targets**:
+- Excellent: <200 KB total application size
+- Good: <500 KB
+- Acceptable: <1 MB
+
+**Testing Automation**:
+- HTML validation, JS analysis, accessibility audit
+- Data validation, feature verification
+- All automated before manual testing
+
+**Accessibility Scoring**:
+- 140% coverage = WCAG AA compliant with extra features
+- Target: 95+ on Lighthouse accessibility score
+- Check: ARIA labels, keyboard nav, screen readers, reduced motion
+
+### Production Deployment Best Practices
+
+**Asset Generation Workflow**:
+1. Create script (e.g., `generate_og_preview.py`) for reproducibility
+2. Use local AI tools when MCP quota exceeded
+3. Test dimensions (divisible by 16 for diffusion)
+4. Commit both script and generated asset
+5. Document generation parameters in commit
+
+**Documentation Structure** (interactive-games pattern):
+- `CONTRIBUTING.md` - Contributor guide with examples
+- `API.md` - Technical reference with function signatures
+- `SCENARIOS.md` - Domain-specific guide (educational)
+- `VISUAL_ASSETS.md` - Asset creation guide with AI prompts
+- `CHANGELOG.md` - Version history with detailed changes
+- `LAUNCH_CHECKLIST.md` - Testing results and sign-off
+- `LICENSE` - Open source license (MIT/Apache)
+
+**Pre-Launch Requirements**:
+- All automated tests pass
+- LICENSE file present
+- CHANGELOG.md updated
+- Comprehensive testing documentation
+- Performance metrics documented
+- Accessibility compliance verified
+
+### Recurring Issues from 50+ Conversations (Analysis 2026-02-08)
+
+**Meta-Lesson: Always Try Simple/Local Solutions First**
+
+Before suggesting paid APIs, cloud services, or complex architectures, ask: "Can this be done locally with basic file operations?"
+
+Example: Conversation analysis task
+- ❌ Initial approach: Use Claude API ($5-10) to analyze conversations
+- ✅ Better approach: Export to markdown (free), read locally (free), synthesize (free)
+- **Result**: Same quality, $0 cost
+
+**Key Anti-Patterns to Avoid:**
+
+1. **Overthinking solutions** - Reaching for external services when local tools work
+2. **Hardcoding IP addresses** - Use auto-detection or localhost/0.0.0.0
+3. **Ignoring venv documentation** - Always update `docs/venvs.md`
+4. **Using Gradio for everything** - Switch to HTML/JS when clipboard operations or custom interactions needed
+5. **Assuming model censorship is OK** - Always offer uncensored alternatives (LM Studio + Dolphin)
+6. **Adding unrequested features** - Do exactly what's requested, offer enhancements separately
+
+**Most Common Recurring Issues:**
+
+1. **CUDA OOM errors** - Add `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` to launcher
+2. **Dark mode requested** - User asks for this immediately on every new web UI
+3. **Clipboard operations broken** - Gradio limitations, need paste button + one-click copy
+4. **LM Studio connection fails** - CORS issues, use 127.0.0.1 proxy pattern
+5. **Multiple GPU services conflict** - Only run one GPU-heavy service at a time
+6. **Remotion caching issues** - Changes not reflected, need hard refresh + cache clear
+7. **Documentation drift** - Update CLAUDE.md and venvs.md IMMEDIATELY after changes
+
+**See also:**
+- Full analysis: `~/claude_conversations_review/LESSONS_LEARNED.md`
+- Critical lessons: `~/.claude/projects/-srv-containers-edq/memory/MEMORY.md`
+
+### Memory Organization Pattern (Best Practice)
+
+**Problem:** Claude Code's auto memory has a 200-line limit. How to preserve more context?
+
+**Solution:** Use MEMORY.md as an **index** that references detailed topic files.
+
+**Structure:**
+```
+~/.claude/projects/-srv-containers-edq/memory/
+├── MEMORY.md                  # <200 lines, auto-loaded, quick reference
+├── gpu_optimization.md        # Detailed GPU/CUDA lessons
+├── web_ui_patterns.md         # Comprehensive web UI standards
+├── common_issues.md           # Troubleshooting guide
+└── [additional topics...]     # As needed
+```
+
+**Benefits:**
+1. **MEMORY.md stays fast** - Only critical info in auto-loaded prompt
+2. **Detailed info preserved** - Full context available when needed (read topic files)
+3. **Better organization** - Topics separated by concern
+4. **Easier updates** - Modify specific topic files without touching main index
+
+**Pattern in MEMORY.md:**
+```markdown
+## Detailed Topic Files
+
+### GPU & Hardware
+📄 **memory/gpu_optimization.md**
+- CUDA memory configuration
+- CPU offloading strategies
+- [bullet points of what's covered]
+
+### Web Development
+📄 **memory/web_ui_patterns.md**
+- Dark mode by default
+- Clipboard operations
+- [bullet points of what's covered]
+```
+
+**When to use:** When you find yourself hitting the 200-line limit or when topics are complex enough to deserve their own files.
+
+---
+
+**Last Updated**: 2026-02-08
+**Projects Applied**: interactive-games (v2.0.0 launch)
+**Conversation Analysis**: 50+ sessions (2025-12-29 to 2026-02-07)

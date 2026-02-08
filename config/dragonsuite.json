@@ -18,6 +18,23 @@
       "stop_command": "pkill -f \"dragonsight_server.py\" || true"
     },
     {
+      "id": "file-watcher",
+      "name": "Dragon File Watcher",
+      "description": "Auto-rename Downloads/ai_generated with AI",
+      "category": "automation",
+      "port": null,
+      "path": null,
+      "icon": "&#128065;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_file_watcher.sh",
+      "project_path": null,
+      "features": [
+        "Auto-rename",
+        "Ollama VLM",
+        "Background"
+      ],
+      "stop_command": "pkill -f \"file_watcher.py\" || true"
+    },
+    {
       "id": "dragonflux-klein",
       "name": "DragonFlux Klein",
       "description": "Image Generation + LoRA Support",
@@ -64,6 +81,23 @@
         "Face Enhance",
         "Anime"
       ]
+    },
+    {
+      "id": "creative-upscale",
+      "name": "Creative Upscaler",
+      "description": "FLUX + ControlNet Tile - Prompt-Guided Upscaling",
+      "category": "image",
+      "port": 8018,
+      "path": null,
+      "icon": "&#127912;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_creative_upscale.sh",
+      "project_path": null,
+      "features": [
+        "Prompt Guided",
+        "Creative AI",
+        "FLUX + CN"
+      ],
+      "stop_command": "pkill -f \"creative_upscale_gradio.py\" || true"
     },
     {
       "id": "dragonart-studio",
@@ -225,6 +259,23 @@
       ]
     },
     {
+      "id": "facefusion",
+      "name": "FaceFusion",
+      "description": "Face Swap + Manipulation + Live Webcam",
+      "category": "segmentation",
+      "port": 8017,
+      "path": null,
+      "icon": "&#128123;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_facefusion.sh",
+      "project_path": "/srv/containers/edq/projects/facefusion",
+      "features": [
+        "Face Swap",
+        "Live Webcam",
+        "GPU Accel"
+      ],
+      "stop_command": "pkill -f \"facefusion.py\" || true"
+    },
+    {
       "id": "qwen-image-layered",
       "name": "Qwen Image Layered",
       "description": "Image Layer Decomposition + PPTX Export",
@@ -239,6 +290,41 @@
         "RGBA Export",
         "PPTX"
       ]
+    },
+    {
+      "id": "mule-game",
+      "name": "M.U.L.E.",
+      "description": "Economic Strategy Game - Tribute to Dani Bunten Berry",
+      "category": "game",
+      "port": 8016,
+      "path": null,
+      "icon": "&#127918;",
+      "thumbnail": "/media/thumbnails/mule-game.png",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_mule_game.sh",
+      "project_path": "/srv/containers/edq/projects/mule-game",
+      "features": [
+        "Bunten Berries",
+        "Multiplayer",
+        "Save/Load"
+      ],
+      "stop_command": "pkill -f \"mule_game_web.py\" || true"
+    },
+    {
+      "id": "homeassistant",
+      "name": "Home Assistant",
+      "description": "Smart Home Hub + Kasa + HomeKit Bridge",
+      "category": "smart-home",
+      "port": 8123,
+      "path": null,
+      "icon": "&#127968;",
+      "launch_command": "cd /srv/containers/edq/homeassistant && docker compose up -d",
+      "project_path": "/srv/containers/edq/homeassistant",
+      "features": [
+        "Kasa",
+        "HomeKit",
+        "Automations"
+      ],
+      "stop_command": "cd /srv/containers/edq/homeassistant && docker compose down"
     }
   ],
   "categories": {
@@ -261,6 +347,18 @@
     "segmentation": {
       "name": "Segmentation / Matting",
       "icon": "&#127919;"
+    },
+    "game": {
+      "name": "Games",
+      "icon": "&#127918;"
+    },
+    "smart-home": {
+      "name": "Smart Home",
+      "icon": "&#127968;"
+    },
+    "automation": {
+      "name": "Automation / Tools",
+      "icon": "&#9881;"
     }
   }
 }

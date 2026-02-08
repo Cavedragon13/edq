@@ -5,6 +5,11 @@
       "args": ["/srv/containers/edq/mcp-servers/dragonsuite/server.py"],
       "description": "Manage Dragonsuite GPU services - start/stop services, check VRAM"
     },
+    "vocab-translator": {
+      "command": "/srv/containers/edq/mcp-servers/vocab-translator/venv/bin/python",
+      "args": ["/srv/containers/edq/mcp-servers/vocab-translator/server.py"],
+      "description": "Translation QA pipeline: Qwen/LLaMA translators, DeepSeek critic, Ollama backend"
+    },
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"],
@@ -17,6 +22,51 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       },
       "description": "GitHub API - repos, issues, PRs, code search"
+    },
+    "blender": {
+      "command": "blender",
+      "args": ["--background", "--python-use-system-env", "--python", "/home/edq/.config/blender/5.0/scripts/addons/blender_mcp_addon.py"],
+      "description": "Control Blender for 3D modeling, rendering, and scene manipulation"
+    },
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-obsidian", "/home/edq/knowledge-base"],
+      "description": "Access and manage your Obsidian knowledge base"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/srv/containers/edq", "/home/edq"],
+      "description": "Enhanced file system operations with better permissions"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Advanced reasoning and chain-of-thought capabilities"
+    },
+    "supabase": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-supabase"],
+      "env": {
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_SECRET_KEY": "${SUPABASE_SECRET_KEY}"
+      },
+      "description": "Database operations with Supabase"
+    },
+    "mongodb": {
+      "command": "npx",
+      "args": ["-y", "@mongodb-js/mongodb-mcp-server"],
+      "env": {
+        "MONGODB_URI": "${MONGODB_URI}"
+      },
+      "description": "MongoDB database operations and Atlas cluster management"
+    },
+    "topaz-labs": {
+      "command": "/srv/containers/edq/mcp-servers/topaz-labs/venv/bin/python",
+      "args": ["/srv/containers/edq/mcp-servers/topaz-labs/server.py"],
+      "env": {
+        "TOPAZ_API_KEY": "${TOPAZ_API_KEY}"
+      },
+      "description": "Topaz Labs AI image/video enhancement - upscale, denoise, restore, sharpen"
     }
   }
 }

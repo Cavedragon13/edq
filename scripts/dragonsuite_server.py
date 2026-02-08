@@ -256,6 +256,53 @@ async def get_git_revision(service_id: str):
     return {"git": git_info}
 
 
+@app.get("/api/gpu-stats")
+async def get_gpu_stats():
+    """Get GPU VRAM and utilization stats using nvidia-smi."""
+    try:
+        # Query NVIDIA GPU for memory and utilization
+        cmd = [
+            "nvidia-smi",
+            "--query-gpu=memory.used,memory.total,utilization.gpu",
+            "--format=csv,noheader,nounits"
+        ]
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        if result.returncode != 0:
+            return {"error": "nvidia-smi failed"}
+
+        # Parse output: "used_mb, total_mb, utilization_percent"
+        output = result.stdout.strip()
+        parts = [x.strip() for x in output.split(',')]
+
+        if len(parts) != 3:
+            return {"error": "Unexpected nvidia-smi output"}
+
+        vram_used_mb = int(parts[0])
+        vram_total_mb = int(parts[1])
+        gpu_util = int(parts[2])
+
+        vram_percent = (vram_used_mb / vram_total_mb * 100) if vram_total_mb > 0 else 0
+
+        return {
+            "vram_used_mb": vram_used_mb,
+            "vram_total_mb": vram_total_mb,
+            "vram_percent": vram_percent,
+            "gpu_utilization": gpu_util
+        }
+
+    except subprocess.TimeoutExpired:
+        return {"error": "nvidia-smi timeout"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 def find_process_by_port(port: int) -> Optional[int]:
     """Find process ID using a specific port."""
     try:

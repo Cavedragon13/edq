@@ -20,12 +20,15 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_zimage | `/srv/containers/edq/venv_zimage` | ~8GB | `start_zimage.sh` | Z-Image Base text-to-image (6B) |
 | venv_rembg | `/srv/containers/edq/venv_rembg` | ~1GB | `start_rembg.sh` | Rembg AI background removal |
 | venv_qwen_image_layered | `/srv/containers/edq/venv_qwen_image_layered` | ~10GB | `start_qwen_image_layered.sh` | Qwen-Image-Layered decomposition |
+| venv_mule_game | `/srv/containers/edq/venv_mule_game` | ~50MB | `start_mule_game.sh` | M.U.L.E. web game (Gradio) |
+| venv_facefusion | `/srv/containers/edq/venv_facefusion` | ~2GB | `start_facefusion.sh` | FaceFusion face swap & manipulation |
 
 ## MCP Server Venvs
 
 | Name | Path | Size | Purpose |
 |------|------|------|---------|
 | dragonsuite-mcp | `/srv/containers/edq/mcp-servers/dragonsuite/venv` | ~20MB | Dragonsuite MCP server for Claude Code |
+| topaz-labs-mcp | `/srv/containers/edq/mcp-servers/topaz-labs/venv` | ~20MB | Topaz Labs API MCP server for image/video enhancement |
 
 ## Naming Convention
 
@@ -60,3 +63,6 @@ When removing a project:
 | 2026-02-01 | Added MCP servers section; created `mcp-servers/dragonsuite/venv` |
 | 2026-02-01 | Deleted `venv_matanyone` - dependency conflicts, SAM2+Rembg cover use cases |
 | 2026-02-02 | Replaced `venv_sadtalker` with `venv_liveportrait` (KlingTeam, 2026) |
+| 2026-02-06 | Added `venv_mule_game` for M.U.L.E. web game (tribute to Dani Bunten Berry) |
+| 2026-02-08 | Added `venv_facefusion` for FaceFusion face swap & manipulation |
+| 2026-02-08 | Added `topaz-labs-mcp` MCP server for Topaz Labs API integration |
