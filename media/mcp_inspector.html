@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Inspector - Security Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        body.light-mode {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.light-mode .container {
+            background: white;
+            color: #1a1a1a;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d2d44 0%, #1f2937 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        body.light-mode .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(180deg);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #4a5568;
+            padding-bottom: 0;
+        }
+
+        body.light-mode .tab-switcher {
+            border-color: #e5e7eb;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            margin-bottom: -2px;
+        }
+
+        body.light-mode .tab-btn {
+            color: #6b7280;
+        }
+
+        .tab-btn:hover {
+            color: #3B82F6;
+        }
+
+        .tab-btn.active {
+            color: #3B82F6;
+            border-bottom-color: #3B82F6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .install-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            margin-left: 8px;
+            background: #10B981;
+            color: white;
+        }
+
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 20px;
+            border: 2px solid #4a5568;
+            border-radius: 8px;
+            background: #2d2d2d;
+            color: #e0e0e0;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        body.light-mode .search-box {
+            background: white;
+            color: #1a1a1a;
+            border-color: #d1d5db;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #4a5568;
+            border-radius: 8px;
+            background: #2d2d2d;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        body.light-mode .filter-btn {
+            background: #f3f4f6;
+            color: #6b7280;
+            border-color: #d1d5db;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #3B82F6;
+            color: white;
+            border-color: #3B82F6;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #2d2d2d;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        body.light-mode .stats {
+            background: #f9fafb;
+        }
+
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .server-card {
+            background: #2d2d2d;
+            border: 2px solid #4a5568;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        body.light-mode .server-card {
+            background: white;
+            border-color: #e5e7eb;
+        }
+
+        .server-card:hover {
+            border-color: #3B82F6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        .server-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .server-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        body.light-mode .server-name {
+            color: #1a1a1a;
+        }
+
+        .trust-score {
+            font-size: 18px;
+            white-space: nowrap;
+        }
+
+        .server-description {
+            color: #9ca3af;
+            font-size: 0.9em;
+            margin-bottom: 12px;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .type-python-local {
+            background: #10B981;
+            color: white;
+        }
+
+        .type-npm-package {
+            background: #3B82F6;
+            color: white;
+        }
+
+        .type-uvx-package {
+            background: #8B5CF6;
+            color: white;
+        }
+
+        .type-unknown {
+            background: #6B7280;
+            color: white;
+        }
+
+        .security-warnings {
+            margin: 12px 0;
+        }
+
+        .warning-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            margin: 2px 4px 2px 0;
+        }
+
+        .warning-danger {
+            background: #EF4444;
+            color: white;
+        }
+
+        .warning-caution {
+            background: #F59E0B;
+            color: white;
+        }
+
+        .warning-safe {
+            background: #10B981;
+            color: white;
+        }
+
+        .server-meta {
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #374151;
+        }
+
+        body.light-mode .server-meta {
+            border-color: #e5e7eb;
+        }
+
+        .server-meta div {
+            margin: 4px 0;
+        }
+
+        .npm-stats {
+            margin-top: 12px;
+            font-size: 0.85em;
+        }
+
+        .npm-stats span {
+            display: inline-block;
+            margin-right: 15px;
+            color: #9ca3af;
+        }
+
+        .server-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3B82F6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #6B7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4B5563;
+        }
+
+        .env-vars {
+            margin-top: 8px;
+            font-size: 0.8em;
+            color: #9ca3af;
+        }
+
+        .env-var {
+            display: inline-block;
+            background: #374151;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 2px;
+        }
+
+        body.light-mode .env-var {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #3B82F6;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: start;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #1e1e1e;
+            color: #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        body.light-mode .modal-content {
+            background: white;
+            color: #1a1a1a;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            background: #6B7280;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .modal-close:hover {
+            background: #4B5563;
+        }
+
+        pre {
+            background: #0d1117;
+            color: #e6edf3;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        body.light-mode pre {
+            background: #f6f8fa;
+            color: #24292f;
+        }
+
+        @media (max-width: 768px) {
+            .server-grid {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme">☀️</button>
+            <h1>🔍 MCP Inspector</h1>
+            <p>Security Browser for Model Context Protocol Servers</p>
+            <p style="font-size: 0.85em; margin-top: 8px; opacity: 0.8;">Audit your MCP servers before trusting them</p>
+        </div>
+
+        <div class="content">
+            <div class="tab-switcher">
+                <button class="tab-btn active" data-tab="installed">Installed Servers</button>
+                <button class="tab-btn" data-tab="browse">Browse Catalog</button>
+            </div>
+
+            <!-- Installed Tab -->
+            <div id="installedTab" class="tab-content active">
+                <div class="controls">
+                    <input type="text" id="searchBox" class="search-box" placeholder="🔎 Search servers by name, type, or package...">
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="python-local">Python</button>
+                        <button class="filter-btn" data-filter="npm-package">NPM</button>
+                        <button class="filter-btn" data-filter="uvx-package">UVX</button>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div>
+                        <strong id="totalServers">0</strong> servers configured
+                    </div>
+                    <div>
+                        <strong id="highTrust">0</strong> ⭐⭐⭐ trusted
+                    </div>
+                    <div>
+                        <strong id="medTrust">0</strong> ⭐⭐ moderate
+                    </div>
+                    <div>
+                        <strong id="lowTrust">0</strong> ⭐ unknown
+                    </div>
+                </div>
+
+                <div id="errorBox" class="error" style="display: none;"></div>
+                <div id="loadingBox" class="loading">⏳ Loading MCP server configurations...</div>
+                <div id="serverGrid" class="server-grid"></div>
+            </div>
+
+            <!-- Browse Tab -->
+            <div id="browseTab" class="tab-content">
+                <div class="controls">
+                    <input type="text" id="browseSearchBox" class="search-box" placeholder="🔎 Search official MCP registry...">
+                    <button class="btn btn-primary" onclick="loadBrowseCatalog()">🔍 Search</button>
+                </div>
+
+                <div class="stats">
+                    <div>
+                        <strong id="catalogTotal">0</strong> servers loaded
+                    </div>
+                    <div>
+                        <strong id="catalogOfficial">0</strong> official
+                    </div>
+                    <div>
+                        <strong id="catalogVerified">0</strong> verified
+                    </div>
+                </div>
+
+                <div style="background: #1e3a5f; border-left: 4px solid #3B82F6; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9em;">
+                    <strong style="color: #60A5FA;">ℹ️ Registry Limitation</strong>
+                    <p style="margin: 8px 0 0 0; color: #9ca3af; line-height: 1.5;">
+                        This catalog shows only servers submitted to the <strong>official MCP registry</strong>. Many MCP servers exist on NPM, PyPI, or GitHub but aren't listed here yet. Your installed servers (like blender-mcp, obsidian-mcp-server) may not appear in search results if they haven't been submitted to the registry.
+                    </p>
+                </div>
+
+                <div id="browseErrorBox" class="error" style="display: none;"></div>
+                <div id="browseLoadingBox" class="loading" style="display: none;">⏳ Loading catalog...</div>
+                <div id="browseGrid" class="server-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sourceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Source Code</h2>
+                <button class="modal-close" onclick="closeModal()">✕ Close</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <div id="installModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Install MCP Server</h2>
+                <button class="modal-close" onclick="closeInstallModal()">✕ Close</button>
+            </div>
+            <div id="installModalBody">
+                <div style="margin-bottom: 20px;">
+                    <h3 id="installServerName" style="margin-bottom: 10px;"></h3>
+                    <p id="installServerDesc" style="color: #9ca3af; margin-bottom: 15px;"></p>
+
+                    <div style="background: #374151; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <strong style="display: block; margin-bottom: 10px;">This will add to .mcp.json:</strong>
+                        <pre id="installConfigPreview" style="margin: 0; background: #1e1e1e;"></pre>
+                    </div>
+
+                    <div style="background: #fee2e2; border: 2px solid #ef4444; color: #991b1b; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <strong>⚠️ Security Warning</strong>
+                        <p style="margin-top: 5px;">MCP servers run with full system permissions. Only install servers you trust!</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="btn btn-secondary" onclick="closeInstallModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="confirmInstall()">⬇️ Install</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allServers = [];
+        let currentFilter = 'all';
+
+        // Dark mode by default
+        const savedTheme = localStorage.getItem('mcp-inspector-theme');
+        const themeToggle = document.getElementById('themeToggle');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = '🌙';
+        } else {
+            themeToggle.textContent = '☀️';
+            if (!savedTheme) {
+                localStorage.setItem('mcp-inspector-theme', 'dark');
+            }
+        }
+
+        // Theme toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isDark = !document.body.classList.contains('light-mode');
+            themeToggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('mcp-inspector-theme', isDark ? 'dark' : 'light');
+        });
+
+        // Load servers on page load
+        window.addEventListener('DOMContentLoaded', loadServers);
+
+        async function loadServers() {
+            try {
+                const response = await fetch('/api/servers');
+                const data = await response.json();
+                allServers = data.servers;
+
+                document.getElementById('loadingBox').style.display = 'none';
+                updateStats();
+                renderServers();
+            } catch (error) {
+                document.getElementById('loadingBox').style.display = 'none';
+                showError(`Failed to load servers: ${error.message}`);
+            }
+        }
+
+        function updateStats() {
+            const total = allServers.length;
+            const high = allServers.filter(s => s.trust_score === 3).length;
+            const med = allServers.filter(s => s.trust_score === 2).length;
+            const low = allServers.filter(s => s.trust_score === 1).length;
+
+            document.getElementById('totalServers').textContent = total;
+            document.getElementById('highTrust').textContent = high;
+            document.getElementById('medTrust').textContent = med;
+            document.getElementById('lowTrust').textContent = low;
+        }
+
+        function renderServers() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const filtered = allServers.filter(server => {
+                const matchesFilter = currentFilter === 'all' || server.type === currentFilter;
+                const matchesSearch = searchTerm === '' ||
+                    server.name.toLowerCase().includes(searchTerm) ||
+                    server.description.toLowerCase().includes(searchTerm) ||
+                    (server.package && server.package.toLowerCase().includes(searchTerm));
+                return matchesFilter && matchesSearch;
+            });
+
+            const grid = document.getElementById('serverGrid');
+            grid.innerHTML = filtered.map(server => createServerCard(server)).join('');
+        }
+
+        function createServerCard(server) {
+            const trustStars = '⭐'.repeat(server.trust_score);
+            const typeBadge = `type-${server.type}`;
+
+            let securityBadges = '';
+            if (server.security) {
+                if (server.security.dangers && server.security.dangers.length > 0) {
+                    server.security.dangers.forEach(d => {
+                        securityBadges += `<span class="warning-badge warning-danger">🔴 ${d}</span>`;
+                    });
+                }
+                if (server.security.warnings && server.security.warnings.length > 0) {
+                    server.security.warnings.forEach(w => {
+                        securityBadges += `<span class="warning-badge warning-caution">🟡 ${w}</span>`;
+                    });
+                }
+                if (server.security.safe && (!server.security.warnings || server.security.warnings.length === 0)) {
+                    securityBadges += `<span class="warning-badge warning-safe">🟢 Safe</span>`;
+                }
+            }
+
+            let npmStats = '';
+            if (server.npm_stats) {
+                const stars = server.npm_stats.stars ? `⭐ ${server.npm_stats.stars}` : '';
+                const license = server.npm_stats.license ? `📜 ${server.npm_stats.license}` : '';
+                const version = server.npm_stats.version ? `v${server.npm_stats.version}` : '';
+                npmStats = `<div class="npm-stats"><span>${version}</span><span>${stars}</span><span>${license}</span></div>`;
+            }
+
+            let envVars = '';
+            if (server.env_vars && server.env_vars.length > 0) {
+                envVars = `<div class="env-vars">Env: ${server.env_vars.map(v => `<span class="env-var">${v}</span>`).join('')}</div>`;
+            }
+
+            let actions = '';
+            if (server.type === 'python-local') {
+                actions = `<button class="btn btn-primary" onclick="viewSource('${server.name}')">📄 View Source</button>`;
+            } else if (server.repository) {
+                const repoUrl = server.repository.replace('git+', '').replace('.git', '');
+                actions = `<button class="btn btn-secondary" onclick="window.open('${repoUrl}', '_blank')">🔗 GitHub</button>`;
+            } else if (server.homepage) {
+                actions = `<button class="btn btn-secondary" onclick="window.open('${server.homepage}', '_blank')">🌐 Homepage</button>`;
+            }
+
+            return `
+                <div class="server-card">
+                    <div class="server-header">
+                        <div class="server-name">${server.name}</div>
+                        <div class="trust-score" title="Trust Score">${trustStars}</div>
+                    </div>
+                    <div class="server-description">${server.description || 'No description'}</div>
+                    <span class="type-badge ${typeBadge}">${formatType(server.type)}</span>
+                    <div class="security-warnings">${securityBadges}</div>
+                    ${npmStats}
+                    <div class="server-meta">
+                        <div><strong>Command:</strong> ${server.command}</div>
+                        ${server.package ? `<div><strong>Package:</strong> ${server.package}</div>` : ''}
+                        ${server.source ? `<div><strong>Source:</strong> ${server.source}</div>` : ''}
+                        ${envVars}
+                    </div>
+                    ${actions ? `<div class="server-actions">${actions}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function formatType(type) {
+            const typeMap = {
+                'python-local': 'Python Local',
+                'npm-package': 'NPM Package',
+                'uvx-package': 'UVX Package',
+                'blender': 'Blender',
+                'unknown': 'Unknown'
+            };
+            return typeMap[type] || type;
+        }
+
+        async function viewSource(serverName) {
+            try {
+                const response = await fetch(`/api/source/${serverName}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                document.getElementById('modalTitle').textContent = `Source Code: ${serverName}`;
+                document.getElementById('modalBody').innerHTML = `
+                    <div style="margin-bottom: 15px; color: #9ca3af; font-size: 0.9em;">
+                        <strong>Path:</strong> ${data.path}
+                    </div>
+                    <pre><code>${escapeHtml(data.source)}</code></pre>
+                `;
+                document.getElementById('sourceModal').classList.add('show');
+            } catch (error) {
+                showError(`Failed to load source: ${error.message}`);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('sourceModal').classList.remove('show');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showError(message) {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.textContent = message;
+            errorBox.style.display = 'block';
+        }
+
+        // Search
+        document.getElementById('searchBox').addEventListener('input', renderServers);
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentFilter = e.target.dataset.filter;
+                renderServers();
+            });
+        });
+
+        // Close modal on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Close modal on background click
+        document.getElementById('sourceModal').addEventListener('click', (e) => {
+            if (e.target.id === 'sourceModal') {
+                closeModal();
+            }
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tab = e.target.dataset.tab;
+
+                // Update active tab button
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+
+                // Show corresponding content
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(tab + 'Tab').classList.add('active');
+
+                // Load browse catalog if switching to browse tab
+                if (tab === 'browse' && document.getElementById('browseGrid').innerHTML === '') {
+                    loadBrowseCatalog();
+                }
+            });
+        });
+
+        // Browse catalog functionality
+        let browseCatalog = [];
+        let nextCursor = null;
+        let hasMore = false;
+        let totalLoaded = 0;
+
+        async function loadBrowseCatalog(append = false) {
+            const searchTerm = document.getElementById('browseSearchBox').value;
+            const loadingBox = document.getElementById('browseLoadingBox');
+            const errorBox = document.getElementById('browseErrorBox');
+
+            try {
+                loadingBox.style.display = 'block';
+                errorBox.style.display = 'none';
+
+                // Reset if new search
+                if (!append) {
+                    browseCatalog = [];
+                    nextCursor = null;
+                    totalLoaded = 0;
+                }
+
+                const url = `/api/browse/official?limit=100${searchTerm ? '&search=' + encodeURIComponent(searchTerm) : ''}${append && nextCursor ? '&cursor=' + encodeURIComponent(nextCursor) : ''}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                const newServers = data.servers || [];
+                browseCatalog = append ? [...browseCatalog, ...newServers] : newServers;
+                nextCursor = data.nextCursor || null;
+                hasMore = data.hasMore || false;
+                totalLoaded = browseCatalog.length;
+
+                loadingBox.style.display = 'none';
+                updateBrowseStats();
+                renderBrowseCatalog();
+            } catch (error) {
+                loadingBox.style.display = 'none';
+                errorBox.textContent = `Failed to load catalog: ${error.message}`;
+                errorBox.style.display = 'block';
+            }
+        }
+
+        function loadMoreServers() {
+            if (hasMore && nextCursor) {
+                loadBrowseCatalog(true);
+            }
+        }
+
+        function updateBrowseStats() {
+            const total = browseCatalog.length;
+            const official = browseCatalog.filter(s => s.verified || (s.package && s.package.includes('@modelcontextprotocol/'))).length;
+            const verified = browseCatalog.filter(s => s.verified).length;
+
+            const totalText = hasMore ? `${total}+ (more available)` : total;
+            document.getElementById('catalogTotal').textContent = totalText;
+            document.getElementById('catalogOfficial').textContent = official;
+            document.getElementById('catalogVerified').textContent = verified;
+        }
+
+        function renderBrowseCatalog() {
+            const grid = document.getElementById('browseGrid');
+            const cards = browseCatalog.map(server => createBrowseServerCard(server)).join('');
+
+            const loadMoreButton = hasMore ? `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 20px;">
+                    <button class="btn btn-primary" onclick="loadMoreServers()" style="padding: 12px 30px; font-size: 1em;">
+                        ⬇️ Load More Servers (${totalLoaded} loaded so far)
+                    </button>
+                    <p style="color: #9ca3af; margin-top: 10px; font-size: 0.9em;">
+                        More servers available - click to load next 100
+                    </p>
+                </div>
+            ` : '';
+
+            grid.innerHTML = cards + loadMoreButton;
+        }
+
+        function createBrowseServerCard(server) {
+            const trustStars = '⭐'.repeat(server.trust_score);
+            const verifiedBadge = server.verified ? '<span class="warning-badge warning-safe">🟢 VERIFIED</span>' : '';
+            const installedBadge = server.installed ? '<span class="install-badge">✓ INSTALLED</span>' : '';
+
+            let repoButton = '';
+            if (server.repository) {
+                const repoUrl = server.repository.replace('git+', '').replace('.git', '');
+                repoButton = `<button class="btn btn-secondary" onclick="window.open('${repoUrl}', '_blank')">🔗 Repository</button>`;
+            }
+
+            const installButton = server.installed
+                ? '<button class="btn btn-secondary" disabled>Already Installed</button>'
+                : `<button class="btn btn-primary" onclick='showInstallModal(${JSON.stringify(server).replace(/'/g, "&#39;")})'>⬇️ Install</button>`;
+
+            return `
+                <div class="server-card">
+                    <div class="server-header">
+                        <div class="server-name">${server.name}${installedBadge}</div>
+                        <div class="trust-score" title="Trust Score">${trustStars}</div>
+                    </div>
+                    <div class="server-description">${server.description || 'No description'}</div>
+                    <span class="type-badge type-npm-package">NPM Package</span>
+                    <div class="security-warnings">${verifiedBadge}</div>
+                    ${server.stars ? `<div class="npm-stats"><span>⭐ ${server.stars.toLocaleString()} stars</span></div>` : ''}
+                    <div class="server-meta">
+                        <div><strong>Package:</strong> ${server.package || 'N/A'}</div>
+                        ${server.category ? `<div><strong>Category:</strong> ${server.category}</div>` : ''}
+                    </div>
+                    <div class="server-actions">
+                        ${repoButton}
+                        ${installButton}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Installation modal
+        let pendingInstall = null;
+
+        function showInstallModal(server) {
+            pendingInstall = server;
+
+            document.getElementById('installServerName').textContent = server.name;
+            document.getElementById('installServerDesc').textContent = server.description || 'No description';
+
+            const config = {
+                command: server.command || 'npx',
+                args: server.args || ['-y', server.package],
+                description: server.description || ''
+            };
+
+            document.getElementById('installConfigPreview').textContent = JSON.stringify(config, null, 2);
+            document.getElementById('installModal').classList.add('show');
+        }
+
+        function closeInstallModal() {
+            document.getElementById('installModal').classList.remove('show');
+            pendingInstall = null;
+        }
+
+        async function confirmInstall() {
+            if (!pendingInstall) return;
+
+            try {
+                const config = {
+                    command: pendingInstall.command || 'npx',
+                    args: pendingInstall.args || ['-y', pendingInstall.package],
+                    description: pendingInstall.description || ''
+                };
+
+                const response = await fetch('/api/install', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: pendingInstall.name,
+                        config: config
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`✓ ${pendingInstall.name} installed successfully!\n\nRestart Claude Code to activate the server.`);
+                    closeInstallModal();
+                    // Reload installed servers and browse catalog
+                    await loadServers();
+                    await loadBrowseCatalog();
+                } else {
+                    alert(`✗ Installation failed: ${result.error}`);
+                }
+            } catch (error) {
+                alert(`✗ Installation failed: ${error.message}`);
+            }
+        }
+
+        // Close install modal on background click
+        document.getElementById('installModal').addEventListener('click', (e) => {
+            if (e.target.id === 'installModal') {
+                closeInstallModal();
+            }
+        });
+
+        // Browse search on Enter
+        document.getElementById('browseSearchBox').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadBrowseCatalog();
+            }
+        });
+    </script>
+</body>
+</html>

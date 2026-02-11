@@ -35,6 +35,40 @@
       "stop_command": "pkill -f \"file_watcher.py\" || true"
     },
     {
+      "id": "mcp-inspector",
+      "name": "MCP Inspector",
+      "description": "Security Browser for MCP Servers + Trust Scores",
+      "category": "automation",
+      "port": 8020,
+      "path": null,
+      "icon": "&#128269;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_mcp_inspector.sh",
+      "project_path": null,
+      "features": [
+        "Security Audit",
+        "Trust Scores",
+        "Source View"
+      ],
+      "stop_command": "pkill -f \"mcp_inspector_server.py\" || true"
+    },
+    {
+      "id": "blender-mcp",
+      "name": "Blender MCP Server",
+      "description": "Headless Blender with MCP integration (port 9876)",
+      "category": "automation",
+      "port": null,
+      "path": null,
+      "icon": "&#127912;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_blender_mcp.sh",
+      "project_path": null,
+      "features": [
+        "Headless",
+        "MCP Bridge",
+        "Port 9876"
+      ],
+      "stop_command": "pkill -f \"blender.*background.*blender_mcp_startup\" || true"
+    },
+    {
       "id": "dragonflux-klein",
       "name": "DragonFlux Klein",
       "description": "Image Generation + LoRA Support",
@@ -100,6 +134,24 @@
       "stop_command": "pkill -f \"creative_upscale_gradio.py\" || true"
     },
     {
+      "id": "topaz-labs",
+      "name": "Topaz Labs AI",
+      "description": "Professional Enhancement - Upscale, Sharpen, Denoise, Restore",
+      "category": "image",
+      "port": 8019,
+      "path": null,
+      "icon": "&#11088;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_topaz_labs.sh",
+      "project_path": null,
+      "features": [
+        "Enhance 1-4x",
+        "Sharpen",
+        "Denoise",
+        "Restore"
+      ],
+      "stop_command": "pkill -f \"topaz_labs_gradio.py\" || true"
+    },
+    {
       "id": "dragonart-studio",
       "name": "DragonArt Studio",
       "description": "Gemini 3 Pro AI Editor + Veo 3.1 Video",
@@ -130,6 +182,23 @@
         "Video Gen",
         "Multi-Model"
       ]
+    },
+    {
+      "id": "ltx2",
+      "name": "LTX-2 Video",
+      "description": "Dedicated LTX-2 19B Interface + Audio",
+      "category": "video",
+      "port": 8016,
+      "path": null,
+      "icon": "&#127916;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_ltx2.sh",
+      "project_path": "/srv/containers/edq/projects/Wan2GP",
+      "features": [
+        "20s Video",
+        "Audio Track",
+        "Keyframes"
+      ],
+      "stop_command": "pkill -f \"ltx2_gradio.py\" || true"
     },
     {
       "id": "liveportrait",
