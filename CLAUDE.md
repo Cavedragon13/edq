@@ -12,348 +12,86 @@ This is a personal AI development environment focused on video generation, visio
 /srv/containers/edq/
 ├── apps/               # Application binaries (LM Studio, Pinokio)
 ├── config/             # Configuration files (dragonsuite.json)
-├── docs/               # Documentation (setup guides, venvs.md registry)
+├── docs/               # Documentation (setup guides, service docs)
+│   └── services/       # Detailed service documentation
 ├── scripts/            # Standalone Python scripts and shell launchers
 ├── projects/           # Cloned AI project repositories
-│   ├── Wan2GP/         # Wan2GP video generation
-│   ├── wan-animate/    # Wan2.2-Animate-14B project
-│   ├── fish-speech/    # Fish Speech TTS
-│   ├── heartmula/      # HeartMuLa music generation
-│   ├── qwen3-tts/      # Qwen3-TTS (TTS, cloning, voice design)
-│   ├── sam2/           # SAM 2.1 segmentation
-│   ├── LivePortrait/   # Portrait animation (KlingTeam)
-│   ├── hunyuan3d/      # Image to 3D generation
-│   └── llama.cpp/      # llama.cpp for GGUF models
 ├── models/             # Downloaded AI models and weights
-├── media/              # Media files, HTML apps (dragonsight4.html, dragonsuite.html)
+├── media/              # Media files, HTML apps
 ├── pinokio/            # Pinokio launcher system
-├── venv_dragonsuite/   # Dashboard backend venv
-├── venv_fish_speech/   # Fish Speech TTS venv
-├── venv_florence2/     # Florence2 vision service venv
-├── venv_flux2/         # DragonFlux Klein venv
-├── venv_heartmula/     # HeartMuLa music venv
-├── venv_qwen3_tts/     # Qwen3-TTS venv
-├── venv_hunyuan3d/     # Hunyuan3D-2 venv
-├── venv_liveportrait/  # LivePortrait venv
-├── venv_realesrgan/    # Real-ESRGAN upscaler venv
-├── venv_sam2/          # SAM 2.1 venv
-├── venv_wan2gp/        # Wan2GP venv
-├── venv_zimage/        # Z-Image Base venv
-├── venv_rembg/         # Rembg background removal venv
-└── venv_qwen_image_layered/  # Qwen-Image-Layered venv
+└── venv_*/             # Virtual environments (see docs/venvs.md)
 ```
 
 ## Port Layout
 
-| Port | Service | Type |
-|------|---------|------|
-| 1234 | LM Studio API | On-demand (manual) |
-| 8080 | Dragonsight 4 | Static file server |
-| 8100 | Dragonsuite Dashboard | On-demand |
-| 8001 | DragonFlux Klein | On-demand (GPU) |
-| 8002 | Wan2GP | On-demand (GPU) |
-| 8003 | Fish Speech | On-demand (GPU) |
-| 8004 | HeartMuLa | On-demand (GPU) |
-| 8005 | SAM 2.1 | On-demand (GPU) |
-| 8006 | LivePortrait | On-demand (GPU) |
-| 8007 | Hunyuan3D-2 | On-demand (GPU) |
-| 8009 | Qwen3-TTS | On-demand (GPU) |
-| 8010 | Real-ESRGAN | On-demand (GPU) |
-| 8011 | Z-Image Base | On-demand (GPU) |
-| 8012 | Rembg | On-demand (GPU) |
-| 8013 | Qwen-Image-Layered | On-demand (GPU) |
-| 8014 | Qwen3-Audiobook | On-demand |
-| 8888 | Jupyter (reserved) | Future |
-| 11434 | Ollama API | Always-on (snap) |
+| Port | Service | Type | Documentation |
+|------|---------|------|---------------|
+| 1234 | LM Studio API | On-demand (manual) | - |
+| 8080 | Dragonsight 4 | Static file server | [Vision AI](docs/services/vision-ai.md) |
+| 8100 | Dragonsuite Dashboard | On-demand | Central launcher |
+| 8001 | DragonFlux Klein | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
+| 8002 | Wan2GP | On-demand (GPU) | [Video & Music](docs/services/video-music.md) |
+| 8003 | Fish Speech | On-demand (GPU) | [Audio & TTS](docs/services/audio-tts.md) |
+| 8004 | HeartMuLa | On-demand (GPU) | [Video & Music](docs/services/video-music.md) |
+| 8005 | SAM 2.1 | On-demand (GPU) | [Vision AI](docs/services/vision-ai.md) |
+| 8006 | LivePortrait | On-demand (GPU) | [Vision AI](docs/services/vision-ai.md) |
+| 8007 | Hunyuan3D-2 | On-demand (GPU) | [Utilities](docs/services/utilities.md) |
+| 8009 | Qwen3-TTS | On-demand (GPU) | [Audio & TTS](docs/services/audio-tts.md) |
+| 8010 | Real-ESRGAN | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
+| 8011 | Z-Image Base | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
+| 8012 | Rembg | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
+| 8013 | Qwen-Image-Layered | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
+| 8014 | Qwen3-Audiobook | On-demand | [Audio & TTS](docs/services/audio-tts.md) |
+| 8015 | Dragonart Studio | Production | [Utilities](docs/services/utilities.md) |
+| 8020 | MCP Inspector | On-demand | [Utilities](docs/services/utilities.md) |
+| 8021 | ACE-Step 1.5 | On-demand (GPU) | [Video & Music](docs/services/video-music.md) |
+| 8888 | Jupyter (reserved) | Future | - |
+| 11434 | Ollama API | Always-on (snap) | - |
 
-## Key Components
+## Service Quick Reference
 
-### 1. Dragonsuite Dashboard
-- **HTML App**: `media/dragonsuite.html`
-- **Backend**: `scripts/dragonsuite_server.py`
-- **Launcher**: `scripts/start_dragonsuite.sh`
-- **Port**: 8100
-- **Purpose**: Central launcher hub for all Dragonsuite tools
-- **Features**:
-  - Shows service status (running/stopped)
-  - Start/Stop buttons for each tool
-  - QR codes for mobile access
-  - Git revision info for projects
-- **Web UI**: `http://192.168.7.226:8100`
-- **Config**: `config/dragonsuite.json`
+### Core Services
 
-### 2. Dragonsight 4 (Vision AI)
-- **HTML App**: `media/dragonsight4.html`
-- **Launcher**: `scripts/start_dragonsight.sh`
-- **Port**: 8080
-- **Purpose**: Drag-and-drop image analysis, AI descriptions, smart file naming
-- **Primary Backend**: Ollama (always-on via snap)
-  - `qwen3-vl:8b` (default, 6.1GB)
-  - `llama3.2-vision:11b` (optional, 7.8GB)
-- **Secondary Backend**: LM Studio (manual start)
-  - GLM-4.6V with Dolphin uncensored prompt
-- **Features**:
-  - Pure frontend (HTML/JS) - no Python backend needed
-  - Model selector for Ollama VLMs
-  - Automatic fallback between backends
-  - Clipboard paste support (Ctrl+V)
-  - Parallel API calls for faster results
-  - Copy buttons for all outputs
-  - Metadata JSON download
-- **Backend URLs** (via proxy to avoid CORS):
-  - Ollama: `http://127.0.0.1:8080/api/ollama/generate` → proxied to `127.0.0.1:11434`
-  - LM Studio: `http://localhost:1234/v1/chat/completions` (direct, same-origin not needed)
-- **Web UI**: `http://192.168.7.226:8080`
-- **Architecture**: Frontend served on 8080, Ollama calls proxied through same port (see Architecture Patterns)
+**Dragonsuite Dashboard** (port 8100)
+- Central launcher hub for all services
+- Status monitoring, QR codes, git revision info
+- **Launch:** `bash scripts/start_dragonsuite.sh`
 
-### 3. DragonFlux Klein (Image Generation)
-- **Script**: `scripts/flux2_klein_gradio.py`
-- **Launcher**: `scripts/start_flux2_klein.sh`
-- **Port**: 8001
-- **Venv**: `venv_flux2`
-- **Purpose**: FLUX.2-klein image generation with LoRA support
-- **Features**:
-  - LoRA model loading from `~/models/loras/flux-klein/`
-  - Output saves to `~/ai_generated/flux2-klein/`
-  - Gradio interface
-- **Web UI**: `http://192.168.7.226:8001`
+**Dragonsight 4** (port 8080) - [Full docs](docs/services/vision-ai.md)
+- Vision AI with Ollama backend (qwen3-vl:8b, llama3.2-vision:11b)
+- Drag-and-drop image analysis, smart file naming
+- **Launch:** `bash scripts/start_dragonsight.sh`
 
-### 4. Wan2GP (Video Generation)
-- **Location**: `projects/Wan2GP/`
-- **Launcher**: `scripts/start_wan2gp.sh`
-- **Port**: 8002
-- **Venv**: `venv_wan2gp`
-- **Purpose**: Wan 2.0 video generation
-- **Recommended models** (16GB VRAM):
-  - Wan 2.2 Ovi (6GB) - fastest
-  - LTX 2 (8GB)
-  - Flux 2 int8 (8GB)
-- **Web UI**: `http://192.168.7.226:8002`
+### Image Generation - [Full docs](docs/services/image-generation.md)
 
-### 5. HeartMuLa (Music Generation)
-- **Location**: `projects/heartmula/`
-- **Launcher**: `scripts/start_heartmula.sh`
-- **Port**: 8004
-- **Venv**: `venv_heartmula`
-- **Purpose**: AI music generation from lyrics and style tags (Suno-level quality, open source)
-- **Model**: HeartMuLa-oss-3B (Apache 2.0 license)
-- **Features**:
-  - Lyrics-to-music generation
-  - Section structure support ([Verse], [Chorus], [Bridge], etc.)
-  - Style tags (instruments, mood, genre, tempo)
-  - Adjustable temperature, top-k, CFG scale
-  - Output: MP3 files saved to `~/ai_generated/heartmula/`
-- **Web UI**: `http://192.168.7.226:8004`
-- **Requirements**: ~12GB VRAM, ~10GB disk for models
+- **DragonFlux Klein** (8001) - FLUX.2-klein with LoRA support
+- **Z-Image Base + Turbo** (8011) - Alibaba's 6B text-to-image (Base/Turbo/Fast modes)
+- **Qwen-Image-Layered** (8013) - Layer decomposition for editing
+- **Real-ESRGAN** (8010) - AI upscaling with multiple models
 
-### 6. Fish Speech (Text-to-Speech)
-- **Location**: `projects/fish-speech/`
-- **Launcher**: `scripts/start_fish_speech.sh`
-- **Port**: 8003
-- **Venv**: `venv_fish_speech`
-- **Purpose**: Expressive TTS with voice cloning (OpenAudio S1-mini, 0.5B params)
-- **Features**:
-  - Zero-shot TTS (no reference audio needed)
-  - Voice cloning from 10-30s audio samples
-  - Emotion control markers (angry, sad, excited, etc.)
-  - Multi-language support (EN, CN, JP, DE, FR, ES, KO, AR, RU, etc.)
-  - Gradio web interface
-- **Web UI**: `http://192.168.7.226:8003`
-- **Requirements**: 12GB VRAM
+### Video & Music - [Full docs](docs/services/video-music.md)
 
-### 7. Qwen3-TTS (Text-to-Speech)
-- **Location**: `projects/qwen3-tts/`
-- **Launcher**: `scripts/start_qwen3_tts.sh`
-- **Port**: 8009
-- **Venv**: `venv_qwen3_tts`
-- **Purpose**: High-quality TTS with voice cloning and voice design
-- **Models**: Qwen3-TTS-12Hz-1.7B (Base, CustomVoice, VoiceDesign)
-- **Features**:
-  - TTS with 9 predefined speakers + style control
-  - Voice cloning from reference audio
-  - Voice design from natural language descriptions
-  - Multi-language support (EN, CN, JP, KO, FR, DE, ES, PT, RU)
-  - Lazy model loading (one model at a time)
-- **Web UI**: `http://192.168.7.226:8009`
-- **Requirements**: ~6-8GB VRAM per model (with FlashAttention)
-- **Tip**: Switching tabs may reload models as only one is loaded at a time
+- **Wan2GP** (8002) - Video generation (Wan 2.0)
+- **HeartMuLa** (8004) - Music generation from lyrics (~12GB VRAM)
+- **ACE-Step 1.5** (8021) - Ultra-fast music generation (<4GB VRAM)
 
-### 8. SAM 2.1 (Segment Anything)
-- **Location**: `projects/sam2/`
-- **Launcher**: `scripts/start_sam2.sh`
-- **Port**: 8005
-- **Venv**: `venv_sam2`
-- **Purpose**: Meta's foundation model for image and video segmentation
-- **Features**:
-  - Click-to-segment in images
-  - Track objects across video frames
-  - Automatic mask generation
-  - Point and box prompts
-- **Web UI**: `http://192.168.7.226:8005`
-- **Requirements**: ~6GB VRAM
+### Audio & TTS - [Full docs](docs/services/audio-tts.md)
 
-### 9. LivePortrait (Portrait Animation)
-- **Location**: `projects/LivePortrait/`
-- **Launcher**: `scripts/start_liveportrait.sh`
-- **Port**: 8006
-- **Venv**: `venv_liveportrait`
-- **Purpose**: KlingTeam's portrait animation with expression transfer
-- **Features**:
-  - Image to animated portrait
-  - Video-driven face animation
-  - Expression transfer from driving video
-  - Animals mode (cats & dogs)
-- **Web UI**: `http://192.168.7.226:8006`
-- **Requirements**: ~6GB VRAM
-- **Tip**: Use short driving videos (2-5s) for best results
+- **Fish Speech** (8003) - Expressive TTS with voice cloning
+- **Qwen3-TTS** (8009) - High-quality TTS with voice design
+- **Qwen3-Audiobook** (8014) - Document to audiobook conversion
 
-### 10. Hunyuan3D-2 (Image to 3D)
-- **Location**: `projects/hunyuan3d/`
-- **Launcher**: `scripts/start_hunyuan3d.sh`
-- **Port**: 8007
-- **Venv**: `venv_hunyuan3d`
-- **Purpose**: Tencent's image-to-3D model generation
-- **Features**:
-  - Image to 3D mesh
-  - Texture synthesis
-  - GLB/OBJ export
-- **Web UI**: `http://192.168.7.226:8007`
-- **Requirements**: ~6GB VRAM (shape), ~16GB (with texture)
+### Vision AI - [Full docs](docs/services/vision-ai.md)
 
-### 11. Real-ESRGAN (Image Upscaling)
-- **Script**: `scripts/realesrgan_gradio.py`
-- **Launcher**: `scripts/start_realesrgan.sh`
-- **Port**: 8010
-- **Venv**: `venv_realesrgan`
-- **Purpose**: AI image upscaling with multiple models
-- **Models**:
-  - RealESRGAN_x4plus - General photos (default)
-  - RealESRGAN_x4plus_anime_6B - Anime/illustration
-  - RealESRGAN_x2plus - 2x upscaling (faster)
-  - realesr-general-x4v3 - Compact with denoise
-- **Features**:
-  - Up to 8x output scaling
-  - Face enhancement (GFPGAN)
-  - Tiling for large images
-  - Clipboard paste support
-- **Web UI**: `http://192.168.7.226:8010`
-- **Requirements**: ~4GB VRAM
-- **Output**: `~/ai_generated/realesrgan/`
+- **SAM 2.1** (8005) - Image/video segmentation
+- **LivePortrait** (8006) - Portrait animation with expression transfer
 
-### 13. Z-Image Base + Turbo (Text-to-Image)
+### Utilities - [Full docs](docs/services/utilities.md)
 
-- **Script**: `scripts/zimage_base_gradio.py`
-- **Launcher**: `scripts/start_zimage.sh`
-- **Port**: 8011
-- **Venv**: `venv_zimage`
-- **Purpose**: Alibaba Tongyi's 6B parameter text-to-image with dual model support
-- **Models**:
-  - **Base**: Tongyi-MAI/Z-Image (Apache 2.0 license) ✅ Available
-    - 30-step inference with CFG scaling (7-10 recommended)
-    - Negative prompt support
-    - Superior photorealism, hands, text rendering
-  - **Turbo**: Tongyi-MAI/Z-Image-Turbo ✅ Available
-    - 8-step fast inference (4x faster than Base)
-    - CFG fixed at 1.0 for optimal results
-    - ~5-10 seconds per image
-  - **ControlNet Union 2.1**: 🚧 Coming Soon (Pending diffusers v0.37+)
-    - Planned: Multi-condition control (Canny, Depth, Pose, HED, MLSD)
-    - Planned: Professional-grade spatial control (15+ layer blocks)
-    - Workaround: Use [VideoX-Fun](https://github.com/aigc-apps/VideoX-Fun) repository
-- **Features**:
-  - Model selector (Base vs Turbo)
-  - LoRA support from `~/models/loras/zimage/`
-  - Multiple aspect ratio presets
-  - Control image preprocessing (ready for ControlNet when available)
-- **Web UI**: `http://192.168.7.226:8011`
-- **Requirements**: ~13-14GB VRAM (bf16) with CPU offloading
-- **Output**: `~/ai_generated/zimage/`
-- **Tips**:
-  - **Base mode**: CFG 7-10, 30 steps, use negative prompts
-  - **Turbo mode**: 8 steps (CFG fixed at 1.0), ~5-10 seconds per image
-  - **ControlNet**: Infrastructure ready, waiting for diffusers library support
-
-### 14. Qwen-Image-Layered (Layer Decomposition)
-- **Script**: `scripts/qwen_image_layered_gradio.py`
-- **Launcher**: `scripts/start_qwen_image_layered.sh`
-- **Port**: 8013
-- **Venv**: `venv_qwen_image_layered`
-- **Purpose**: Decompose images into multiple RGBA layers for advanced editing
-- **Model**: Qwen/Qwen-Image-Layered (Apache 2.0 license)
-- **Features**:
-  - Variable layer count (2-8 layers)
-  - RGBA PNG export for each layer
-  - ZIP download of all layers
-  - PPTX export for presentations
-  - Recursive decomposition possible
-- **Web UI**: `http://192.168.7.226:8013`
-- **Requirements**: ~14-16GB VRAM (uses CPU offloading)
-- **Output**: `~/ai_generated/qwen-layered/`
-- **Tips**: Close other GPU services before use; 640px resolution recommended
-
-### 15. Qwen3-Audiobook (Document to Audiobook)
-- **Script**: `scripts/qwen3_audiobook_gradio.py`
-- **Launcher**: `scripts/start_qwen3_audiobook.sh`
-- **Port**: 8014
-- **Venv**: Shares `venv_qwen3_tts`
-- **Purpose**: Convert documents to MP3 audiobooks using Qwen3-TTS
-- **Requires**: Qwen3-TTS running on port 8009
-- **Supported Formats**:
-  - PDF (text-based)
-  - EPUB (e-books)
-  - DOCX/DOC (Word documents)
-  - TXT (plain text)
-- **Features**:
-  - 9 predefined speaker voices
-  - Custom style instructions
-  - Intelligent text chunking (~1200 words)
-  - Progress tracking
-- **Web UI**: `http://192.168.7.226:8014`
-- **Requirements**: CPU only (TTS uses GPU via port 8009)
-- **Output**: `~/ai_generated/qwen3-audiobook/`
-- **Tips**: Start Qwen3-TTS first before using audiobook converter
-
-### 16. Pinokio Launcher System
-- **Location**: `pinokio/`
-- **Purpose**: Cross-platform launcher framework for AI apps
-- **Important Files**:
-  - `.cursorrules`: Contains strict development guidelines (always reference when working with Pinokio)
-  - `PINOKIO.md`: Full API documentation
-  - `prototype/system/examples/`: Reference examples for all launcher patterns
-
-### 17. Llama.cpp Integration
-- **Location**: `projects/llama.cpp/`
-- **Purpose**: GGUF model inference for quantized models
-
-### 18. Dragonart Studio (Image Transformation)
-- **Location**: `projects/dragonart-studio/`
-- **Tech Stack**: React + TypeScript + Vite
-- **Purpose**: Professional AI-powered image transformation tool with 70+ edit modes
-- **Features**:
-  - Image-to-image transformation with prompt control
-  - 70+ edit modes: Trading cards, movie posters, magazine covers, comic art, etc.
-  - Multi-model support: Gemini 3 Pro, Gemini 3 Flash, GPT-Image-1
-  - Video generation: Veo 3.1, Veo 3.1 Fast, Sora-2
-  - Session management with undo/redo history
-  - Reference image support for style transfer
-  - Automatic aspect ratio cropping per mode
-  - Export sessions as HTML galleries
-- **Key Modes**:
-  - **Trading Cards**: MTG, Sports (7 types), Non-Sports (10 vintage styles)
-  - **Posters**: Horror, Fantasy, Sci-Fi, Wanted
-  - **Magazines**: Harper's, Syrens, Joxtrap, Freestyle (20 genres)
-  - **Comic Art**: Pages, Splash panels, Covers
-  - **Transformations**: Diorama, Action Figure, Puppet, Pin-up
-  - **Art Styles**: Anime, Watercolor, Gothic, Illustration
-- **Models Available**:
-  - Gemini 3 Pro → Veo 3.1 (best quality, all 70+ modes)
-  - Gemini 3 Flash → Veo 3.1 Fast (faster, good quality)
-  - GPT-Image-1 → Sora-2 (OpenAI models)
-- **Important Notes**:
-  - Uses React with TypeScript strict mode
-  - State management via useState + useCallback hooks
-  - All edit mode dropdowns have conditional sub-selectors (sports, genres, styles)
-  - Prompts designed for fair use (no trademarked names in templates)
+- **Hunyuan3D-2** (8007) - Image to 3D mesh generation
+- **MCP Inspector** (8020) - Security auditing for MCP servers
+- **Dragonart Studio** (8015) - 70+ AI image transformation modes (React app)
+- **Pinokio** - Cross-platform launcher framework
 
 ## Common Development Tasks
 
@@ -369,505 +107,32 @@ bash scripts/start_dragonsuite.sh
 
 From here you can start/stop all other services.
 
-### Working with Dragonsight 4
+### Launching Services
 
-**Launch:**
+All services follow the same pattern:
 ```bash
 cd /srv/containers/edq
-bash scripts/start_dragonsight.sh
+bash scripts/start_<service>.sh
 ```
 
-**Access at:** `http://192.168.7.226:8080/media/dragonsight4.html`
-
-**Key considerations:**
-- **Ollama is always-on** via snap - no manual start needed
-- Default model: qwen3-vl:8b, optional: llama3.2-vision:11b
-- Pure HTML/JS frontend - no Python dependencies
-- LM Studio available as secondary backend (manual start) for uncensored GLM-4.6V
-
-### Working with DragonFlux Klein
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_flux2_klein.sh
-```
-
-**Access at:** `http://192.168.7.226:8001`
-
-**Key considerations:**
-- GPU-heavy (loads FLUX model into VRAM)
-- LoRA support via `~/models/loras/flux-klein/`
-- Output saves to `~/ai_generated/flux2-klein/`
-
-### Working with Wan2GP
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_wan2gp.sh
-```
-
-**Access at:** `http://192.168.7.226:8002`
-
-**Key considerations:**
-- GPU-heavy, only run one GPU service at a time
-- Multiple model options for different VRAM budgets
-- Video generation can take several minutes
-
-### Working with Fish Speech
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_fish_speech.sh
-```
-
-**Access at:** `http://192.168.7.226:8003`
-
-**Key considerations:**
-- GPU-heavy (12GB VRAM), only run one GPU service at a time
-- First launch downloads ~2GB model weights
-- Voice cloning: place 10-30s audio samples in `projects/fish-speech/references/<voice_id>/sample.wav`
-- Emotion markers: use `(angry)`, `(excited)`, `(sad)`, etc. in text
-- Tone markers: `(whispering)`, `(shouting)`, `(in a hurry tone)`
-
-### Working with HeartMuLa
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_heartmula.sh
-```
-
-**Access at:** `http://192.168.7.226:8004`
-
-**Key considerations:**
-- GPU-heavy (~12GB VRAM), only run one GPU service at a time
-- First launch downloads ~10GB of model weights
-- Generation speed: ~1x real-time (2 min song = ~2 min generation)
-- Output saves to `~/ai_generated/heartmula/`
-- Use section tags in lyrics: `[Verse]`, `[Chorus]`, `[Bridge]`, `[Intro]`, `[Outro]`
-- Style tags are comma-separated: `piano,happy,uplifting,pop`
-- Supports multi-language lyrics
-
-### Working with Qwen3-TTS
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_qwen3_tts.sh
-```
-
-**Access at:** `http://192.168.7.226:8009`
-
-**Key considerations:**
-- GPU-heavy (~6-8GB VRAM per model), only run one GPU service at a time
-- First launch downloads ~6GB of model weights (per model type)
-- Three modes: TTS (speakers), Voice Clone, Voice Design
-- Only one model loaded at a time for 16GB VRAM compatibility
-- Switching tabs may reload models
-- Output saves to `~/ai_generated/qwen3-tts/`
-- 9 predefined speakers: Aiden, Dylan, Eric, Ono_anna, Ryan, Serena, Sohee, Uncle_fu, Vivian
-- Voice design: describe age, gender, tone, emotion, accent
-
-### Working with SAM 2.1
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_sam2.sh
-```
-
-**Access at:** `http://192.168.7.226:8005`
-
-**Key considerations:**
-- Click on image to segment objects
-- Supports video tracking (propagate mask across frames)
-- First launch downloads ~2.5GB checkpoint
-- ~6GB VRAM for large model
-
-### Working with LivePortrait
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_liveportrait.sh
-```
-
-**Access at:** `http://192.168.7.226:8006`
-
-**Key considerations:**
-- Upload source portrait + driving video
-- First launch downloads ~2GB of model weights
-- Use short driving videos (2-5 seconds) for best results
-- Animals mode available for cats & dogs
-- Expression transfer works best with similar face angles
-
-### Working with Hunyuan3D-2
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_hunyuan3d.sh
-```
-
-**Access at:** `http://192.168.7.226:8007`
-
-**Key considerations:**
-- Upload image → generates 3D mesh
-- First launch downloads ~10GB of models
-- ~6GB VRAM for shape only, ~16GB for shape + texture
-- Exports GLB/OBJ formats
-
-### Working with Real-ESRGAN
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_realesrgan.sh
-```
-
-**Access at:** `http://192.168.7.226:8010`
-
-**Key considerations:**
-- First launch downloads ~200MB of model weights
-- ~4GB VRAM for most models
-- Use tiling (256/512) for large images to save VRAM
-- Face enhancement adds GFPGAN (~500MB additional download)
-- Output saves to `~/ai_generated/realesrgan/`
-- Anime model works best for illustrations/anime art
-
-### Working with Z-Image Base + Turbo ControlNet
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_zimage.sh
-```
-
-**Access at:** `http://192.168.7.226:8011`
-
-**Key considerations:**
-
-- Dual model support: Base (30-step CFG) or Turbo (8-step fast)
-- **Base model features (✅ Available):**
-  - CFG scaling 7-10 recommended
-  - Negative prompt support
-  - 30 steps for quality output
-  - Superior photorealism and text rendering
-  - ~20-30 seconds per image
-- **Turbo model features (✅ Available):**
-  - 8-step fast inference (4x faster)
-  - CFG fixed at 1.0 for optimal 8-step results
-  - Perfect for rapid iteration and prototyping
-  - ~5-10 seconds per image
-- **ControlNet Union 2.1 (🚧 Coming Soon):**
-  - Infrastructure ready but waiting for diffusers v0.37+ support
-  - `ZImageControlNetPipeline` not yet available in diffusers 0.36.0
-  - Workaround: Use [VideoX-Fun repository](https://github.com/aigc-apps/VideoX-Fun) for immediate ControlNet access
-  - Planned: Multi-condition control (Canny, Depth, Pose, HED, MLSD)
-  - Planned: Professional-grade spatial control (15+ layer blocks)
-- **LoRA support (✅ Available):**
-  - Place LoRA files in `~/models/loras/zimage/`
-  - Works with both Base and Turbo models
-  - Adjust LoRA scale 0.0-2.0 (1.0 default)
-- First launch downloads Base model (~12GB) on-demand
-- Turbo model (~12GB) downloads when first used
-- Output saves to `~/ai_generated/zimage/`
-- Uses CPU offloading to fit in 16GB VRAM
-- Close other GPU services if you encounter OOM errors
-- opencv-python installed for future ControlNet preprocessing
-
-### Working with Qwen-Image-Layered
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_qwen_image_layered.sh
-```
-
-**Access at:** `http://192.168.7.226:8013`
-
-**Key considerations:**
-- First launch downloads ~12GB of model weights
-- Uses ~14-16GB VRAM with CPU offloading enabled
-- Close other GPU services before use
-- 640px resolution recommended (1024px uses more VRAM)
-- Output saves to `~/ai_generated/qwen-layered/`
-- Downloads include ZIP and optional PPTX of all layers
-
-### Working with Qwen3-Audiobook
-
-**Launch:**
-```bash
-cd /srv/containers/edq
-bash scripts/start_qwen3_audiobook.sh
-```
-
-**Access at:** `http://192.168.7.226:8014`
-
-**Key considerations:**
-- Requires Qwen3-TTS running on port 8009 first
-- Start TTS service: `bash scripts/start_qwen3_tts.sh`
-- Shares venv with Qwen3-TTS (no separate installation)
-- Supports PDF, EPUB, DOCX, DOC, TXT formats
-- Text is chunked into ~1200 word segments for reliable TTS
-- Output saves to `~/ai_generated/qwen3-audiobook/`
-- Long documents may take significant time to convert
-
-### Working with Pinokio Launchers
-
-**Critical workflow (from .cursorrules):**
-1. Always reference `.cursorrules` before any Pinokio script changes
-2. Check `/home/edq/pinokio/prototype/system/examples` for reference patterns
-3. Review `PINOKIO.md` for API syntax
-4. Check logs in `logs/` or `pinokio/logs/` for debugging
-5. Use relative paths (never absolute) in `shell.run` commands
-
-**Key patterns:**
-- Always use `venv` attribute for Python apps
-- Capture server URLs with regex patterns like `/(http:\/\/[0-9.:]+)/`
-- Set local variables with `local.set` using `{{input.event[1]}}`
-- Use `daemon: true` for server launchers
-- Prefer `uv` over `pip` for Python package installation
-
-**Project structure:**
-```
-launcher-root/
-├── install.js    # Installation script
-├── start.js      # Launch script (daemon: true for servers)
-├── reset.js      # Reset dependencies
-├── update.js     # Update app and scripts
-├── pinokio.js    # UI generator (dynamic menu)
-└── pinokio.json  # Metadata
-```
-
-### Working with Dragonart Studio
-
-**Location:** `cd /srv/containers/edq/projects/dragonart-studio`
-
-**IMPORTANT: Production Deployment**
-Dragonart Studio runs as a production service on port 8015, managed by the Dragonsuite Dashboard:
-- **Production URL:** `http://192.168.7.226:8015`
-- **Server:** `scripts/dragonart_server.py` (Python HTTP server)
-- **Launch:** `bash scripts/start_dragonart.sh` (auto-builds if needed)
-- **Dashboard:** Integrated into Dragonsuite on port 8100
-
-**Making Changes:**
-```bash
-# Option 1: Development (faster iteration)
-cd /srv/containers/edq/projects/dragonart-studio
-npm run dev  # Vite dev server on random port (3000+)
-
-# Option 2: Production deployment (for dashboard)
-npm run build  # Build to dist/
-bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
-```
-
-**CRITICAL:** Type changes (types.ts) and constant changes (constants.ts) require `npm run build` to take effect in production. The dev server hot-reloads, but production serves static built files from `dist/`.
-
-**Key considerations:**
-- React + TypeScript app with strict mode enabled
-- Uses Gemini 3 Pro / Flash API (requires Google Cloud API key in `/srv/containers/edq/.env`)
-- All state managed via React hooks (useState, useCallback, useEffect)
-- Image processing happens client-side before API calls
-- Sessions auto-save to localStorage with compression
-- **Always rebuild after TypeScript/React changes before deploying to production**
-
-**Common workflows:**
-
-1. **Adding a new edit mode:**
-   - Add mode to `EditMode` type in `types.ts`
-   - Create prompt template in `constants.ts`
-   - Add to `MODE_CONFIGS` in `components/ControlPanel.tsx`
-   - Add case in `getPromptForMode()` switch statement
-   - If needs aspect ratio: add to `ASPECT_RATIO_MAP` in `App.tsx`
-
-2. **Adding a dropdown selector (like Non-Sports Card styles):**
-   - Create new type in `types.ts` (e.g., `NonSportsCardStyle`)
-   - Add state in `App.tsx`: `const [style, setStyle] = useState<Type>('default')`
-   - Pass to ControlPanel props and add to function parameters
-   - Add conditional dropdown in ControlPanel using `{editMode === 'mode' && (...)}`
-   - Add to `getPromptForMode` parameters and use in prompt building
-   - **CRITICAL:** Add new state variable to `handleGenerateClick` dependency array!
-
-3. **Debugging state sync issues:**
-   - Check useCallback dependency arrays include ALL state variables used
-   - Missing dependencies cause stale closure bugs (dropdown changes don't apply)
-   - Add console.log in handleGenerateClick to verify current state values
-   - React StrictMode causes double-renders (normal in dev, not production)
-
-4. **Fair use / content filtering:**
-   - Avoid trademarked names in prompts ("Star Wars" → "classic sci-fi movie")
-   - Use generic style descriptors ("Marvel" → "superhero comic style")
-   - Keep prompt_snippets focused on visual aesthetics, not brand names
-
-**Troubleshooting:**
-- **Changes not appearing:** Rebuild with `npm run build` and restart via dashboard or launch script
-- **API errors:** Check Google Cloud API key has billing enabled in `/srv/containers/edq/.env`
-- **Content filtering:** Review prompts for trademarked names (use generic descriptors)
-- **State not updating:** Check useCallback/useEffect dependency arrays for missing dependencies
-- **Aspect ratio issues:** Verify mode is in ASPECT_RATIO_MAP in `App.tsx`
-- **Session not saving:** Check localStorage isn't full (browser quota ~5-10MB)
-- **Server conflicts:** Don't run dev server when production server is running on port 8015
+Access via: `http://192.168.7.226:<port>`
+
+See service documentation for detailed usage:
+- [Vision AI Services](docs/services/vision-ai.md)
+- [Image Generation Services](docs/services/image-generation.md)
+- [Video & Music Generation](docs/services/video-music.md)
+- [Audio & TTS Services](docs/services/audio-tts.md)
+- [Utility Services](docs/services/utilities.md)
 
 ## Architecture Patterns
 
-### Python Script Structure
-- Most scripts use Gradio for web interfaces
-- Scripts typically support multiple backends (Ollama, LM Studio)
-- Virtual environments stored alongside projects
-- Configuration via constants at top of files
-- Subprocess calls for external commands with timeout handling
-
-### Server Launching Pattern
-1. Start server with `subprocess.run()` or `shell.run`
-2. Capture URL via regex on stdout
-3. Set local variable for UI to display
-4. Use `daemon: true` to keep process alive
-
-### Video Processing Pattern
-For vision models that don't support video:
-1. Extract keyframes using OpenCV (`cv2.VideoCapture`)
-2. Process each frame individually
-3. Combine descriptions/results
-4. Clean up temporary frame files
-
-### CORS Proxy Pattern (for Local APIs)
-When frontend needs to call a local service that doesn't support CORS (e.g., Ollama):
-
-**Problem**: Browser blocks cross-port requests (8080 → 11434) due to CORS policy.
-
-**Solution**: Proxy through the frontend server to stay same-origin:
-```
-Frontend (8080) → Server (8080) → Local API (11434)
-```
-
-**Implementation** (see `scripts/dragonsight_server.py`):
-- Use `BaseHTTPRequestHandler` (not `SimpleHTTPRequestHandler` - breaks POST override)
-- Add `Access-Control-Allow-Origin: *` to all responses
-- Handle OPTIONS for CORS preflight
-- Use `SO_REUSEADDR` to avoid binding errors on restart
-- Set adequate timeout (300s for model inference)
-
-**Key rules**:
-- **ALWAYS** use `127.0.0.1` for local services, never external IPs
-- **DO NOT** use `window.location.hostname` (returns external IP from LAN)
-- Test with: `curl -X POST http://127.0.0.1:8080/api/proxy/endpoint`
-
-### Memory Optimization for Large Models (16GB VRAM)
-
-**Environment Variable (REQUIRED in all GPU launcher scripts):**
-```bash
-# Add before python command in start_*.sh scripts
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-```
-
-Note: `expandable_segments:True` is superior to the older `max_split_size_mb:512` setting.
-
-**CPU Offloading Strategy (for diffusers pipelines):**
-```python
-# Choose based on VRAM requirements:
-
-# Option 1: Model CPU offload (best speed/memory balance)
-# Moves entire models to GPU one at a time
-pipeline.enable_model_cpu_offload()
-
-# Option 2: Sequential CPU offload (maximum memory savings, slower)
-# Moves individual layers to GPU during forward pass
-pipeline.enable_sequential_cpu_offload()
-
-# CRITICAL: Never call .to("cuda") before offloading methods!
-```
-
-**VAE Optimizations (always enable for image generation):**
-```python
-if hasattr(pipeline, 'vae'):
-    pipeline.vae.enable_slicing()  # Batch memory reduction
-    pipeline.vae.enable_tiling()   # High-res support
-```
-
-**Memory Cleanup Pattern:**
-```python
-import gc
-import torch
-
-def clear_gpu_memory():
-    """Clear GPU memory between operations."""
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-
-# Call before inference if VRAM is tight
-clear_gpu_memory()
-```
-
-**Service VRAM Requirements:**
-| Service | VRAM | Offload Strategy |
-|---------|------|------------------|
-| Qwen-Image-Layered | 14-16GB | Sequential (required) |
-| Z-Image Base | 13-14GB | Sequential |
-| HeartMuLa | ~12GB | Model |
-| Fish Speech | ~12GB | Model |
-| Hunyuan3D (shape) | ~6GB | Model |
-| SAM 2.1 | ~6GB | Model |
-| Real-ESRGAN | ~4GB | None needed |
-| LivePortrait | ~6GB | Model |
-
-**General Guidelines:**
-- Only run ONE GPU-heavy service at a time
-- Use 640px resolution when possible (vs 1024px)
-- Limit video length for video generation
-- Add user-facing warnings about hardware limits in UI
-
-### React State Management Pattern (Dragonart Studio)
-
-**CRITICAL: useCallback Dependency Arrays**
-
-When creating callbacks that use state variables, **ALL** state variables must be in the dependency array:
-
-```typescript
-const handleGenerateClick = useCallback(async () => {
-  const prompt = getPromptForMode({
-    mode: editMode,
-    sport: sportType,
-    console: consoleType,
-    magazineGenre: magazineGenre,
-    nonSportsCardStyle: nonSportsCardStyle,  // ← Must be in deps!
-  });
-  // ...
-}, [editMode, sportType, consoleType, magazineGenre, nonSportsCardStyle]);
-//  ↑ ALL state variables used in callback MUST be here ↑
-```
-
-**Common Bug:** Missing state in dependency array causes stale closures:
-- Symptom: Dropdown selection takes 2-3 clicks to apply
-- Cause: Callback captures old state value, not current
-- Fix: Add missing state variable to dependency array
-
-**Debugging Pattern:**
-```typescript
-const handleGenerateClick = useCallback(async () => {
-  console.log('Current state:', { editMode, sportType, nonSportsCardStyle });
-  // ↑ Verify all values are current, not stale
-}, [editMode, sportType, nonSportsCardStyle]);
-```
-
-**State Flow for Dropdowns:**
-```
-User changes dropdown
-    ↓
-onChange={(e) => setState(e.target.value)}
-    ↓
-Parent state updates (App.tsx)
-    ↓
-Callback recreated with new state (due to dependency array)
-    ↓
-Next Generate click uses current state ✓
-```
-
-**Without dependency:** Callback keeps old state until something else causes re-render ✗
+For detailed technical patterns, see [Architecture Patterns Documentation](docs/architecture-patterns.md):
+- Python Script Structure
+- Server Launching Pattern
+- Video Processing Pattern
+- CORS Proxy Pattern (for Local APIs)
+- Memory Optimization for Large Models (16GB VRAM)
+- React State Management Pattern (Dragonart Studio)
 
 ## API Keys & Environment Variables
 
@@ -912,7 +177,6 @@ const googleKey = process.env.GOOGLE_API_KEY;
 - **Working Directory**: `/srv/containers/edq`
 - **Not a Git Repo**: This is a container/workspace, not version controlled
 - **User**: edq
-- **Date**: 2026-02-01
 
 ### Network Shares (SMB/Samba)
 
@@ -931,6 +195,8 @@ const googleKey = process.env.GOOGLE_API_KEY;
 - **ALWAYS** use relative paths in `shell.run` commands
 - **NEVER** make assumptions about API syntax - check `PINOKIO.md`
 - Check logs first when debugging (`logs/api/latest` or `pinokio/logs/api/latest`)
+
+See [Utilities Documentation](docs/services/utilities.md#pinokio-launcher-system) for details.
 
 ### Model Backend Selection
 - **Ollama**: Better for local deployment, easier setup
@@ -1047,13 +313,7 @@ See `media/dragonsight4.html` for reference implementation with:
 
 ### ✅ Completed Fixes (2026-01-20)
 1. **✅ Port standardization**: Moved all Dragonsuite tools to 8xxx ports
-   - DragonFlux Klein: 7863 → 8001
-   - Wan2GP: 7864 → 8002
-   - Dashboard remains at 8100, Dragonsight at 8080
-2. **✅ Removed legacy components**:
-   - Deleted Qwen Vision (legacy) and `venv_qwen`
-   - Deleted LTX-Video and LTX-2 projects
-   - Deleted orphaned `/Wan2GP/` directory (63GB)
+2. **✅ Removed legacy components**: Deleted Qwen Vision, LTX-Video, orphaned directories
 3. **✅ Created venv registry**: `docs/venvs.md` tracks all virtual environments
 4. **✅ Fixed DragonFlux Klein**: Corrected launch script path in config
 5. **✅ Updated dashboard config**: `config/dragonsuite.json` reflects current tools
@@ -1069,15 +329,65 @@ See `media/dragonsight4.html` for reference implementation with:
 
 ## Lessons Learned & Best Practices (2026-02-08)
 
-### MCP Image Generation
+### Meta-Lesson: Always Try Simple/Local Solutions First
 
-**Issue**: MCP Hugging Face GPU quota can be exceeded
-**Solution**: Use local Dragonsuite tools instead
-- MCP external services have limited GPU time quotas
-- When quota exceeded, fall back to local Z-Image Base (port 8011) or DragonFlux Klein (port 8001)
-- Local tools are always available when user has exited other GPU services
+Before suggesting paid APIs, cloud services, or complex architectures, ask: "Can this be done locally with basic file operations?"
 
-**Calling Local Gradio APIs Programmatically**:
+Example: Conversation analysis task
+- ❌ Initial approach: Use Claude API ($5-10) to analyze conversations
+- ✅ Better approach: Export to markdown (free), read locally (free), synthesize (free)
+- **Result**: Same quality, $0 cost
+
+### Key Anti-Patterns to Avoid
+
+1. **Overthinking solutions** - Reaching for external services when local tools work
+2. **Hardcoding IP addresses** - Use auto-detection or localhost/0.0.0.0
+3. **Ignoring venv documentation** - Always update `docs/venvs.md`
+4. **Using Gradio for everything** - Switch to HTML/JS when clipboard operations or custom interactions needed
+5. **Assuming model censorship is OK** - Always offer uncensored alternatives (LM Studio + Dolphin)
+6. **Adding unrequested features** - Do exactly what's requested, offer enhancements separately
+
+### Most Common Recurring Issues
+
+1. **CUDA OOM errors** - Add `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` to launcher
+2. **Dark mode requested** - User asks for this immediately on every new web UI
+3. **Clipboard operations broken** - Gradio limitations, need paste button + one-click copy
+4. **LM Studio connection fails** - CORS issues, use 127.0.0.1 proxy pattern
+5. **Multiple GPU services conflict** - Only run one GPU-heavy service at a time
+6. **Remotion caching issues** - Changes not reflected, need hard refresh + cache clear
+7. **Documentation drift** - Update CLAUDE.md and venvs.md IMMEDIATELY after changes
+
+**See also:**
+- Full analysis: `~/claude_conversations_review/LESSONS_LEARNED.md`
+- Critical lessons: `~/.claude/projects/-srv-containers-edq/memory/MEMORY.md`
+- [Architecture Patterns](docs/architecture-patterns.md) for technical details
+
+### Memory Organization Pattern (Best Practice)
+
+**Problem:** Claude Code's auto memory has a 200-line limit. How to preserve more context?
+
+**Solution:** Use MEMORY.md as an **index** that references detailed topic files.
+
+**Structure:**
+```
+~/.claude/projects/-srv-containers-edq/memory/
+├── MEMORY.md                  # <200 lines, auto-loaded, quick reference
+├── gpu_optimization.md        # Detailed GPU/CUDA lessons
+├── web_ui_patterns.md         # Comprehensive web UI standards
+├── common_issues.md           # Troubleshooting guide
+└── [additional topics...]     # As needed
+```
+
+**When to use:** When you find yourself hitting the 200-line limit or when topics are complex enough to deserve their own files.
+
+### Image Generation Best Practices
+
+**Social Media Assets:**
+- og-preview.png standard: 1200×630px
+- Closest diffusion-compatible: 1200×640px (divisible by 16)
+- Use Z-Image Base for text rendering (better than FLUX for readable text)
+
+**Calling Local Gradio APIs Programmatically:**
 ```python
 from gradio_client import Client
 
@@ -1098,194 +408,13 @@ result = client.predict(
 image_path = result[0]
 ```
 
-**Key Requirements**:
+**Key Requirements:**
 - Dimensions must be divisible by 16 for diffusion models (e.g., 640 not 630)
 - Use `127.0.0.1` not external IP for local services
 - Check service is running first (see port list)
 
-### API Key Management
-
-**Central Location**: `/srv/containers/edq/.env`
-
-**Key Format Patterns**:
-- OpenAI: `sk-proj-...` (project keys)
-- Anthropic: `sk-ant-api03-...` (API keys)
-- Hugging Face: `hf_...` (user tokens)
-- Groq: `gsk_...` (API keys)
-- GitHub: `github_pat_...` (personal access tokens)
-- Supabase: `sb_publishable_` / `sb_secret_` (dual keys)
-- FAL: `UUID:hash` format
-- KLING: Uses Access Key + Secret Key (two separate values)
-
-**Free Tier Gotchas**:
-- **Replicate**: Requires credit card even for free tier
-- **Together AI**: Requires credit card even for free tier
-- **Note**: Add "Requires CC" to comments when applicable
-
-**URL Corrections**:
-- KLING API: `https://app.klingai.com/global/dev/api-key` (not `klingai.com/api`)
-- Always verify API documentation URLs when adding new services
-
-### Image Generation Best Practices
-
-**Social Media Assets**:
-- og-preview.png standard: 1200×630px
-- Closest diffusion-compatible: 1200×640px (divisible by 16)
-- Use Z-Image Base for text rendering (better than FLUX for readable text)
-
-**Prompt Structure for Social Cards**:
-```
-Professional social media preview card design.
-[Background description with hex colors].
-Center: [main visual element with specific colors].
-[Icon/symbol positions and descriptions].
-Top: [text in quotes] "MAIN TITLE" in [style].
-Bottom: [text in quotes] "Subtitle text" in [style].
-Clean modern [aesthetic], high contrast, [effects].
-```
-
-**Negative Prompts for Text Quality**:
-```
-blurry text, unreadable text, low contrast, cluttered,
-messy, amateur, pixelated, distorted text, watermark
-```
-
-### Git Workflow Enhancements
-
-**Commit Message Structure** (from interactive-games project):
-- Short title in imperative mood
-- Detailed explanation with bullet points
-- Features list
-- Technical details
-- Co-Authored-By tag for AI assistance
-
-**Launch Checklist Pattern**:
-- Create comprehensive `LAUNCH_CHECKLIST.md` with automated test results
-- Document what was tested and what's production-ready
-- Include manual testing recommendations (non-blocking)
-- Provide risk assessment matrix
-- Clear sign-off and approval status
-
-### Web Development Standards Update
-
-**Performance Targets**:
-- Excellent: <200 KB total application size
-- Good: <500 KB
-- Acceptable: <1 MB
-
-**Testing Automation**:
-- HTML validation, JS analysis, accessibility audit
-- Data validation, feature verification
-- All automated before manual testing
-
-**Accessibility Scoring**:
-- 140% coverage = WCAG AA compliant with extra features
-- Target: 95+ on Lighthouse accessibility score
-- Check: ARIA labels, keyboard nav, screen readers, reduced motion
-
-### Production Deployment Best Practices
-
-**Asset Generation Workflow**:
-1. Create script (e.g., `generate_og_preview.py`) for reproducibility
-2. Use local AI tools when MCP quota exceeded
-3. Test dimensions (divisible by 16 for diffusion)
-4. Commit both script and generated asset
-5. Document generation parameters in commit
-
-**Documentation Structure** (interactive-games pattern):
-- `CONTRIBUTING.md` - Contributor guide with examples
-- `API.md` - Technical reference with function signatures
-- `SCENARIOS.md` - Domain-specific guide (educational)
-- `VISUAL_ASSETS.md` - Asset creation guide with AI prompts
-- `CHANGELOG.md` - Version history with detailed changes
-- `LAUNCH_CHECKLIST.md` - Testing results and sign-off
-- `LICENSE` - Open source license (MIT/Apache)
-
-**Pre-Launch Requirements**:
-- All automated tests pass
-- LICENSE file present
-- CHANGELOG.md updated
-- Comprehensive testing documentation
-- Performance metrics documented
-- Accessibility compliance verified
-
-### Recurring Issues from 50+ Conversations (Analysis 2026-02-08)
-
-**Meta-Lesson: Always Try Simple/Local Solutions First**
-
-Before suggesting paid APIs, cloud services, or complex architectures, ask: "Can this be done locally with basic file operations?"
-
-Example: Conversation analysis task
-- ❌ Initial approach: Use Claude API ($5-10) to analyze conversations
-- ✅ Better approach: Export to markdown (free), read locally (free), synthesize (free)
-- **Result**: Same quality, $0 cost
-
-**Key Anti-Patterns to Avoid:**
-
-1. **Overthinking solutions** - Reaching for external services when local tools work
-2. **Hardcoding IP addresses** - Use auto-detection or localhost/0.0.0.0
-3. **Ignoring venv documentation** - Always update `docs/venvs.md`
-4. **Using Gradio for everything** - Switch to HTML/JS when clipboard operations or custom interactions needed
-5. **Assuming model censorship is OK** - Always offer uncensored alternatives (LM Studio + Dolphin)
-6. **Adding unrequested features** - Do exactly what's requested, offer enhancements separately
-
-**Most Common Recurring Issues:**
-
-1. **CUDA OOM errors** - Add `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` to launcher
-2. **Dark mode requested** - User asks for this immediately on every new web UI
-3. **Clipboard operations broken** - Gradio limitations, need paste button + one-click copy
-4. **LM Studio connection fails** - CORS issues, use 127.0.0.1 proxy pattern
-5. **Multiple GPU services conflict** - Only run one GPU-heavy service at a time
-6. **Remotion caching issues** - Changes not reflected, need hard refresh + cache clear
-7. **Documentation drift** - Update CLAUDE.md and venvs.md IMMEDIATELY after changes
-
-**See also:**
-- Full analysis: `~/claude_conversations_review/LESSONS_LEARNED.md`
-- Critical lessons: `~/.claude/projects/-srv-containers-edq/memory/MEMORY.md`
-
-### Memory Organization Pattern (Best Practice)
-
-**Problem:** Claude Code's auto memory has a 200-line limit. How to preserve more context?
-
-**Solution:** Use MEMORY.md as an **index** that references detailed topic files.
-
-**Structure:**
-```
-~/.claude/projects/-srv-containers-edq/memory/
-├── MEMORY.md                  # <200 lines, auto-loaded, quick reference
-├── gpu_optimization.md        # Detailed GPU/CUDA lessons
-├── web_ui_patterns.md         # Comprehensive web UI standards
-├── common_issues.md           # Troubleshooting guide
-└── [additional topics...]     # As needed
-```
-
-**Benefits:**
-1. **MEMORY.md stays fast** - Only critical info in auto-loaded prompt
-2. **Detailed info preserved** - Full context available when needed (read topic files)
-3. **Better organization** - Topics separated by concern
-4. **Easier updates** - Modify specific topic files without touching main index
-
-**Pattern in MEMORY.md:**
-```markdown
-## Detailed Topic Files
-
-### GPU & Hardware
-📄 **memory/gpu_optimization.md**
-- CUDA memory configuration
-- CPU offloading strategies
-- [bullet points of what's covered]
-
-### Web Development
-📄 **memory/web_ui_patterns.md**
-- Dark mode by default
-- Clipboard operations
-- [bullet points of what's covered]
-```
-
-**When to use:** When you find yourself hitting the 200-line limit or when topics are complex enough to deserve their own files.
-
 ---
 
-**Last Updated**: 2026-02-08
-**Projects Applied**: interactive-games (v2.0.0 launch)
-**Conversation Analysis**: 50+ sessions (2025-12-29 to 2026-02-07)
+**Last Updated**: 2026-02-11
+**Services**: 20+ AI tools across vision, image, video, audio, and utilities
+**Documentation**: Reorganized into topic-specific guides (2026-02-11)
