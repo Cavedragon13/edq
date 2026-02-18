@@ -25,6 +25,11 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # Memory optimization for 16GB VRAM
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
+# Local model paths (download first: bash scripts/download_creative_upscale_models.sh)
+MODELS_BASE = Path("/srv/containers/edq/models/creative_upscale")
+CONTROLNET_PATH = MODELS_BASE / "controlnet"
+FLUX_DEV_PATH = MODELS_BASE / "flux_dev"
+
 
 def clear_gpu_memory():
     """Clear GPU memory"""
@@ -34,30 +39,41 @@ def clear_gpu_memory():
 
 
 def load_pipeline():
-    """Load FLUX + ControlNet pipeline (lazy loading)"""
+    """Load FLUX + ControlNet pipeline from local models"""
     global pipeline
 
     if pipeline is not None:
         return
 
     from diffusers import FluxControlNetPipeline, FluxControlNetModel
-    from diffusers.utils import load_image
 
-    print("🔄 Loading FLUX + ControlNet Tile...")
+    # Check if models exist locally
+    if not CONTROLNET_PATH.exists() or not FLUX_DEV_PATH.exists():
+        raise FileNotFoundError(
+            "Models not found! Download first (~28GB, resumable):\n"
+            "  bash scripts/download_creative_upscale_models.sh\n\n"
+            f"Expected locations:\n"
+            f"  {CONTROLNET_PATH}\n"
+            f"  {FLUX_DEV_PATH}"
+        )
 
-    # Load ControlNet
+    print("🔄 Loading FLUX + ControlNet Tile from local models...")
+
+    # Load ControlNet from local path
     controlnet = FluxControlNetModel.from_pretrained(
-        "alimama-creative/FLUX.1-dev-Controlnet-Upscaler",
+        str(CONTROLNET_PATH),
         torch_dtype=torch.bfloat16,
-        device_map="balanced"
+        device_map="balanced",
+        local_files_only=True
     )
 
-    # Load pipeline
+    # Load pipeline from local path
     pipeline = FluxControlNetPipeline.from_pretrained(
-        "black-forest-labs/FLUX.1-dev",
+        str(FLUX_DEV_PATH),
         controlnet=controlnet,
         torch_dtype=torch.bfloat16,
-        device_map="balanced"
+        device_map="balanced",
+        local_files_only=True
     )
 
     # Memory optimizations

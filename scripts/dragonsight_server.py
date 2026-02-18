@@ -17,6 +17,8 @@ from datetime import datetime
 
 PORT = 8080
 OLLAMA_PORT = 11434
+LMSTUDIO_PORT = 1234
+DOLPHIN_PORT = 8025
 MEDIA_DIR = Path("/srv/containers/edq/media")
 HTML_FILE = MEDIA_DIR / "dragonsight4.html"
 OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/dragonsight"))
@@ -80,9 +82,13 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
         self.send_error(404, f"Path {self.path} not found")
     
     def do_POST(self):
-        """Handle POST requests - proxy to Ollama or save metadata."""
+        """Handle POST requests - proxy to Ollama/LM Studio or save metadata."""
         if self.path == '/api/ollama/generate':
             self._proxy_ollama()
+        elif self.path == '/api/lmstudio/completions':
+            self._proxy_lmstudio()
+        elif self.path == '/api/dolphin/analyze':
+            self._proxy_dolphin()
         elif self.path == '/api/save':
             self._save_metadata()
         else:
@@ -162,17 +168,17 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             if content_length == 0:
                 self.send_error(400, "No request body")
                 return
-            
+
             body = self.rfile.read(content_length)
-            
+
             # Forward to Ollama
             ollama_url = f'http://127.0.0.1:{OLLAMA_PORT}/api/generate'
             req = urllib.request.Request(ollama_url, data=body, method='POST')
             req.add_header('Content-Type', 'application/json')
-            
+
             with urllib.request.urlopen(req, timeout=300) as response:
                 ollama_response = response.read()
-            
+
             # Return Ollama response with CORS headers
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -180,7 +186,7 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(ollama_response)
-        
+
         except urllib.error.URLError as e:
             error_msg = f"Ollama unavailable: {str(e)}"
             response = json.dumps({'error': error_msg}).encode()
@@ -190,7 +196,101 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(response)
-        
+
+        except Exception as e:
+            error_msg = f"Server error: {str(e)}"
+            response = json.dumps({'error': error_msg}).encode()
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(response)
+
+    def _proxy_lmstudio(self):
+        """Proxy POST requests to LM Studio /v1/chat/completions."""
+        try:
+            # Read request body
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length == 0:
+                self.send_error(400, "No request body")
+                return
+
+            body = self.rfile.read(content_length)
+
+            # Forward to LM Studio
+            lmstudio_url = f'http://127.0.0.1:{LMSTUDIO_PORT}/v1/chat/completions'
+            req = urllib.request.Request(lmstudio_url, data=body, method='POST')
+            req.add_header('Content-Type', 'application/json')
+            req.add_header('Accept', 'application/json')
+
+            with urllib.request.urlopen(req, timeout=300) as response:
+                lmstudio_response = response.read()
+
+            # Return LM Studio response with CORS headers
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(lmstudio_response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(lmstudio_response)
+
+        except urllib.error.URLError as e:
+            error_msg = f"LM Studio unavailable: {str(e)}"
+            response = json.dumps({'error': error_msg}).encode()
+            self.send_response(503)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(response)
+
+        except Exception as e:
+            error_msg = f"Server error: {str(e)}"
+            response = json.dumps({'error': error_msg}).encode()
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(response)
+
+
+    def _proxy_dolphin(self):
+        """Proxy POST requests to Dolphin Vision /analyze endpoint."""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length == 0:
+                self.send_error(400, "No request body")
+                return
+
+            body = self.rfile.read(content_length)
+
+            dolphin_url = f'http://127.0.0.1:{DOLPHIN_PORT}/analyze'
+            req = urllib.request.Request(dolphin_url, data=body, method='POST')
+            req.add_header('Content-Type', 'application/json')
+            req.add_header('Accept', 'application/json')
+
+            with urllib.request.urlopen(req, timeout=300) as response:
+                dolphin_response = response.read()
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(dolphin_response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(dolphin_response)
+
+        except urllib.error.URLError as e:
+            error_msg = f"Dolphin Vision unavailable (is port {DOLPHIN_PORT} running?): {str(e)}"
+            response = json.dumps({'error': error_msg}).encode()
+            self.send_response(503)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(response)
+
         except Exception as e:
             error_msg = f"Server error: {str(e)}"
             response = json.dumps({'error': error_msg}).encode()
@@ -220,7 +320,9 @@ if __name__ == "__main__":
     
     print(f"🐉 Dragonsight 4 HTTP Server")
     print(f"   Serving: {HTML_FILE}")
-    print(f"   Ollama Proxy: http://127.0.0.1:{PORT}/api/ollama/generate")
+    print(f"   Ollama Proxy: /api/ollama/generate → localhost:{OLLAMA_PORT}")
+    print(f"   LM Studio Proxy: /api/lmstudio/completions → localhost:{LMSTUDIO_PORT}")
+    print(f"   Dolphin Proxy: /api/dolphin/analyze → localhost:{DOLPHIN_PORT}")
     print(f"   Port: {PORT}")
     print(f"   Access: http://127.0.0.1:{PORT}")
     print(f"   LAN: http://192.168.7.226:{PORT}")

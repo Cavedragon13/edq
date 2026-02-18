@@ -19,8 +19,10 @@ echo "✓ Launching FaceFusion web interface..."
 echo "📍 Access at: http://192.168.7.226:8017"
 echo ""
 
+# Set Gradio server config via environment variables
+export GRADIO_SERVER_NAME=0.0.0.0
+export GRADIO_SERVER_PORT=8017
+
 python facefusion.py run \
     --execution-providers cuda \
-    --ui-layouts webcam benchmark \
-    --server-host 0.0.0.0 \
-    --server-port 8017
+    --ui-layouts webcam benchmark

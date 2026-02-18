@@ -18,13 +18,26 @@ MODELS = {
         "id": "black-forest-labs/FLUX.2-klein-4B",
         "name": "FLUX.2-klein-4B (Recommended)",
         "vram": "~12GB",
+        "recommended_steps": 4,
+        "recommended_guidance": 1.0,
     },
     "9b": {
         "id": "black-forest-labs/FLUX.2-klein-9B",
         "name": "FLUX.2-klein-9B",
         "vram": "~29GB (needs CPU offload)",
+        "recommended_steps": 4,
+        "recommended_guidance": 1.0,
+    },
+    "flux1-dev": {
+        "id": "/srv/containers/edq/models/creative_upscale/flux_dev",
+        "name": "FLUX.1-dev (HD Quality)",
+        "vram": "~24GB (heavy CPU offload)",
+        "recommended_steps": 28,
+        "recommended_guidance": 3.5,
     },
 }
+
+FLUX1_DEV_PATH = "/srv/containers/edq/models/creative_upscale/flux_dev"
 
 # Aspect ratio presets (width x height, multiples of 64)
 ASPECT_RATIOS = {
@@ -115,12 +128,20 @@ def load_pipeline(model_variant="4b"):
 
     print(f"Loading {model_info['name']}...")
     try:
-        from diffusers import Flux2KleinPipeline
-
         # Set memory optimization environment (expandable_segments is superior to max_split_size_mb)
         os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
-        pipe = Flux2KleinPipeline.from_pretrained(model_id, torch_dtype=dtype)
+        if model_variant == "flux1-dev":
+            from diffusers import FluxPipeline
+            if not os.path.isdir(model_id):
+                raise FileNotFoundError(
+                    f"FLUX.1-dev not found at {model_id}\n"
+                    "Run: bash scripts/download_creative_upscale_models.sh"
+                )
+            pipe = FluxPipeline.from_pretrained(model_id, torch_dtype=dtype, local_files_only=True)
+        else:
+            from diffusers import Flux2KleinPipeline
+            pipe = Flux2KleinPipeline.from_pretrained(model_id, torch_dtype=dtype)
 
         # Use sequential CPU offload for maximum memory savings
         pipe.enable_sequential_cpu_offload()
@@ -193,7 +214,12 @@ def generate_image(
         return None, "Please enter a prompt"
 
     # Map display name back to key
-    variant_key = "4b" if "4B" in model_variant else "9b"
+    if "FLUX.1-dev" in model_variant or "HD Quality" in model_variant:
+        variant_key = "flux1-dev"
+    elif "4B" in model_variant:
+        variant_key = "4b"
+    else:
+        variant_key = "9b"
 
     progress(0, desc="Loading model...")
     try:
@@ -274,6 +300,22 @@ def refresh_loras():
     return gr.update(choices=get_available_loras())
 
 
+def on_model_change(model_variant):
+    """Auto-adjust recommended settings when model changes."""
+    if "FLUX.1-dev" in model_variant or "HD Quality" in model_variant:
+        steps = MODELS["flux1-dev"]["recommended_steps"]
+        guidance = MODELS["flux1-dev"]["recommended_guidance"]
+        warning = "> ⚠️ **HD Mode**: Slower generation (~60s/image). Requires FLUX.1-dev downloaded."
+        return steps, guidance, gr.update(value=warning, visible=True)
+    elif "4B" in model_variant:
+        steps = MODELS["4b"]["recommended_steps"]
+        guidance = MODELS["4b"]["recommended_guidance"]
+    else:
+        steps = MODELS["9b"]["recommended_steps"]
+        guidance = MODELS["9b"]["recommended_guidance"]
+    return steps, guidance, gr.update(value="", visible=False)
+
+
 def update_dimensions(aspect_ratio):
     """Update width/height sliders based on aspect ratio selection"""
     if aspect_ratio == "Custom":
@@ -324,11 +366,13 @@ with gr.Blocks(
                 choices=[
                     f"{MODELS['4b']['name']} - {MODELS['4b']['vram']}",
                     f"{MODELS['9b']['name']} - {MODELS['9b']['vram']}",
+                    f"{MODELS['flux1-dev']['name']} - {MODELS['flux1-dev']['vram']}",
                 ],
                 value=f"{MODELS['4b']['name']} - {MODELS['4b']['vram']}",
                 label="Model",
-                info="4B recommended for 16GB VRAM"
+                info="4B recommended for 16GB VRAM. FLUX.1-dev = HD quality but slower (~60s/image)"
             )
+            model_warning = gr.Markdown(visible=False, value="")
 
             # Prompt
             prompt_input = gr.Textbox(
@@ -433,6 +477,12 @@ with gr.Blocks(
     """)
 
     # Event handlers
+    model_selector.change(
+        fn=on_model_change,
+        inputs=[model_selector],
+        outputs=[num_steps, guidance_scale, model_warning]
+    )
+
     aspect_ratio.change(
         fn=update_dimensions,
         inputs=[aspect_ratio],

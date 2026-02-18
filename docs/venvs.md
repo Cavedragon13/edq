@@ -22,6 +22,12 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_qwen_image_layered | `/srv/containers/edq/venv_qwen_image_layered` | ~10GB | `start_qwen_image_layered.sh` | Qwen-Image-Layered decomposition |
 | venv_mule_game | `/srv/containers/edq/venv_mule_game` | ~50MB | `start_mule_game.sh` | M.U.L.E. web game (Gradio) |
 | venv_facefusion | `/srv/containers/edq/venv_facefusion` | ~2GB | `start_facefusion.sh` | FaceFusion face swap & manipulation |
+| ACE-Step .venv | `/srv/containers/edq/projects/ACE-Step-1.5/.venv` | ~5GB | `start_ace_step.sh` | ACE-Step 1.5 music generation (managed by uv) |
+| venv_soulxsinger | `/srv/containers/edq/venv_soulxsinger` | ~8GB | `start_soulxsinger.sh` | SoulX-Singer zero-shot singing voice synthesis |
+| venv_deepgen | `/srv/containers/edq/venv_deepgen` | ~6GB | `start_deepgen.sh` | DeepGen 1.0 multimodal image gen/edit (5B) |
+| JustDubit .venv | `/srv/containers/edq/projects/just-dub-it/.venv` | ~8GB | `start_justdubit.sh` | JustDubit video dubbing (managed by uv) |
+| venv_topaz_gradio | `/srv/containers/edq/venv_topaz_gradio` | ~300MB | `start_topaz_labs.sh` | Topaz Labs Gradio web UI (cloud API client) |
+| venv_dolphin_vision | `/srv/containers/edq/venv_dolphin_vision` | ~8GB | `start_dolphin_vision.sh` | Dolphin Vision 7B uncensored VLM (BunnyQwen2 architecture) |
 
 ## MCP Server Venvs
 
@@ -29,11 +35,16 @@ Centralized tracking of Python virtual environments in this workspace.
 |------|------|------|---------|
 | dragonsuite-mcp | `/srv/containers/edq/mcp-servers/dragonsuite/venv` | ~20MB | Dragonsuite MCP server for Claude Code |
 | topaz-labs-mcp | `/srv/containers/edq/mcp-servers/topaz-labs/venv` | ~20MB | Topaz Labs API MCP server for image/video enhancement |
+| vocab-translator-mcp | `/srv/containers/edq/mcp-servers/vocab-translator/venv` | ~20MB | Vocab translator MCP server with Ollama backend |
+| mcp-inspector | `/srv/containers/edq/venv_mcp_inspector` | ~30MB | MCP Inspector web app with Supabase integration |
 
 ## Naming Convention
 
 - Centralized venvs: `/srv/containers/edq/venv_<project>`
-- Exception: ComfyUI keeps its venv inside project dir (standard for ComfyUI)
+- Exceptions:
+  - ComfyUI keeps its venv inside project dir (standard for ComfyUI)
+  - ACE-Step uses `uv` package manager with `.venv` in project dir
+  - JustDubit uses `uv` package manager with `.venv` in project dir
 
 ## Cleanup Checklist
 
@@ -66,3 +77,13 @@ When removing a project:
 | 2026-02-06 | Added `venv_mule_game` for M.U.L.E. web game (tribute to Dani Bunten Berry) |
 | 2026-02-08 | Added `venv_facefusion` for FaceFusion face swap & manipulation |
 | 2026-02-08 | Added `topaz-labs-mcp` MCP server for Topaz Labs API integration |
+| 2026-02-11 | Added ACE-Step 1.5 (uv-managed .venv) for ultra-fast music generation |
+| 2026-02-11 | Added Z-Image-Fun-Lora-Distill fast mode (4-step/8-step LoRAs) |
+| 2026-02-15 | Added `venv_soulxsinger` for SoulX-Singer zero-shot singing synthesis |
+| 2026-02-15 | Added `venv_deepgen` for DeepGen 1.0 multimodal image gen/edit |
+| 2026-02-15 | Added JustDubit .venv (uv-managed) for video dubbing with lip-sync |
+| 2026-02-15 | Added `venv_topaz_gradio` for Topaz Labs Gradio web UI (separate from MCP venv) |
+| 2026-02-15 | Added `venv_dolphin_vision` for Dolphin Vision 7B uncensored VLM (port 8025) |
+| 2026-02-15 | Added AudioMass web audio editor - Audacity-like client-side editor (port 8027) |
+| 2026-02-15 | Added Audio Processing Suite - exposes SoulX-Singer preprocess models standalone (port 8026) |
+| 2026-02-15 | Enhanced DragonFlux Klein - added FLUX.1-dev HD Mode as third model option |

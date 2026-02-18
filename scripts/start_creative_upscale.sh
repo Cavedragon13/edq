@@ -22,5 +22,21 @@ echo "✓ GPU detected"
 echo "⚠️  Close other GPU services if VRAM is low (<4GB free)"
 echo ""
 
+# Check if models exist
+MODELS_DIR="/srv/containers/edq/models/creative_upscale"
+if [ ! -d "$MODELS_DIR/controlnet" ] || [ ! -d "$MODELS_DIR/flux_dev" ]; then
+    echo "❌ Models not found at $MODELS_DIR"
+    echo ""
+    echo "Download models first (~28GB, resumable):"
+    echo "  bash scripts/download_creative_upscale_models.sh"
+    echo ""
+    echo "This takes 20-60 minutes depending on connection speed."
+    echo "Safe to interrupt (Ctrl+C) and resume later."
+    exit 1
+fi
+
+echo "✓ Models found"
+echo ""
+
 # Launch
 python /srv/containers/edq/scripts/creative_upscale_gradio.py

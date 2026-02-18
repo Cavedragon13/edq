@@ -3,6 +3,7 @@
 MCP Inspector - Security Browser for MCP Servers
 Serves mcp_inspector.html on port 8020
 Analyzes configured MCP servers for trust and security
+Stores audit results in Supabase for historical tracking
 """
 
 import http.server
@@ -13,8 +14,33 @@ import urllib.error
 import urllib.parse
 import os
 import re
+import hashlib
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv('/srv/containers/edq/.env')
+
+# Supabase integration
+try:
+    from supabase import create_client, Client
+    SUPABASE_URL = os.getenv('SUPABASE_URL')
+    SUPABASE_SECRET_KEY = os.getenv('SUPABASE_SECRET_KEY')
+
+    if SUPABASE_URL and SUPABASE_SECRET_KEY:
+        supabase: Optional[Client] = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
+        SUPABASE_ENABLED = True
+        print("✓ Supabase integration enabled")
+    else:
+        supabase = None
+        SUPABASE_ENABLED = False
+        print("⚠️  Supabase credentials not found - running without database")
+except ImportError:
+    supabase = None
+    SUPABASE_ENABLED = False
+    print("⚠️  supabase-py not installed - running without database")
 
 PORT = 8020
 MEDIA_DIR = Path("/srv/containers/edq/media")
@@ -343,6 +369,15 @@ def analyze_server(name: str, config: Dict) -> Dict[str, Any]:
     )
     result['trust_score'] = trust_score
 
+    # Save audit scan to database
+    if SUPABASE_ENABLED:
+        try:
+            audit_id = save_audit_scan(name, result)
+            if audit_id:
+                result['audit_id'] = audit_id
+        except Exception as e:
+            print(f"⚠️  Failed to save audit for {name}: {e}")
+
     return result
 
 
@@ -405,7 +440,7 @@ def analyze_external_server(server_data: Dict) -> Dict[str, Any]:
     verified = is_official
     trust_score = 3 if verified else 1
 
-    return {
+    result = {
         'name': name,
         'package': package,
         'description': description,
@@ -418,6 +453,15 @@ def analyze_external_server(server_data: Dict) -> Dict[str, Any]:
         'trust_score': trust_score,
         'installed': False,  # Will be checked against local config
     }
+
+    # Save to catalog database
+    if SUPABASE_ENABLED:
+        try:
+            save_catalog_server(result)
+        except Exception as e:
+            print(f"⚠️  Failed to save catalog server {name}: {e}")
+
+    return result
 
 
 def install_server(name: str, config: Dict) -> Dict[str, Any]:
@@ -447,10 +491,181 @@ def install_server(name: str, config: Dict) -> Dict[str, Any]:
 
         temp_file.replace(target_config)
 
+        # Record installation in Supabase
+        if SUPABASE_ENABLED:
+            try:
+                save_installation_history(name, config, 'ui-install')
+            except Exception as e:
+                print(f"⚠️  Failed to record installation in database: {e}")
+
         return {'success': True, 'message': f'Server "{name}" installed successfully'}
 
     except Exception as e:
         return {'success': False, 'error': str(e)}
+
+
+# =============================================================================
+# Supabase Database Functions
+# =============================================================================
+
+def compute_source_hash(source_code: str) -> str:
+    """Compute SHA256 hash of source code."""
+    return hashlib.sha256(source_code.encode('utf-8')).hexdigest()
+
+
+def save_audit_scan(server_name: str, analysis: Dict[str, Any]) -> Optional[str]:
+    """Save audit scan results to Supabase."""
+    if not SUPABASE_ENABLED or not supabase:
+        return None
+
+    try:
+        # Compute source hash if available
+        source_hash = None
+        if analysis.get('source'):
+            source_hash = compute_source_hash(analysis['source'])
+
+        # Prepare audit data
+        audit_data = {
+            'server_name': server_name,
+            'scan_timestamp': datetime.utcnow().isoformat(),
+            'server_type': analysis.get('type', 'unknown'),
+            'trust_score': analysis.get('trust_score', 1),
+            'dangers': json.dumps(analysis.get('security', {}).get('dangers', [])),
+            'warnings': json.dumps(analysis.get('security', {}).get('warnings', [])),
+            'suspicious_imports': json.dumps(analysis.get('security', {}).get('suspicious_imports', [])),
+            'line_count': analysis.get('security', {}).get('line_count', 0),
+            'source_hash': source_hash,
+            'package_name': analysis.get('package', ''),
+            'package_version': analysis.get('npm_stats', {}).get('version', ''),
+            'config': json.dumps({
+                'command': analysis.get('command', ''),
+                'args': analysis.get('args', []),
+                'env_vars': analysis.get('env_vars', []),
+                'description': analysis.get('description', '')
+            }),
+            'npm_stats': json.dumps(analysis.get('npm_stats', {}))
+        }
+
+        # Insert into database
+        result = supabase.table('audit_scans').insert(audit_data).execute()
+
+        if result.data and len(result.data) > 0:
+            return result.data[0].get('id')
+        return None
+
+    except Exception as e:
+        print(f"⚠️  Failed to save audit scan: {e}")
+        return None
+
+
+def save_catalog_server(server_data: Dict[str, Any]) -> Optional[str]:
+    """Save catalog server to Supabase (upserts based on name+package)."""
+    if not SUPABASE_ENABLED or not supabase:
+        return None
+
+    try:
+        catalog_data = {
+            'server_name': server_data.get('name', ''),
+            'package_name': server_data.get('package', ''),
+            'description': server_data.get('description', ''),
+            'repository': server_data.get('repository', ''),
+            'homepage': server_data.get('homepage', ''),
+            'verified': server_data.get('verified', False),
+            'stars': server_data.get('stars', 0),
+            'category': server_data.get('category', ''),
+            'metadata': json.dumps(server_data),
+            'last_seen': datetime.utcnow().isoformat()
+        }
+
+        # Upsert (insert or update)
+        result = supabase.table('catalog_servers').upsert(
+            catalog_data,
+            on_conflict='server_name,package_name'
+        ).execute()
+
+        if result.data and len(result.data) > 0:
+            return result.data[0].get('id')
+        return None
+
+    except Exception as e:
+        print(f"⚠️  Failed to save catalog server: {e}")
+        return None
+
+
+def save_installation_history(server_name: str, config: Dict, method: str = 'manual') -> Optional[str]:
+    """Record server installation in history."""
+    if not SUPABASE_ENABLED or not supabase:
+        return None
+
+    try:
+        install_data = {
+            'server_name': server_name,
+            'installed_at': datetime.utcnow().isoformat(),
+            'config': json.dumps(config),
+            'installation_method': method
+        }
+
+        result = supabase.table('installation_history').insert(install_data).execute()
+
+        if result.data and len(result.data) > 0:
+            return result.data[0].get('id')
+        return None
+
+    except Exception as e:
+        print(f"⚠️  Failed to save installation history: {e}")
+        return None
+
+
+def get_audit_history(server_name: Optional[str] = None, limit: int = 100) -> List[Dict]:
+    """Get audit history from database."""
+    if not SUPABASE_ENABLED or not supabase:
+        return []
+
+    try:
+        query = supabase.table('audit_scans').select('*').order('scan_timestamp', desc=True).limit(limit)
+
+        if server_name:
+            query = query.eq('server_name', server_name)
+
+        result = query.execute()
+        return result.data if result.data else []
+
+    except Exception as e:
+        print(f"⚠️  Failed to get audit history: {e}")
+        return []
+
+
+def get_security_trends(days: int = 30) -> List[Dict]:
+    """Get security trends from database."""
+    if not SUPABASE_ENABLED or not supabase:
+        return []
+
+    try:
+        result = supabase.table('security_trends').select('*').limit(1000).execute()
+        return result.data if result.data else []
+
+    except Exception as e:
+        print(f"⚠️  Failed to get security trends: {e}")
+        return []
+
+
+def search_catalog_history(search: str = '', limit: int = 100) -> List[Dict]:
+    """Search catalog server history."""
+    if not SUPABASE_ENABLED or not supabase:
+        return []
+
+    try:
+        query = supabase.table('catalog_servers').select('*').order('last_seen', desc=True).limit(limit)
+
+        if search:
+            query = query.ilike('server_name', f'%{search}%')
+
+        result = query.execute()
+        return result.data if result.data else []
+
+    except Exception as e:
+        print(f"⚠️  Failed to search catalog: {e}")
+        return []
 
 
 class MCPInspectorHandler(http.server.BaseHTTPRequestHandler):
@@ -474,6 +689,14 @@ class MCPInspectorHandler(http.server.BaseHTTPRequestHandler):
             self._serve_source_code(server_name)
         elif self.path.startswith('/api/browse/official'):
             self._serve_browse_official()
+        elif self.path.startswith('/api/history/audits'):
+            self._serve_audit_history()
+        elif self.path.startswith('/api/history/trends'):
+            self._serve_security_trends()
+        elif self.path.startswith('/api/history/installations'):
+            self._serve_installation_history()
+        elif self.path == '/api/database/status':
+            self._serve_database_status()
         elif self.path.startswith('/media/'):
             self._serve_static()
         else:
@@ -740,6 +963,115 @@ class MCPInspectorHandler(http.server.BaseHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(error)
+
+    def _serve_audit_history(self):
+        """Serve audit history from database."""
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+
+        server_name = params.get('server', [None])[0]
+        limit = int(params.get('limit', ['100'])[0])
+
+        audits = get_audit_history(server_name, limit)
+
+        response_data = {
+            'audits': audits,
+            'count': len(audits),
+            'database_enabled': SUPABASE_ENABLED
+        }
+
+        response = json.dumps(response_data, indent=2, default=str).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', len(response))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(response)
+
+    def _serve_security_trends(self):
+        """Serve security trends from database."""
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+
+        days = int(params.get('days', ['30'])[0])
+
+        trends = get_security_trends(days)
+
+        response_data = {
+            'trends': trends,
+            'count': len(trends),
+            'database_enabled': SUPABASE_ENABLED
+        }
+
+        response = json.dumps(response_data, indent=2, default=str).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', len(response))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(response)
+
+    def _serve_installation_history(self):
+        """Serve installation history from database."""
+        if not SUPABASE_ENABLED or not supabase:
+            response_data = {
+                'installations': [],
+                'count': 0,
+                'database_enabled': False
+            }
+        else:
+            try:
+                result = supabase.table('installation_history').select('*').order('installed_at', desc=True).limit(100).execute()
+                installations = result.data if result.data else []
+
+                response_data = {
+                    'installations': installations,
+                    'count': len(installations),
+                    'database_enabled': True
+                }
+            except Exception as e:
+                response_data = {
+                    'installations': [],
+                    'count': 0,
+                    'error': str(e),
+                    'database_enabled': True
+                }
+
+        response = json.dumps(response_data, indent=2, default=str).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', len(response))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(response)
+
+    def _serve_database_status(self):
+        """Serve database connection status."""
+        status_data = {
+            'enabled': SUPABASE_ENABLED,
+            'url': SUPABASE_URL if SUPABASE_ENABLED else None,
+            'connected': False
+        }
+
+        if SUPABASE_ENABLED and supabase:
+            try:
+                # Test connection with a simple query
+                result = supabase.table('audit_scans').select('id').limit(1).execute()
+                status_data['connected'] = True
+                status_data['message'] = 'Database connected successfully'
+            except Exception as e:
+                status_data['error'] = str(e)
+                status_data['message'] = f'Database connection failed: {str(e)}'
+
+        response = json.dumps(status_data, indent=2).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', len(response))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(response)
 
 
 class ReuseTCPServer(socketserver.TCPServer):

@@ -56,6 +56,23 @@ pinokio/cache/
 pinokio/drive/
 
 # ============================================================================
+# Relocated Caches (symlinked from home dir to 4TB SSD)
+# ============================================================================
+cache_huggingface/
+lmstudio/
+
+# ============================================================================
+# Home Assistant (contains secrets, DB, runtime files)
+# ============================================================================
+homeassistant/config/secrets.yaml
+homeassistant/config/.storage/
+homeassistant/config/*.db
+homeassistant/config/*.db-shm
+homeassistant/config/*.db-wal
+homeassistant/config/*.log*
+homeassistant/config/.ha_run.lock
+
+# ============================================================================
 # Sensitive Data (NEVER commit)
 # ============================================================================
 .env

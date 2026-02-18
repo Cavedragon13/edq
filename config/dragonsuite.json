@@ -296,6 +296,23 @@
       ]
     },
     {
+      "id": "ace-step",
+      "name": "ACE-Step 1.5",
+      "description": "Ultra-Fast Music Gen + LoRA Training + Cover/Repaint",
+      "category": "audio",
+      "port": 8021,
+      "path": null,
+      "icon": "&#127911;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_ace_step.sh",
+      "project_path": "/srv/containers/edq/projects/ACE-Step-1.5",
+      "features": [
+        "<10s/song",
+        "LoRA Train",
+        "Cover/Edit"
+      ],
+      "stop_command": "pkill -f \"acestep\" || true"
+    },
+    {
       "id": "sam2",
       "name": "SAM 2.1",
       "description": "Image + Video Segmentation + Auto Masks",
@@ -394,6 +411,108 @@
         "Automations"
       ],
       "stop_command": "cd /srv/containers/edq/homeassistant && docker compose down"
+    },
+    {
+      "id": "justdubit",
+      "name": "JustDubit",
+      "description": "Video Dubbing + Lip Sync + Audio-Visual Diffusion",
+      "category": "audio",
+      "port": 8022,
+      "path": null,
+      "icon": "&#127909;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_justdubit.sh",
+      "project_path": "/srv/containers/edq/projects/just-dub-it",
+      "features": [
+        "Video Dub",
+        "Lip Sync",
+        "Multilingual"
+      ],
+      "stop_command": "pkill -f \"justdubit_gradio.py\" || true"
+    },
+    {
+      "id": "soulxsinger",
+      "name": "SoulX-Singer",
+      "description": "Zero-Shot Singing Voice Synthesis + Voice Cloning",
+      "category": "audio",
+      "port": 8023,
+      "path": null,
+      "icon": "&#127908;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_soulxsinger.sh",
+      "project_path": "/srv/containers/edq/projects/SoulX-Singer",
+      "features": [
+        "Singing SVS",
+        "Voice Clone",
+        "MIDI Control"
+      ],
+      "stop_command": "pkill -f \"webui.py\" || true"
+    },
+    {
+      "id": "deepgen",
+      "name": "DeepGen 1.0",
+      "description": "Multimodal Image Gen + Edit + Text Rendering (5B)",
+      "category": "image",
+      "port": 8024,
+      "path": null,
+      "icon": "&#129302;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_deepgen.sh",
+      "project_path": "/srv/containers/edq/projects/deepgen",
+      "features": [
+        "Image Gen",
+        "Image Edit",
+        "Text Render"
+      ],
+      "stop_command": "pkill -f \"deepgen_gradio.py\" || true"
+    },
+    {
+      "id": "dolphin-vision",
+      "name": "Dolphin Vision 7B",
+      "description": "Uncensored vision-language model for unrestricted image Q&A",
+      "category": "image",
+      "port": 8025,
+      "path": "/",
+      "icon": "&#128065;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dolphin_vision.sh",
+      "project_path": null,
+      "features": [
+        "Uncensored VLM",
+        "Image Q&A",
+        "Visual Analysis"
+      ],
+      "stop_command": "pkill -f \"dolphin_vision_gradio.py\" || true"
+    },
+    {
+      "id": "audio-tools",
+      "name": "Audio Processing Suite",
+      "description": "Karaoke stem separation, vocal dereverb, speech-to-text (EN/ZH/YUE)",
+      "category": "audio",
+      "port": 8026,
+      "path": "/",
+      "icon": "&#127911;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_audio_tools.sh",
+      "project_path": null,
+      "features": [
+        "Stem Separation",
+        "Dereverberation",
+        "ASR (EN/ZH/YUE)"
+      ],
+      "stop_command": "pkill -f \"audio_tools_gradio.py\" || true"
+    },
+    {
+      "id": "audiomass",
+      "name": "AudioMass Editor",
+      "description": "Web-based audio waveform editor - Audacity-like editing in the browser",
+      "category": "audio",
+      "port": 8027,
+      "path": "/",
+      "icon": "&#127908;",
+      "launch_command": "cd /srv/containers/edq/projects/AudioMass/src && python3 -m http.server 8027",
+      "project_path": "/srv/containers/edq/projects/AudioMass",
+      "features": [
+        "Waveform Editing",
+        "Audio Effects",
+        "Client-Side"
+      ],
+      "stop_command": "pkill -f \"http.server 8027\" || true"
     }
   ],
   "categories": {

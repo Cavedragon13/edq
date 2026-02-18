@@ -48,7 +48,8 @@ def render_word(word_data: Dict, output_path: Path = None):
         "spelling": word_data["spelling"],
         "microContext": word_data["micro_context_en"],
         "characterImage": f"characters/ren_{word_data['day'].lower()}.png",
-        "audioFile": f"audio/{word_id}.mp3",
+        "audioFile": f"audio/{word_id}.wav",  # Qwen3-TTS outputs WAV
+        "musicFile": "music/monday_theme.mp3",  # Background music
         "day": word_data["day"],
         "week": word_data["week"]
     }

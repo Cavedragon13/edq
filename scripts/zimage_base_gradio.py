@@ -273,6 +273,7 @@ def generate_image(
     guidance_scale: float,
     num_inference_steps: int,
     seed: int,
+    fast_mode: bool,
     lora_name: str,
     lora_scale: float,
     progress=gr.Progress()
@@ -292,8 +293,22 @@ def generate_image(
     except Exception as e:
         return None, None, f"Failed to load model: {str(e)}"
 
-    # Apply LoRA if selected
-    if lora_name and lora_name != "None":
+    # Handle Fast Mode: auto-select distilled LoRA
+    if fast_mode:
+        progress(0.1, desc="Loading Fast Mode LoRA...")
+        # Select LoRA based on inference steps
+        if num_inference_steps <= 4:
+            fast_lora = "Z-Image-Fun-Lora-Distill-4-Steps-2602.safetensors"
+        else:
+            fast_lora = "Z-Image-Fun-Lora-Distill-8-Steps-2602.safetensors"
+
+        lora_status = apply_lora(fast_lora, lora_scale)
+        print(f"Fast Mode: {lora_status}")
+
+        # Override CFG for Fast Mode (distilled)
+        guidance_scale = 1.0
+    # Apply LoRA if selected (manual mode)
+    elif lora_name and lora_name != "None":
         progress(0.1, desc="Loading LoRA...")
         lora_status = apply_lora(lora_name, lora_scale)
         print(lora_status)
@@ -532,18 +547,34 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
 
             # LoRA section
             with gr.Accordion("LoRA Settings", open=False):
+                # Fast Mode option
+                fast_mode = gr.Checkbox(
+                    label="⚡ Fast Mode (Distilled LoRA)",
+                    value=False,
+                    info="Auto-select 4-step or 8-step distilled LoRA for faster generation"
+                )
+
+                gr.Markdown("""
+                **Fast Mode:** Uses Z-Image-Fun-Lora-Distill for 4-8x faster generation
+                - 4-step or 8-step inference (vs 30 steps)
+                - CFG fixed at 1.0 (distilled out)
+                - Maintains compatibility with other LoRAs
+                - Recommended: LoRA scale 0.7-0.8
+                """)
+
                 with gr.Row():
                     lora_dropdown = gr.Dropdown(
                         choices=get_available_loras(),
                         value="None",
-                        label="LoRA",
+                        label="Manual LoRA (disabled when Fast Mode active)",
                         scale=3
                     )
                     refresh_btn = gr.Button("Refresh", scale=1, size="sm")
 
                 lora_scale = gr.Slider(
-                    minimum=0.0, maximum=2.0, value=1.0, step=0.05,
-                    label="LoRA Scale"
+                    minimum=0.0, maximum=2.0, value=0.8, step=0.05,
+                    label="LoRA Scale",
+                    info="Recommended: 0.7-0.8 for Fast Mode"
                 )
 
                 gr.Markdown(f"Place LoRA files in: `{LORA_DIR}`")
@@ -647,7 +678,7 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
         inputs=[
             prompt_input, negative_prompt, model_type, controlnet_condition, control_image, controlnet_scale,
             aspect_ratio, width_input, height_input,
-            guidance_scale, num_steps, seed_input, lora_dropdown, lora_scale
+            guidance_scale, num_steps, seed_input, fast_mode, lora_dropdown, lora_scale
         ],
         outputs=[output_image, processed_control_output, status_output]
     )
@@ -657,7 +688,7 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
         inputs=[
             prompt_input, negative_prompt, model_type, controlnet_condition, control_image, controlnet_scale,
             aspect_ratio, width_input, height_input,
-            guidance_scale, num_steps, seed_input, lora_dropdown, lora_scale
+            guidance_scale, num_steps, seed_input, fast_mode, lora_dropdown, lora_scale
         ],
         outputs=[output_image, processed_control_output, status_output]
     )

@@ -27,12 +27,15 @@
         // Configuration
         const CONFIG = {
             ollama: {
-                url: 'http://127.0.0.1:8080/api/ollama/generate',  // Use local proxy (no CORS issues)
+                url: '/api/ollama/generate',  // Relative URL works from any device
                 defaultModel: 'qwen3-vl:8b'
             },
             lmstudio: {
-                url: `http://127.0.0.1:1234/v1/chat/completions`,
+                url: '/api/lmstudio/completions',  // Proxy through our server
                 model: 'zai-org/glm-4.6v-flash'  // Full model name from LM Studio
+            },
+            dolphin: {
+                url: '/api/dolphin/analyze'  // Proxy to Dolphin Vision 7B (port 8025)
             }
         };
 
@@ -60,6 +63,9 @@
         // Show/hide Ollama model selector based on backend
         function updateModelSelectorVisibility() {
             ollamaModelSelect.style.display = backendSelect.value === 'ollama' ? 'block' : 'none';
+            // Show Dolphin status hint when selected
+            const dolphinHint = document.getElementById('dolphinHint');
+            if (dolphinHint) dolphinHint.style.display = backendSelect.value === 'dolphin' ? 'inline' : 'none';
         }
         backendSelect.addEventListener('change', updateModelSelectorVisibility);
         updateModelSelectorVisibility(); // Initial state
@@ -292,6 +298,33 @@
             }
         }
 
+        async function callDolphinVision(base64Image, prompt) {
+            try {
+                console.log('Calling Dolphin Vision at:', CONFIG.dolphin.url);
+
+                const response = await fetch(CONFIG.dolphin.url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image_base64: base64Image,
+                        prompt: prompt
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(`Dolphin Vision HTTP ${response.status}: ${errorData.error || response.statusText}`);
+                }
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data.result;
+            } catch (error) {
+                console.error('Dolphin Vision error:', error);
+                throw new Error(`Dolphin Vision failed: ${error.message}. Is the service running on port 8025?`);
+            }
+        }
+
         async function describeImage(base64Image, promptType, backend) {
             // Improved prompts with anatomical/literal focus
             const prompts = {
@@ -330,6 +363,14 @@ CRITICAL INSTRUCTIONS:
                     console.warn('LM Studio failed, trying Ollama fallback:', error);
                     showError('LM Studio unavailable, using Ollama fallback...');
                     return await callOllama(base64Image, prompt);
+                }
+            } else if (backend === 'dolphin') {
+                try {
+                    return await callDolphinVision(base64Image, prompt);
+                } catch (error) {
+                    console.warn('Dolphin Vision failed:', error);
+                    showError('Dolphin Vision unavailable - ensure service is running on port 8025');
+                    throw error;
                 }
             } else {
                 try {

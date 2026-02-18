@@ -24,14 +24,18 @@
       "description": "GitHub API - repos, issues, PRs, code search"
     },
     "blender": {
-      "command": "blender",
-      "args": ["--background", "--python-use-system-env", "--python", "/home/edq/.config/blender/5.0/scripts/addons/blender_mcp_addon.py"],
-      "description": "Control Blender for 3D modeling, rendering, and scene manipulation"
+      "command": "uvx",
+      "args": ["blender-mcp"],
+      "env": {
+        "BLENDER_HOST": "localhost",
+        "BLENDER_PORT": "9876"
+      },
+      "description": "Control Blender for 3D modeling, rendering, and scene manipulation (requires Blender running with MCP addon)"
     },
     "obsidian": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-obsidian", "/home/edq/knowledge-base"],
-      "description": "Access and manage your Obsidian knowledge base"
+      "description": "Access and manage Obsidian knowledge base via direct file access"
     },
     "filesystem": {
       "command": "npx",

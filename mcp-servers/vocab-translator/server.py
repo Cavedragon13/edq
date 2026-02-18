@@ -18,7 +18,8 @@ from pathlib import Path
 from typing import Any
 
 import aiohttp
-from mcp.server import Server
+from mcp.server import Server, NotificationOptions
+from mcp.server.models import InitializationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
@@ -336,8 +337,19 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
 
 async def main():
     """Run the server."""
-    async with stdio_server(server) as (read_stream, write_stream):
-        await server.run(read_stream, write_stream, asyncio.Event())
+    async with stdio_server() as (read_stream, write_stream):
+        await server.run(
+            read_stream,
+            write_stream,
+            InitializationOptions(
+                server_name="vocab-translator",
+                server_version="1.0.0",
+                capabilities=server.get_capabilities(
+                    notification_options=NotificationOptions(),
+                    experimental_capabilities={},
+                ),
+            ),
+        )
 
 
 if __name__ == "__main__":

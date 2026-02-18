@@ -1,27 +1,63 @@
 #!/usr/bin/env python3
 """
-Topaz Labs MCP Server
+Topaz Labs MCP Server (Updated for Real API)
 Provides access to Topaz Labs AI image/video enhancement APIs
+
+Based on actual API documentation from developer.topazlabs.com
 """
 
 import os
+import sys
 import asyncio
+import logging
 import httpx
+from pathlib import Path
 from typing import Optional
+from datetime import datetime
 from mcp.server.models import InitializationOptions
 import mcp.types as types
 from mcp.server import NotificationOptions, Server
 import mcp.server.stdio
 
-# Topaz Labs API configuration
-TOPAZ_API_BASE = "https://api.topazlabs.com/v1"
+# Topaz Labs API configuration (CORRECTED)
+TOPAZ_API_BASE = "https://api.topazlabs.com"
 
 server = Server("topaz-labs")
+
+# Logging to file (stdout reserved for MCP stdio protocol)
+LOG_DIR = Path(__file__).parent / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+LOG_FILE = LOG_DIR / f"topaz_mcp_{datetime.now().strftime('%Y%m%d')}.log"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler(sys.stderr),
+    ]
+)
+logger = logging.getLogger(__name__)
+logger.info("=" * 50)
+logger.info("Topaz Labs MCP Server v1.2.0 starting")
+logger.info(f"Log file: {LOG_FILE}")
 
 
 def get_api_key() -> Optional[str]:
     """Get Topaz Labs API key from environment."""
     return os.getenv("TOPAZ_API_KEY")
+
+
+def validate_environment() -> bool:
+    """Validate environment and log diagnostics."""
+    api_key = get_api_key()
+    if not api_key:
+        logger.error("TOPAZ_API_KEY environment variable not set!")
+        logger.error("Get your key from https://topazlabs.com/my-account/")
+        return False
+    redacted = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 8 else "****"
+    logger.info(f"TOPAZ_API_KEY found: {redacted}")
+    return True
 
 
 @server.list_tools()
@@ -30,121 +66,50 @@ async def handle_list_tools() -> list[types.Tool]:
     return [
         types.Tool(
             name="topaz_enhance_image",
-            description="Enhance image quality using Topaz AI",
+            description="Enhance image quality using Topaz AI (Standard V2 model)",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "image_url": {
+                    "image_path": {
                         "type": "string",
-                        "description": "URL of the image to enhance"
+                        "description": "Local path to the image file to enhance"
                     },
-                    "mode": {
+                    "model": {
                         "type": "string",
-                        "enum": ["standard", "generative"],
-                        "description": "Enhancement mode (standard or generative)",
-                        "default": "standard"
-                    },
-                    "scale": {
-                        "type": "integer",
-                        "description": "Upscale factor (1-4x)",
-                        "default": 2,
-                        "minimum": 1,
-                        "maximum": 4
+                        "enum": ["Standard V2", "Recover 3"],
+                        "description": "Enhancement model to use",
+                        "default": "Standard V2"
                     }
                 },
-                "required": ["image_url"]
+                "required": ["image_path"]
             }
         ),
         types.Tool(
-            name="topaz_sharpen_image",
-            description="Sharpen image using Topaz AI",
+            name="topaz_enhance_async",
+            description="Enhance image with generative AI (async processing, supports Recover 3)",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "image_url": {
+                    "image_path": {
                         "type": "string",
-                        "description": "URL of the image to sharpen"
+                        "description": "Local path to the image file to enhance"
                     },
-                    "mode": {
+                    "model": {
                         "type": "string",
-                        "enum": ["standard", "generative"],
-                        "description": "Sharpening mode",
-                        "default": "standard"
+                        "enum": ["Recover 3"],
+                        "description": "Generative enhancement model",
+                        "default": "Recover 3"
                     }
                 },
-                "required": ["image_url"]
-            }
-        ),
-        types.Tool(
-            name="topaz_denoise_image",
-            description="Remove noise from image using Topaz AI",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "image_url": {
-                        "type": "string",
-                        "description": "URL of the image to denoise"
-                    },
-                    "strength": {
-                        "type": "number",
-                        "description": "Denoising strength (0-1)",
-                        "default": 0.5,
-                        "minimum": 0,
-                        "maximum": 1
-                    }
-                },
-                "required": ["image_url"]
-            }
-        ),
-        types.Tool(
-            name="topaz_restore_image",
-            description="Restore old/damaged images using Topaz AI (generative)",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "image_url": {
-                        "type": "string",
-                        "description": "URL of the image to restore"
-                    }
-                },
-                "required": ["image_url"]
+                "required": ["image_path"]
             }
         ),
         types.Tool(
             name="topaz_check_credits",
-            description="Check remaining Topaz Labs API credits",
+            description="Check remaining Topaz Labs API credits (if credits endpoint exists)",
             inputSchema={
                 "type": "object",
                 "properties": {}
-            }
-        ),
-        types.Tool(
-            name="topaz_estimate_cost",
-            description="Estimate credit cost for an operation",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "operation": {
-                        "type": "string",
-                        "enum": ["enhance", "sharpen", "denoise", "restore"],
-                        "description": "Operation to estimate"
-                    },
-                    "image_width": {
-                        "type": "integer",
-                        "description": "Image width in pixels"
-                    },
-                    "image_height": {
-                        "type": "integer",
-                        "description": "Image height in pixels"
-                    },
-                    "mode": {
-                        "type": "string",
-                        "enum": ["standard", "generative"],
-                        "description": "Processing mode",
-                        "default": "standard"
-                    }
-                },
-                "required": ["operation", "image_width", "image_height"]
             }
         )
     ]
@@ -155,139 +120,149 @@ async def handle_call_tool(
     name: str, arguments: dict | None
 ) -> list[types.TextContent]:
     """Handle tool execution."""
+    logger.info(f"Tool called: {name}")
     api_key = get_api_key()
     if not api_key:
+        logger.error("Tool call failed: TOPAZ_API_KEY not set")
         raise ValueError(
             "TOPAZ_API_KEY environment variable not set. "
-            "Get your API key from https://developer.topazlabs.com/"
+            "Get your API key from https://topazlabs.com/my-account/"
         )
 
     headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
+        "X-API-Key": api_key,
+        "accept": "image/jpeg"
     }
 
     async with httpx.AsyncClient(timeout=300.0) as client:
         if name == "topaz_check_credits":
-            # Check account credits
-            response = await client.get(
-                f"{TOPAZ_API_BASE}/credits",
-                headers=headers
-            )
-            response.raise_for_status()
-            data = response.json()
-
-            credits = data.get("credits", {})
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Topaz Labs Credits:\n"
-                         f"Available: {credits.get('available', 'N/A')}\n"
-                         f"Total: {credits.get('total', 'N/A')}\n"
-                         f"Used: {credits.get('used', 'N/A')}"
-                )
-            ]
-
-        elif name == "topaz_estimate_cost":
-            # Estimate operation cost
-            operation = arguments["operation"]
-            width = arguments["image_width"]
-            height = arguments["image_height"]
-            mode = arguments.get("mode", "standard")
-
-            response = await client.post(
-                f"{TOPAZ_API_BASE}/estimate",
-                headers=headers,
-                json={
-                    "operation": operation,
-                    "width": width,
-                    "height": height,
-                    "mode": mode
-                }
-            )
-            response.raise_for_status()
-            data = response.json()
-
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Estimated cost for {operation} ({mode}):\n"
-                         f"Credits: {data.get('credits', 'N/A')}\n"
-                         f"Processing time: ~{data.get('estimated_time', 'N/A')}s"
-                )
-            ]
-
-        elif name in ["topaz_enhance_image", "topaz_sharpen_image",
-                      "topaz_denoise_image", "topaz_restore_image"]:
-            # Map tool names to API endpoints
-            endpoint_map = {
-                "topaz_enhance_image": "enhance",
-                "topaz_sharpen_image": "sharpen",
-                "topaz_denoise_image": "denoise",
-                "topaz_restore_image": "restore"
-            }
-
-            endpoint = endpoint_map[name]
-            image_url = arguments["image_url"]
-
-            # Build request payload
-            payload = {"input_url": image_url}
-
-            if name == "topaz_enhance_image":
-                payload["mode"] = arguments.get("mode", "standard")
-                payload["scale"] = arguments.get("scale", 2)
-            elif name == "topaz_sharpen_image":
-                payload["mode"] = arguments.get("mode", "standard")
-            elif name == "topaz_denoise_image":
-                payload["strength"] = arguments.get("strength", 0.5)
-
-            # Submit processing request
-            response = await client.post(
-                f"{TOPAZ_API_BASE}/image/{endpoint}",
-                headers=headers,
-                json=payload
-            )
-            response.raise_for_status()
-            data = response.json()
-
-            task_id = data.get("task_id")
-
-            # Poll for completion (with timeout)
-            max_wait = 300  # 5 minutes
-            poll_interval = 5
-            elapsed = 0
-
-            while elapsed < max_wait:
-                status_response = await client.get(
-                    f"{TOPAZ_API_BASE}/task/{task_id}",
+            # Note: Credits endpoint may not exist, trying common patterns
+            try:
+                response = await client.get(
+                    f"{TOPAZ_API_BASE}/account/credits",
                     headers=headers
                 )
-                status_response.raise_for_status()
-                status_data = status_response.json()
+                response.raise_for_status()
+                data = response.json()
 
-                state = status_data.get("status")
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Topaz Labs Credits: {data}"
+                    )
+                ]
+            except httpx.HTTPStatusError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Credits endpoint not available (status {e.response.status_code}). "
+                             "Check your account at https://topazlabs.com/my-account/"
+                    )
+                ]
 
-                if state == "completed":
-                    output_url = status_data.get("output_url")
-                    credits_used = status_data.get("credits_used", "N/A")
+        elif name == "topaz_enhance_image":
+            # Standard synchronous enhancement
+            image_path = Path(arguments["image_path"])
+            if not image_path.exists():
+                raise FileNotFoundError(f"Image not found: {image_path}")
 
-                    return [
-                        types.TextContent(
-                            type="text",
-                            text=f"✓ {name.replace('topaz_', '').replace('_', ' ').title()} completed!\n"
-                                 f"Output URL: {output_url}\n"
-                                 f"Credits used: {credits_used}\n"
-                                 f"Download the result from the URL above."
-                        )
-                    ]
-                elif state == "failed":
-                    error = status_data.get("error", "Unknown error")
-                    raise RuntimeError(f"Processing failed: {error}")
+            model = arguments.get("model", "Standard V2")
 
-                await asyncio.sleep(poll_interval)
-                elapsed += poll_interval
+            with open(image_path, "rb") as f:
+                files = {"image": f}
+                data = {"model": model}
 
-            raise TimeoutError(f"Processing timed out after {max_wait}s")
+                response = await client.post(
+                    f"{TOPAZ_API_BASE}/image/v1/enhance",
+                    headers=headers,
+                    files=files,
+                    data=data
+                )
+                response.raise_for_status()
+
+                # Save enhanced image
+                output_path = image_path.parent / f"{image_path.stem}_enhanced.jpg"
+                output_path.write_bytes(response.content)
+
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"✓ Image enhanced successfully!\n"
+                             f"Model: {model}\n"
+                             f"Output: {output_path}\n"
+                             f"Size: {len(response.content) / 1024:.1f} KB"
+                    )
+                ]
+
+        elif name == "topaz_enhance_async":
+            # Async generative enhancement (for Recover 3, etc.)
+            image_path = Path(arguments["image_path"])
+            if not image_path.exists():
+                raise FileNotFoundError(f"Image not found: {image_path}")
+
+            model = arguments.get("model", "Recover 3")
+
+            with open(image_path, "rb") as f:
+                files = {"image": f}
+                data = {"model": model}
+
+                # Submit async request
+                response = await client.post(
+                    f"{TOPAZ_API_BASE}/image/v1/enhance-gen/async",
+                    headers=headers,
+                    files=files,
+                    data=data
+                )
+                response.raise_for_status()
+                result = response.json()
+
+                request_id = result.get("requestId") or result.get("request_id")
+
+                # Poll for completion
+                max_wait = 300  # 5 minutes
+                poll_interval = 5
+                elapsed = 0
+
+                while elapsed < max_wait:
+                    status_response = await client.get(
+                        f"{TOPAZ_API_BASE}/image/v1/request/{request_id}",
+                        headers=headers
+                    )
+                    status_response.raise_for_status()
+                    status_data = status_response.json()
+
+                    state = status_data.get("status")
+
+                    if state == "complete" or state == "completed":
+                        # Download result
+                        download_url = status_data.get("download_url") or status_data.get("downloadUrl")
+
+                        download_response = await client.get(download_url, headers=headers)
+                        download_response.raise_for_status()
+
+                        # Save enhanced image
+                        output_path = image_path.parent / f"{image_path.stem}_{model.replace(' ', '_')}_enhanced.jpg"
+                        output_path.write_bytes(download_response.content)
+
+                        return [
+                            types.TextContent(
+                                type="text",
+                                text=f"✓ Async enhancement completed!\n"
+                                     f"Model: {model}\n"
+                                     f"Request ID: {request_id}\n"
+                                     f"Output: {output_path}\n"
+                                     f"Size: {len(download_response.content) / 1024:.1f} KB"
+                            )
+                        ]
+
+                    elif state == "failed" or state == "error":
+                        error = status_data.get("error", "Unknown error")
+                        raise RuntimeError(f"Processing failed: {error}")
+
+                    await asyncio.sleep(poll_interval)
+                    elapsed += poll_interval
+
+                raise TimeoutError(f"Processing timed out after {max_wait}s")
 
         else:
             raise ValueError(f"Unknown tool: {name}")
@@ -295,20 +270,34 @@ async def handle_call_tool(
 
 async def main():
     """Run the MCP server."""
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="topaz-labs",
-                server_version="1.0.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
+    logger.info("Starting MCP stdio server...")
+    validate_environment()
+
+    try:
+        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+            logger.info("Server ready - waiting for requests")
+            await server.run(
+                read_stream,
+                write_stream,
+                InitializationOptions(
+                    server_name="topaz-labs",
+                    server_version="1.2.0",
+                    capabilities=server.get_capabilities(
+                        notification_options=NotificationOptions(),
+                        experimental_capabilities={},
+                    ),
                 ),
-            ),
-        )
+            )
+    except Exception as e:
+        logger.error(f"Server crashed: {e}", exc_info=True)
+        raise
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+    except Exception as e:
+        logger.error(f"Fatal error: {e}", exc_info=True)
+        sys.exit(1)

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCP Inspector - Security Browser</title>
+    <link rel="icon" type="image/svg+xml" href="/media/favicon.svg">
     <style>
         * {
             margin: 0;
@@ -515,6 +516,7 @@
             <div class="tab-switcher">
                 <button class="tab-btn active" data-tab="installed">Installed Servers</button>
                 <button class="tab-btn" data-tab="browse">Browse Catalog</button>
+                <button class="tab-btn" data-tab="history">Audit History</button>
             </div>
 
             <!-- Installed Tab -->
@@ -573,11 +575,45 @@
                     <p style="margin: 8px 0 0 0; color: #9ca3af; line-height: 1.5;">
                         This catalog shows only servers submitted to the <strong>official MCP registry</strong>. Many MCP servers exist on NPM, PyPI, or GitHub but aren't listed here yet. Your installed servers (like blender-mcp, obsidian-mcp-server) may not appear in search results if they haven't been submitted to the registry.
                     </p>
+                    <p style="margin: 8px 0 0 0; color: #9ca3af; line-height: 1.5;">
+                        <strong>Note:</strong> Duplicate entries from the registry are automatically filtered out for clarity.
+                    </p>
                 </div>
 
                 <div id="browseErrorBox" class="error" style="display: none;"></div>
                 <div id="browseLoadingBox" class="loading" style="display: none;">⏳ Loading catalog...</div>
                 <div id="browseGrid" class="server-grid"></div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="historyTab" class="tab-content">
+                <div class="controls">
+                    <input type="text" id="historySearchBox" class="search-box" placeholder="🔎 Search audit history by server name...">
+                    <button class="btn btn-primary" onclick="loadAuditHistory()">🔍 Search</button>
+                </div>
+
+                <div class="stats">
+                    <div>
+                        <strong id="historyTotal">0</strong> audit scans
+                    </div>
+                    <div id="historyDbStatus" style="color: #9ca3af;">
+                        Database: <strong>Checking...</strong>
+                    </div>
+                </div>
+
+                <div style="background: #1e3a5f; border-left: 4px solid #3B82F6; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9em;">
+                    <strong style="color: #60A5FA;">📊 Audit History</strong>
+                    <p style="margin: 8px 0 0 0; color: #9ca3af; line-height: 1.5;">
+                        This tab shows historical security scan results stored in Supabase. Track trust score changes, monitor new vulnerabilities, and analyze trends over time.
+                    </p>
+                </div>
+
+                <div id="historyErrorBox" class="error" style="display: none;"></div>
+                <div id="historyLoadingBox" class="loading" style="display: none;">⏳ Loading audit history...</div>
+
+                <div id="historyTimeline" style="display: none;">
+                    <!-- Timeline will be inserted here -->
+                </div>
             </div>
         </div>
     </div>
@@ -876,15 +912,59 @@
                     totalLoaded = 0;
                 }
 
-                const url = `/api/browse/official?limit=100${searchTerm ? '&search=' + encodeURIComponent(searchTerm) : ''}${append && nextCursor ? '&cursor=' + encodeURIComponent(nextCursor) : ''}`;
-                const response = await fetch(url);
-                const data = await response.json();
+                const targetCount = 50;
+                const startingCount = browseCatalog.length;
+                let attempts = 0;
+                const maxAttempts = 10; // Prevent infinite loops
 
-                const newServers = data.servers || [];
-                browseCatalog = append ? [...browseCatalog, ...newServers] : newServers;
-                nextCursor = data.nextCursor || null;
-                hasMore = data.hasMore || false;
-                totalLoaded = browseCatalog.length;
+                // Keep fetching until we have enough unique servers or run out
+                while (browseCatalog.length - startingCount < targetCount && attempts < maxAttempts) {
+                    const url = `/api/browse/official?limit=50${searchTerm ? '&search=' + encodeURIComponent(searchTerm) : ''}${nextCursor ? '&cursor=' + encodeURIComponent(nextCursor) : ''}`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    const newServers = data.servers || [];
+                    nextCursor = data.nextCursor || null;
+                    hasMore = data.hasMore || false;
+
+                    // No more servers available
+                    if (newServers.length === 0 || !hasMore) {
+                        break;
+                    }
+
+                    // Deduplicate by name + package
+                    const uniqueServers = newServers.filter((server, index, self) =>
+                        index === self.findIndex(s =>
+                            s.name === server.name && s.package === server.package
+                        )
+                    );
+
+                    // Filter against existing catalog
+                    const filtered = uniqueServers.filter(newServer =>
+                        !browseCatalog.some(existing =>
+                            existing.name === newServer.name && existing.package === newServer.package
+                        )
+                    );
+
+                    // Only add enough to reach target
+                    const needed = targetCount - (browseCatalog.length - startingCount);
+                    const toAdd = filtered.slice(0, needed);
+
+                    // Add new unique servers (up to target)
+                    browseCatalog = [...browseCatalog, ...toAdd];
+                    totalLoaded = browseCatalog.length;
+                    attempts++;
+
+                    // If we reached the target, we're done
+                    if (browseCatalog.length - startingCount >= targetCount) {
+                        break;
+                    }
+
+                    // If we didn't get any new unique servers, we're done
+                    if (filtered.length === 0) {
+                        break;
+                    }
+                }
 
                 loadingBox.style.display = 'none';
                 updateBrowseStats();
@@ -923,7 +1003,7 @@
                         ⬇️ Load More Servers (${totalLoaded} loaded so far)
                     </button>
                     <p style="color: #9ca3af; margin-top: 10px; font-size: 0.9em;">
-                        More servers available - click to load next 100
+                        More servers available - click to load next 50
                     </p>
                 </div>
             ` : '';
@@ -1039,6 +1119,185 @@
             if (e.key === 'Enter') {
                 loadBrowseCatalog();
             }
+        });
+
+        // =====================================================================
+        // Audit History Functionality
+        // =====================================================================
+
+        let auditHistory = [];
+
+        async function checkDatabaseStatus() {
+            try {
+                const response = await fetch('/api/database/status');
+                const data = await response.json();
+
+                const statusEl = document.getElementById('historyDbStatus');
+                if (data.connected) {
+                    statusEl.innerHTML = 'Database: <strong style="color: #10B981;">✓ Connected</strong>';
+                } else if (data.enabled) {
+                    statusEl.innerHTML = 'Database: <strong style="color: #F59E0B;">⚠️ Enabled but not connected</strong>';
+                } else {
+                    statusEl.innerHTML = 'Database: <strong style="color: #6B7280;">✗ Disabled</strong>';
+                }
+
+                return data.connected;
+            } catch (error) {
+                const statusEl = document.getElementById('historyDbStatus');
+                statusEl.innerHTML = 'Database: <strong style="color: #EF4444;">✗ Error</strong>';
+                return false;
+            }
+        }
+
+        async function loadAuditHistory() {
+            const searchTerm = document.getElementById('historySearchBox').value;
+            const loadingBox = document.getElementById('historyLoadingBox');
+            const errorBox = document.getElementById('historyErrorBox');
+            const timeline = document.getElementById('historyTimeline');
+
+            try {
+                loadingBox.style.display = 'block';
+                errorBox.style.display = 'none';
+                timeline.style.display = 'none';
+
+                // Check database status first
+                const dbConnected = await checkDatabaseStatus();
+                if (!dbConnected) {
+                    loadingBox.style.display = 'none';
+                    errorBox.textContent = 'Database not connected. Please set up Supabase integration first.';
+                    errorBox.style.display = 'block';
+                    return;
+                }
+
+                const url = `/api/history/audits?limit=100${searchTerm ? '&server=' + encodeURIComponent(searchTerm) : ''}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                auditHistory = data.audits || [];
+
+                loadingBox.style.display = 'none';
+                document.getElementById('historyTotal').textContent = auditHistory.length;
+
+                if (auditHistory.length === 0) {
+                    timeline.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 40px;">No audit history found. Scans will appear here as servers are analyzed.</p>';
+                    timeline.style.display = 'block';
+                    return;
+                }
+
+                renderAuditTimeline();
+                timeline.style.display = 'block';
+
+            } catch (error) {
+                loadingBox.style.display = 'none';
+                errorBox.textContent = `Failed to load audit history: ${error.message}`;
+                errorBox.style.display = 'block';
+            }
+        }
+
+        function renderAuditTimeline() {
+            const timeline = document.getElementById('historyTimeline');
+
+            // Group by server
+            const byServer = {};
+            auditHistory.forEach(audit => {
+                if (!byServer[audit.server_name]) {
+                    byServer[audit.server_name] = [];
+                }
+                byServer[audit.server_name].push(audit);
+            });
+
+            let html = '<div style="display: flex; flex-direction: column; gap: 20px;">';
+
+            Object.keys(byServer).sort().forEach(serverName => {
+                const scans = byServer[serverName];
+                const latest = scans[0];
+
+                html += `
+                    <div style="background: #2d2d2d; border: 2px solid #4a5568; border-radius: 12px; padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0; font-size: 1.3em;">${serverName}</h3>
+                            <span style="font-size: 20px;">${'⭐'.repeat(latest.trust_score)}</span>
+                        </div>
+                        <div style="color: #9ca3af; font-size: 0.9em; margin-bottom: 15px;">
+                            <strong>Type:</strong> ${latest.server_type} |
+                            <strong>Scans:</strong> ${scans.length} |
+                            <strong>Latest:</strong> ${formatDate(latest.scan_timestamp)}
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-top: 15px;">
+                `;
+
+                scans.slice(0, 5).forEach((scan, idx) => {
+                    const dangers = JSON.parse(scan.dangers || '[]');
+                    const warnings = JSON.parse(scan.warnings || '[]');
+
+                    html += `
+                        <div style="background: #1e1e1e; padding: 12px; border-radius: 8px; border-left: 3px solid ${getTrustColor(scan.trust_score)};">
+                            <div style="font-size: 0.85em; color: #6b7280; margin-bottom: 5px;">
+                                ${formatDate(scan.scan_timestamp)}
+                            </div>
+                            <div style="font-size: 0.9em;">
+                                ${dangers.length > 0 ? `<div style="color: #EF4444;">🔴 ${dangers.length} danger(s)</div>` : ''}
+                                ${warnings.length > 0 ? `<div style="color: #F59E0B;">🟡 ${warnings.length} warning(s)</div>` : ''}
+                                ${dangers.length === 0 && warnings.length === 0 ? '<div style="color: #10B981;">🟢 Clean</div>' : ''}
+                            </div>
+                            ${scan.package_version ? `<div style="font-size: 0.8em; color: #6b7280; margin-top: 5px;">v${scan.package_version}</div>` : ''}
+                        </div>
+                    `;
+                });
+
+                if (scans.length > 5) {
+                    html += `<div style="grid-column: 1 / -1; text-align: center; color: #9ca3af; font-size: 0.9em; padding: 10px;">... and ${scans.length - 5} more scans</div>`;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            timeline.innerHTML = html;
+        }
+
+        function getTrustColor(score) {
+            if (score >= 3) return '#10B981';
+            if (score >= 2) return '#F59E0B';
+            return '#6B7280';
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+
+            return date.toLocaleDateString();
+        }
+
+        // History search on Enter
+        document.getElementById('historySearchBox').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadAuditHistory();
+            }
+        });
+
+        // Check database status when switching to history tab
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const originalHandler = btn.onclick;
+            btn.addEventListener('click', (e) => {
+                const tab = e.target.dataset.tab;
+                if (tab === 'history' && document.getElementById('historyTimeline').innerHTML === '') {
+                    checkDatabaseStatus();
+                    loadAuditHistory();
+                }
+            });
         });
     </script>
 </body>
