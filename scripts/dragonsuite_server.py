@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 import uvicorn
+import psutil
 
 # Optional QR code support
 try:
@@ -258,12 +259,11 @@ async def get_git_revision(service_id: str):
 
 @app.get("/api/gpu-stats")
 async def get_gpu_stats():
-    """Get GPU VRAM and utilization stats using nvidia-smi."""
+    """Get GPU VRAM, utilization, and temperature stats using nvidia-smi."""
     try:
-        # Query NVIDIA GPU for memory and utilization
         cmd = [
             "nvidia-smi",
-            "--query-gpu=memory.used,memory.total,utilization.gpu",
+            "--query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu",
             "--format=csv,noheader,nounits"
         ]
 
@@ -277,16 +277,16 @@ async def get_gpu_stats():
         if result.returncode != 0:
             return {"error": "nvidia-smi failed"}
 
-        # Parse output: "used_mb, total_mb, utilization_percent"
         output = result.stdout.strip()
         parts = [x.strip() for x in output.split(',')]
 
-        if len(parts) != 3:
+        if len(parts) != 4:
             return {"error": "Unexpected nvidia-smi output"}
 
         vram_used_mb = int(parts[0])
         vram_total_mb = int(parts[1])
         gpu_util = int(parts[2])
+        gpu_temp = int(parts[3])
 
         vram_percent = (vram_used_mb / vram_total_mb * 100) if vram_total_mb > 0 else 0
 
@@ -294,11 +294,61 @@ async def get_gpu_stats():
             "vram_used_mb": vram_used_mb,
             "vram_total_mb": vram_total_mb,
             "vram_percent": vram_percent,
-            "gpu_utilization": gpu_util
+            "gpu_utilization": gpu_util,
+            "gpu_temp": gpu_temp
         }
 
     except subprocess.TimeoutExpired:
         return {"error": "nvidia-smi timeout"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/api/system-stats")
+async def get_system_stats():
+    """Get CPU, RAM, and disk usage stats."""
+    try:
+        cpu_percent = psutil.cpu_percent(interval=None)
+        ram = psutil.virtual_memory()
+
+        # Check both root and project SSD
+        root_disk = psutil.disk_usage('/')
+        disks = {
+            "root": {
+                "used_gb": round(root_disk.used / (1024**3), 1),
+                "total_gb": round(root_disk.total / (1024**3), 1),
+                "percent": round(root_disk.percent, 1),
+                "mount": "/"
+            }
+        }
+
+        # Project SSD (separate mount)
+        try:
+            proj_disk = psutil.disk_usage('/srv/containers')
+            # Only add if it's a different filesystem
+            if proj_disk.total != root_disk.total:
+                disks["projects"] = {
+                    "used_gb": round(proj_disk.used / (1024**3), 1),
+                    "total_gb": round(proj_disk.total / (1024**3), 1),
+                    "percent": round(proj_disk.percent, 1),
+                    "mount": "/srv/containers"
+                }
+        except Exception:
+            pass
+
+        # Primary disk stats (project SSD if available, else root)
+        primary = disks.get("projects", disks["root"])
+
+        return {
+            "cpu_percent": cpu_percent,
+            "ram_used_gb": round(ram.used / (1024**3), 1),
+            "ram_total_gb": round(ram.total / (1024**3), 1),
+            "ram_percent": ram.percent,
+            "disk_used_gb": primary["used_gb"],
+            "disk_total_gb": primary["total_gb"],
+            "disk_percent": primary["percent"],
+            "disks": disks
+        }
     except Exception as e:
         return {"error": str(e)}
 

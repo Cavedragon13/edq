@@ -10,17 +10,26 @@ This is a personal AI development environment focused on video generation, visio
 
 ```
 /srv/containers/edq/
-├── apps/               # Application binaries (LM Studio, Pinokio)
+├── .env                # API keys (NEVER duplicate - single source of truth)
+├── .mcp.json           # MCP server config (NEVER duplicate)
+├── CLAUDE.md           # This file - project documentation
 ├── config/             # Configuration files (dragonsuite.json)
 ├── docs/               # Documentation (setup guides, service docs)
-│   └── services/       # Detailed service documentation
+│   ├── services/       # Detailed service documentation
+│   ├── venvs.md        # Virtual environment registry
+│   └── organization-principles.md  # Organization rules (avoid duplicates)
 ├── scripts/            # Standalone Python scripts and shell launchers
-├── projects/           # Cloned AI project repositories
+├── projects/           # Cloned AI project repositories (self-contained)
 ├── models/             # Downloaded AI models and weights
 ├── media/              # Media files, HTML apps
+├── mcp-servers/        # Custom MCP server implementations
 ├── pinokio/            # Pinokio launcher system
-└── venv_*/             # Virtual environments (see docs/venvs.md)
+├── venv_*/             # Virtual environments at top level
+├── cache_huggingface/  # HF hub cache (symlinked from ~/.cache/huggingface)
+└── lmstudio/           # LM Studio data (symlinked from ~/.lmstudio)
 ```
+
+**Organization Principle:** Single source of truth - no duplicates. Use symlinks when files must exist in multiple locations. See [docs/organization-principles.md](docs/organization-principles.md) for details.
 
 ## Port Layout
 
@@ -45,6 +54,9 @@ This is a personal AI development environment focused on video generation, visio
 | 8015 | Dragonart Studio | Production | [Utilities](docs/services/utilities.md) |
 | 8020 | MCP Inspector | On-demand | [Utilities](docs/services/utilities.md) |
 | 8021 | ACE-Step 1.5 | On-demand (GPU) | [Video & Music](docs/services/video-music.md) |
+| 8025 | Dolphin Vision 7B | On-demand (GPU) | Uncensored VLM image Q&A |
+| 8026 | Audio Processing Suite | On-demand (GPU) | Karaoke/dereverb/ASR from SoulX-Singer models |
+| 8027 | AudioMass Editor | On-demand | Web audio editor (Audacity-like, client-side) |
 | 8888 | Jupyter (reserved) | Future | - |
 | 11434 | Ollama API | Always-on (snap) | - |
 
@@ -64,7 +76,7 @@ This is a personal AI development environment focused on video generation, visio
 
 ### Image Generation - [Full docs](docs/services/image-generation.md)
 
-- **DragonFlux Klein** (8001) - FLUX.2-klein with LoRA support
+- **DragonFlux Klein** (8001) - FLUX.2-klein (fast) + FLUX.1-dev HD Mode with LoRA support
 - **Z-Image Base + Turbo** (8011) - Alibaba's 6B text-to-image (Base/Turbo/Fast modes)
 - **Qwen-Image-Layered** (8013) - Layer decomposition for editing
 - **Real-ESRGAN** (8010) - AI upscaling with multiple models
@@ -80,11 +92,14 @@ This is a personal AI development environment focused on video generation, visio
 - **Fish Speech** (8003) - Expressive TTS with voice cloning
 - **Qwen3-TTS** (8009) - High-quality TTS with voice design
 - **Qwen3-Audiobook** (8014) - Document to audiobook conversion
+- **Audio Processing Suite** (8026) - Karaoke stem separation, vocal dereverb, ASR (EN/ZH/YUE)
+- **AudioMass Editor** (8027) - Web-based waveform editor with effects (Audacity-like)
 
 ### Vision AI - [Full docs](docs/services/vision-ai.md)
 
 - **SAM 2.1** (8005) - Image/video segmentation
 - **LivePortrait** (8006) - Portrait animation with expression transfer
+- **Dolphin Vision 7B** (8025) - Uncensored VLM for unrestricted image Q&A
 
 ### Utilities - [Full docs](docs/services/utilities.md)
 
@@ -246,6 +261,17 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 - JavaScript (Pinokio) uses module.exports, template expressions `{{...}}`
 - Clear user-facing messages with emoji (🚀, ✓, ❌, etc.)
 
+### Parallel Execution
+**Whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.**
+
+- Reading multiple files → use multiple Read tool calls in one message
+- Searching different patterns → use multiple Grep calls in parallel
+- Running independent bash commands → use multiple Bash tool calls
+- **Benefits:** Faster execution, no waiting between operations
+- **Don't parallelize:** Operations with dependencies or sequential state changes
+
+See [Development Best Practices](docs/organization-principles.md#development-best-practices) for detailed examples.
+
 ## Web Development Standards
 
 ### Dark Mode Requirements
@@ -326,6 +352,44 @@ See `media/dragonsight4.html` for reference implementation with:
 ### Future Additions (reserved ports)
 - 8888: Jupyter Notebook
 - Additional tools: assign next available 800x port
+
+## Standard Operating Procedures (SOPs)
+
+### Model Downloads - CRITICAL SOP (2026-02-15)
+
+**Rule:** NEVER make the first run of a tool wait for model downloads.
+
+**Instead:**
+1. Create standalone download script: `scripts/download_<toolname>_models.sh`
+2. Use Python `snapshot_download()` API (resumable, idempotent)
+3. Document in setup instructions
+4. Add model check to launch script (fail fast if missing)
+
+**Template:**
+```bash
+#!/bin/bash
+source /srv/containers/edq/venv_toolname/bin/activate
+
+python << 'PYEOF'
+from huggingface_hub import snapshot_download
+snapshot_download(
+    repo_id="org/repo",
+    local_dir="/srv/containers/edq/models/toolname"
+)
+PYEOF
+```
+
+**Quick Start:** Copy [scripts/template_download_models.sh](scripts/template_download_models.sh) and customize.
+
+**See:** [docs/sop-model-downloads.md](docs/sop-model-downloads.md) for complete guide, examples, and best practices.
+
+**Benefits:**
+- ✅ Better UX (instant launches after setup)
+- ✅ Resumable downloads (network-safe)
+- ✅ Parallel setup (download multiple tools during idle time)
+- ✅ Clear separation of concerns
+
+---
 
 ## Lessons Learned & Best Practices (2026-02-08)
 
