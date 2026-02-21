@@ -184,21 +184,38 @@
       ]
     },
     {
-      "id": "ltx2",
-      "name": "LTX-2 Video",
-      "description": "Dedicated LTX-2 19B Interface + Audio",
+      "id": "wan-1b",
+      "name": "Wan2.1 T2V 1.3B",
+      "description": "Fast standalone text-to-video · 8GB VRAM · diffusers",
       "category": "video",
       "port": 8016,
       "path": null,
       "icon": "&#127916;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_ltx2.sh",
-      "project_path": "/srv/containers/edq/projects/Wan2GP",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_wan_1b.sh",
+      "project_path": null,
       "features": [
-        "20s Video",
-        "Audio Track",
-        "Keyframes"
+        "T2V",
+        "480P",
+        "~8GB VRAM"
       ],
-      "stop_command": "pkill -f \"ltx2_gradio.py\" || true"
+      "stop_command": "pkill -f \"wan_1b_gradio.py\" || true"
+    },
+    {
+      "id": "ltxvideo",
+      "name": "LTX-Video 0.9.7",
+      "description": "Fast T2V + I2V · 7-step distilled · 3-pass upscale",
+      "category": "video",
+      "port": 8028,
+      "path": null,
+      "icon": "&#127911;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_ltxvideo.sh",
+      "project_path": null,
+      "features": [
+        "T2V",
+        "I2V",
+        "7-step distilled"
+      ],
+      "stop_command": "pkill -f \"ltxvideo_gradio.py\" || true"
     },
     {
       "id": "liveportrait",
@@ -313,6 +330,23 @@
       "stop_command": "pkill -f \"acestep\" || true"
     },
     {
+      "id": "dragonsong",
+      "name": "Dragonsong",
+      "description": "Lyria RealTime Music — live prompting, blend, layer muting",
+      "category": "audio",
+      "port": 8029,
+      "path": "/",
+      "icon": "&#127926;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonsong.sh",
+      "project_path": null,
+      "features": [
+        "Real-time",
+        "Promptable",
+        "Recordable"
+      ],
+      "stop_command": "pkill -f \"dragonsong_server.py\" || true"
+    },
+    {
       "id": "sam2",
       "name": "SAM 2.1",
       "description": "Image + Video Segmentation + Auto Masks",
@@ -378,12 +412,29 @@
       ]
     },
     {
+      "id": "horse-racing",
+      "name": "Horse Racing Simulator",
+      "description": "Browser-based wagering game with AI opponents + persistent progression",
+      "category": "game",
+      "port": 8030,
+      "path": null,
+      "icon": "&#127943;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_horse_racing.sh",
+      "project_path": "/srv/containers/edq/projects/horse-racing-simulator",
+      "features": [
+        "Wagering",
+        "AI Opponents",
+        "Save/Load"
+      ],
+      "stop_command": "ps aux | grep horse-racing-simulator | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true"
+    },
+    {
       "id": "mule-game",
       "name": "M.U.L.E.",
       "description": "Economic Strategy Game - Tribute to Dani Bunten Berry",
       "category": "game",
       "port": 8016,
-      "path": null,
+      "path": "/mule_game.html",
       "icon": "&#127918;",
       "thumbnail": "/media/thumbnails/mule-game.png",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_mule_game.sh",
@@ -391,9 +442,10 @@
       "features": [
         "Bunten Berries",
         "Multiplayer",
-        "Save/Load"
+        "Terrain Bonuses",
+        "SVG Graphics"
       ],
-      "stop_command": "pkill -f \"mule_game_web.py\" || true"
+      "stop_command": "pkill -f 'http.server.*8016' || pkill -f 'mule_game_web.py' || true"
     },
     {
       "id": "homeassistant",

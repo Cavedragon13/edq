@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M.U.L.E. — Planet Irata</title>
+  <style>
+    /* ===== CSS VARIABLES ===== */
+    :root {
+      --bg-primary: #0d0d1a;
+      --bg-secondary: #13132a;
+      --bg-panel: #1a1a35;
+      --bg-input: #0f0f22;
+      --text-primary: #e0e0f0;
+      --text-secondary: #8888aa;
+      --text-dim: #555577;
+      --border: #2a2a4a;
+      --border-bright: #4a4a7a;
+      --accent: #6060ff;
+      --accent-glow: rgba(96,96,255,0.3);
+      --success: #40c060;
+      --warning: #f0a020;
+      --danger: #e04040;
+      --player-red: #ef4444;
+      --player-blue: #3b82f6;
+      --player-green: #10b981;
+      --player-yellow: #f59e0b;
+      --tile-size: 88px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #0a0a20 0%, #12123a 100%);
+      border-bottom: 2px solid var(--accent);
+      box-shadow: 0 2px 20px var(--accent-glow);
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-title h1 {
+      font-size: 1.5rem;
+      letter-spacing: 4px;
+      color: #a0a0ff;
+      text-shadow: 0 0 20px rgba(160,160,255,0.5);
+    }
+
+    .header-title .subtitle {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+    }
+
+    .round-badge {
+      background: var(--bg-panel);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .round-badge .phase-name {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* ===== MAIN LAYOUT ===== */
+    .main-layout {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      height: calc(100vh - 70px);
+    }
+
+    /* ===== LEFT SIDEBAR ===== */
+    .sidebar-left {
+      width: 220px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .panel-title {
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Player cards */
+    .player-card {
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      border-left: 3px solid #666;
+      background: rgba(0,0,0,0.3);
+      transition: all 0.2s;
+    }
+
+    .player-card.active {
+      box-shadow: 0 0 10px rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .player-name {
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .player-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-val {
+      color: var(--text-primary);
+      font-weight: bold;
+    }
+
+    /* Game Log */
+    .game-log {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-bright) transparent;
+    }
+
+    .log-entry {
+      font-size: 0.7rem;
+      padding: 3px 0;
+      color: var(--text-secondary);
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      line-height: 1.4;
+    }
+
+    .log-entry.important {
+      color: var(--text-primary);
+    }
+
+    .log-entry.good { color: var(--success); }
+    .log-entry.bad { color: var(--danger); }
+    .log-entry.special { color: #c080ff; }
+    .log-entry.round {
+      color: var(--accent);
+      font-weight: bold;
+      padding: 5px 0;
+    }
+
+    /* ===== GAME BOARD CENTER ===== */
+    .board-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .board-container {
+      position: relative;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(9, var(--tile-size));
+      grid-template-rows: repeat(5, var(--tile-size));
+      gap: 3px;
+      background: #050510;
+      padding: 3px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    /* Plot tile */
+    .plot {
+      width: var(--tile-size);
+      height: var(--tile-size);
+      position: relative;
+      border-radius: 4px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.1s, box-shadow 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .plot:hover {
+      transform: scale(1.04);
+      z-index: 10;
+    }
+
+    .plot.owned {
+      border-color: var(--owner-color, #666);
+      box-shadow: 0 0 8px var(--owner-color, transparent);
+    }
+
+    .plot.selected {
+      border-color: #ffffff !important;
+      box-shadow: 0 0 14px rgba(255,255,255,0.5) !important;
+      transform: scale(1.04);
+      z-index: 10;
+    }
+
+    .plot.pulse {
+      animation: plotPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes plotPulse {
+      0%, 100% { box-shadow: 0 0 6px var(--owner-color, #6060ff); }
+      50% { box-shadow: 0 0 18px var(--owner-color, #6060ff); }
+    }
+
+    /* Terrain backgrounds */
+    .terrain-plains {
+      background: linear-gradient(160deg, #0c1a08 0%, #142210 50%, #0e1c0a 100%);
+    }
+    .terrain-mountain {
+      background: linear-gradient(160deg, #1a1510 0%, #252018 50%, #1c1812 100%);
+    }
+    .terrain-river {
+      background: linear-gradient(160deg, #061420 0%, #0a1e2c 50%, #081828 100%);
+    }
+
+    /* Resource tint overlays */
+    .resource-tint {
+      position: absolute;
+      inset: 0;
+      opacity: 0.15;
+      border-radius: 2px;
+    }
+
+    /* Resource icons */
+    .resource-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.9;
+    }
+
+    /* Owner indicator — top bar */
+    .owner-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--owner-color, transparent);
+    }
+
+    /* Plot ID label */
+    .plot-id {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-size: 0.55rem;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* MULE badge */
+    .mule-badge {
+      position: absolute;
+      bottom: 2px;
+      left: 2px;
+      width: 28px;
+      height: 28px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 4px;
+      border: 1px solid #6090ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Resource label at bottom */
+    .resource-label {
+      position: absolute;
+      top: 4px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 0.6rem;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.5px;
+    }
+
+    /* Owner name overlay */
+    .owner-label {
+      position: absolute;
+      bottom: 30px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 0.6rem;
+      color: rgba(255,255,255,0.7);
+      text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    }
+
+    /* ===== RIGHT SIDEBAR / CONTROLS ===== */
+    .sidebar-right {
+      width: 240px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Control panels for different phases */
+    .control-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .phase-title {
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .current-player-display {
+      background: rgba(96,96,255,0.1);
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 8px 12px;
+      text-align: center;
+    }
+
+    .current-player-display .player-turn {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .current-player-display .player-turn-name {
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--text-primary);
+    }
+
+    /* Selected plot info */
+    .selected-plot-info {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 0.75rem;
+    }
+
+    .selected-plot-info h4 {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+    }
+
+    /* Inputs */
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-bright);
+      border-radius: 4px;
+      color: var(--text-primary);
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      display: block;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* Buttons */
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      letter-spacing: 1px;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #7070ff;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border-color: var(--border-bright);
+      color: var(--text-secondary);
+    }
+    .btn-secondary:hover {
+      border-color: var(--text-secondary);
+      color: var(--text-primary);
+    }
+
+    .btn-success {
+      background: var(--success);
+      border-color: var(--success);
+      color: #000;
+    }
+    .btn-success:hover { filter: brightness(1.15); }
+
+    .btn-danger {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #fff;
+    }
+    .btn-danger:hover { filter: brightness(1.15); }
+
+    .btn-full { width: 100%; }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Berry market ticker */
+    .berry-market {
+      background: linear-gradient(135deg, #1a0a2e, #2a1045);
+      border: 1px solid #5040a0;
+      border-radius: 6px;
+      padding: 8px 12px;
+      text-align: center;
+    }
+
+    .berry-market .price {
+      font-size: 1.2rem;
+      color: #c080ff;
+      font-weight: bold;
+    }
+
+    .berry-market .price-label {
+      font-size: 0.65rem;
+      color: #8060b0;
+      letter-spacing: 2px;
+    }
+
+    /* ===== SETUP SCREEN ===== */
+    #setup-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .setup-box {
+      background: var(--bg-panel);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      padding: 32px;
+      width: 460px;
+      box-shadow: 0 0 40px var(--accent-glow);
+    }
+
+    .setup-box h2 {
+      font-size: 1.6rem;
+      letter-spacing: 6px;
+      color: #a0a0ff;
+      text-align: center;
+      margin-bottom: 6px;
+      text-shadow: 0 0 20px rgba(160,160,255,0.5);
+    }
+
+    .setup-tagline {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      margin-bottom: 28px;
+      letter-spacing: 1px;
+    }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .player-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+
+    .player-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .num-players-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .num-players-row label {
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .num-btn {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .num-display {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--accent);
+      width: 24px;
+      text-align: center;
+    }
+
+    /* ===== MODAL ===== */
+    #modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    #modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--bg-panel);
+      border: 2px solid var(--accent);
+      border-radius: 10px;
+      padding: 24px;
+      min-width: 320px;
+      max-width: 400px;
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .modal-box h3 {
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+    }
+
+    /* Resource colors for modal context */
+    .resource-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin: 4px 0;
+    }
+
+    /* ===== END GAME SCREEN ===== */
+    #endgame-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 150;
+    }
+
+    #endgame-screen.active {
+      display: flex;
+    }
+
+    .endgame-box {
+      background: var(--bg-panel);
+      border: 2px solid gold;
+      border-radius: 12px;
+      padding: 32px;
+      width: 480px;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(255,215,0,0.3);
+    }
+
+    .endgame-box h2 {
+      font-size: 1.8rem;
+      color: gold;
+      margin-bottom: 8px;
+      letter-spacing: 4px;
+    }
+
+    .final-scores {
+      margin: 20px 0;
+      text-align: left;
+    }
+
+    .final-score-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+
+    .final-score-row.winner {
+      background: rgba(255,215,0,0.1);
+      border: 1px solid rgba(255,215,0,0.3);
+    }
+
+    /* ===== LEGEND ===== */
+    .legend {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    /* Production results */
+    .production-summary {
+      font-size: 0.75rem;
+      line-height: 1.8;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+    /* Phase transitions */
+    .phase-indicator {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+
+    .phase-dot.active { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .phase-dot.done { background: var(--success); }
+
+    /* Help text */
+    .help-text {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== SETUP SCREEN ===== -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <h2>M.U.L.E.</h2>
+    <div class="setup-tagline">Planet Irata · A tribute to Dani Bunten Berry</div>
+
+    <div class="num-players-row">
+      <label>PLAYERS</label>
+      <button class="btn-secondary num-btn" onclick="adjustPlayers(-1)">−</button>
+      <div class="num-display" id="num-display">2</div>
+      <button class="btn-secondary num-btn" onclick="adjustPlayers(1)">+</button>
+    </div>
+
+    <div id="player-inputs"></div>
+
+    <div class="setup-grid">
+      <div>
+        <label>ROUNDS</label>
+        <input type="number" id="max-rounds" value="12" min="4" max="24">
+      </div>
+      <div>
+        <label>STARTING MONEY</label>
+        <input type="number" id="start-money" value="1000" min="500" max="2000" step="100">
+      </div>
+    </div>
+
+    <button class="btn-primary btn-full" onclick="startGame()" style="padding:12px; font-size:0.9rem; letter-spacing:3px;">
+      LAND ON IRATA
+    </button>
+
+    <div style="margin-top:14px; font-size:0.65rem; color:var(--text-dim); text-align:center; line-height:1.7;">
+      🌾 Food · ⚡ Energy · 💎 Ore · 🫐 Bunten Berries (rare!)<br>
+      Acquire land · Deploy M.U.L.E.s · Dominate the colony
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div id="modal-overlay">
+  <div class="modal-box">
+    <h3 id="modal-title">LAND AUCTION</h3>
+    <div id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ===== END GAME ===== -->
+<div id="endgame-screen">
+  <div class="endgame-box">
+    <h2>🏆 GAME OVER 🏆</h2>
+    <div id="endgame-content"></div>
+    <button class="btn-primary btn-full" onclick="location.reload()" style="margin-top:20px;">NEW GAME</button>
+  </div>
+</div>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="header-title">
+    <div>
+      <h1>M.U.L.E.</h1>
+      <div class="subtitle">PLANET IRATA</div>
+    </div>
+  </div>
+
+  <div id="round-badge" class="round-badge">
+    <span id="round-info">Round 1 / 12</span>
+    <span class="phase-name" id="phase-display">SETUP</span>
+  </div>
+
+  <div class="berry-market" style="min-width:110px;">
+    <div class="price-label">🫐 BERRY MKT</div>
+    <div class="price" id="berry-price">$100</div>
+  </div>
+</header>
+
+<!-- ===== MAIN LAYOUT ===== -->
+<div class="main-layout">
+
+  <!-- Left sidebar: Players + Log -->
+  <div class="sidebar-left">
+    <div class="panel" style="flex-shrink:0;">
+      <div class="panel-title">COLONISTS</div>
+      <div id="player-cards"></div>
+    </div>
+    <div class="panel" style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="panel-title">COLONY LOG</div>
+      <div class="game-log" id="game-log"></div>
+    </div>
+  </div>
+
+  <!-- Board center -->
+  <div class="board-area">
+    <div class="board-container">
+      <div class="game-board" id="game-board"></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#142210;border:1px solid #2a4420;"></div>Plains
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#1c1812;border:1px solid #3a3020;"></div>Mountain
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#081828;border:1px solid #102030;"></div>River
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#6090ff;border-radius:50%;"></div>M.U.L.E.
+      </div>
+    </div>
+  </div>
+
+  <!-- Right sidebar: Controls -->
+  <div class="sidebar-right">
+    <div class="panel">
+      <div class="panel-title">COMMAND CENTER</div>
+      <div id="controls-area"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">SELECTED PLOT</div>
+      <div id="selected-plot-info" class="selected-plot-info">
+        <div style="color:var(--text-dim); font-size:0.72rem;">Click a plot to inspect it</div>
+      </div>
+    </div>
+
+    <div class="panel" style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="panel-title">PHASE GUIDE</div>
+      <div id="phase-guide" class="help-text">
+        Set up your game above, then land on Planet Irata!
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== JAVASCRIPT GAME ENGINE ===== -->
+<script>
+// ======================================
+// GAME DATA & CONSTANTS
+// ======================================
+
+const RESOURCES = [
+  { id: 'food',    name: 'Food',          shortName: 'FD', color: '#1a8040', bgColor: '#0c1a08', tint: '#40ff80', basePrice: 30,  rarity: 15 },
+  { id: 'energy',  name: 'Energy',        shortName: 'EN', color: '#c08020', bgColor: '#1a0f00', tint: '#ffd040', basePrice: 25,  rarity: 15 },
+  { id: 'ore',     name: 'Ore',           shortName: 'OR', color: '#7858b0', bgColor: '#16102a', tint: '#b080ff', basePrice: 50,  rarity: 10 },
+  { id: 'berries', name: 'Bunten Berries',shortName: 'BB', color: '#9040d0', bgColor: '#100820', tint: '#d080ff', basePrice: 100, rarity: 5  },
+];
+
+const PLAYER_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b'];
+
+const TERRAIN = {
+  plains:   { cls: 'terrain-plains',   label: 'Plains'   },
+  mountain: { cls: 'terrain-mountain', label: 'Mountain' },
+  river:    { cls: 'terrain-river',    label: 'River'    },
+};
+
+const PHASES = {
+  setup:         { label: 'SETUP',           guide: 'Configure and launch your game.' },
+  auction:       { label: 'LAND AUCTION',    guide: 'Click any unowned plot to bid on it. Highest bidder wins the land. Pass (bid $0) to skip.' },
+  mule_place:    { label: 'M.U.L.E. DEPLOY', guide: 'Click one of your plots to deploy a M.U.L.E. on it ($100 each). Click "Done" when finished.' },
+  production:    { label: 'PRODUCTION',      guide: 'M.U.L.E.s harvest resources from the soil. Sit tight...' },
+  end:           { label: 'GAME OVER',       guide: 'The colony has been fully established. Final scores calculated!' },
+};
+
+// Production bonus based on terrain
+const TERRAIN_BONUS = {
+  plains:   { food: 1.0, energy: 1.0, ore: 0.8, berries: 1.0 },
+  mountain: { food: 0.6, energy: 1.2, ore: 1.5, berries: 0.8 },
+  river:    { food: 1.4, energy: 0.8, ore: 0.7, berries: 1.3 },
+};
+
+// ======================================
+// GAME STATE
+// ======================================
+
+let state = {
+  players: [],
+  plots: [],
+  phase: 'setup',
+  currentRound: 1,
+  maxRounds: 12,
+  currentPlayerIdx: 0,
+  berryPrice: 100,
+  selectedPlotId: null,
+  auctionRoundDone: false, // track if all players passed/bid this auction
+  gameLog: [],
+};
+
+// Setup UI state
+let numPlayers = 2;
+
+// ======================================
+// SETUP SCREEN
+// ======================================
+
+function adjustPlayers(delta) {
+  numPlayers = Math.max(2, Math.min(4, numPlayers + delta));
+  document.getElementById('num-display').textContent = numPlayers;
+  renderPlayerInputs();
+}
+
+function renderPlayerInputs() {
+  const defaults = ['Alice', 'Bob', 'Charlie', 'Diana'];
+  const container = document.getElementById('player-inputs');
+  container.innerHTML = '';
+  for (let i = 0; i < numPlayers; i++) {
+    const row = document.createElement('div');
+    row.className = 'player-input-row';
+    row.innerHTML = `
+      <div class="player-dot" style="background:${PLAYER_COLORS[i]};"></div>
+      <input type="text" id="player-name-${i}" value="${defaults[i]}" maxlength="12"
+             style="flex:1; margin:0;" placeholder="Player ${i+1} name">
+    `;
+    container.appendChild(row);
+  }
+}
+
+// Init setup screen
+renderPlayerInputs();
+
+function startGame() {
+  const names = [];
+  for (let i = 0; i < numPlayers; i++) {
+    const val = document.getElementById(`player-name-${i}`).value.trim();
+    names.push(val || `Player ${i+1}`);
+  }
+
+  const startMoney = parseInt(document.getElementById('start-money').value) || 1000;
+  const maxRounds = parseInt(document.getElementById('max-rounds').value) || 12;
+
+  // Create players
+  state.players = names.map((name, i) => ({
+    name,
+    color: PLAYER_COLORS[i],
+    money: startMoney,
+    food: 50,
+    energy: 50,
+    berries: 0,
+  }));
+
+  state.maxRounds = maxRounds;
+  state.currentRound = 1;
+  state.berryPrice = 100;
+
+  // Create plots
+  initializePlots();
+
+  // Hide setup
+  document.getElementById('setup-screen').style.display = 'none';
+
+  // Start auction
+  state.phase = 'auction';
+  state.currentPlayerIdx = 0;
+
+  addLog(`🚀 Colony ship lands on Planet Irata! ${names.join(', ')} begin their adventure.`, 'important');
+  addLog(`📋 Round 1 of ${maxRounds} — LAND AUCTION begins!`, 'round');
+
+  render();
+}
+
+// ======================================
+// PLOT INITIALIZATION
+// ======================================
+
+function initializePlots() {
+  // Build resource pool
+  const pool = [];
+  RESOURCES.forEach(r => {
+    for (let i = 0; i < r.rarity; i++) pool.push(r.id);
+  });
+
+  // Fisher-Yates shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  state.plots = [];
+  for (let idx = 0; idx < 45; idx++) {
+    const row = Math.floor(idx / 9);
+    const col = idx % 9;
+    let terrain = 'plains';
+    if (col === 4) terrain = 'mountain';
+    else if (col === 0 || col === 8) terrain = 'river';
+
+    state.plots.push({
+      id: idx,
+      row, col,
+      resourceId: pool[idx],
+      terrain,
+      ownerId: null,   // index into state.players
+      hasMule: false,
+    });
+  }
+}
+
+// ======================================
+// SVG ICONS
+// ======================================
+
+function getSVG(type, size = 44) {
+  const s = size;
+  const h = s / 2;
+
+  const icons = {
+    food: `<svg viewBox="0 0 64 64" width="${s}" height="${s}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Main stalk -->
+      <rect x="30" y="20" width="4" height="32" fill="#7a5010"/>
+      <!-- Central grain head -->
+      <ellipse cx="32" cy="16" rx="7" ry="12" fill="#f0c030"/>
+      <ellipse cx="32" cy="14" rx="4" ry="7" fill="#ffe060"/>
+      <!-- Left grain -->
+      <ellipse cx="20" cy="24" rx="5" ry="9" fill="#d4aa20" transform="rotate(-22,20,24)"/>
+      <ellipse cx="18" cy="22" rx="3" ry="5" fill="#eecc40" transform="rotate(-22,18,22)"/>
+      <!-- Right grain -->
+      <ellipse cx="44" cy="24" rx="5" ry="9" fill="#d4aa20" transform="rotate(22,44,24)"/>
+      <ellipse cx="46" cy="22" rx="3" ry="5" fill="#eecc40" transform="rotate(22,46,22)"/>
+      <!-- Far left -->
+      <ellipse cx="13" cy="30" rx="4" ry="7" fill="#b89010" transform="rotate(-38,13,30)"/>
+      <!-- Far right -->
+      <ellipse cx="51" cy="30" rx="4" ry="7" fill="#b89010" transform="rotate(38,51,30)"/>
+      <!-- Ground -->
+      <line x1="12" y1="54" x2="52" y2="54" stroke="#604020" stroke-width="2"/>
+    </svg>`,
+
+    energy: `<svg viewBox="0 0 64 64" width="${s}" height="${s}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Lightning bolt -->
+      <polygon points="42,6 24,36 36,36 22,58 46,28 34,28 42,6" fill="#f0d000"/>
+      <polygon points="42,6 24,36 36,36 22,58 46,28 34,28 42,6" fill="#fff8a0" opacity="0.3"/>
+      <!-- Glow core -->
+      <polygon points="38,14 28,34 36,34 26,52 42,30 34,30 38,14" fill="#ffe840" opacity="0.6"/>
+    </svg>`,
+
+    ore: `<svg viewBox="0 0 64 64" width="${s}" height="${s}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Main crystal -->
+      <polygon points="32,10 46,30 40,52 24,52 18,30" fill="#7050b0"/>
+      <polygon points="32,10 46,30 40,52 24,52 18,30" fill="none" stroke="#c0a0e0" stroke-width="1.5" stroke-opacity="0.7"/>
+      <!-- Crystal face highlight -->
+      <polygon points="32,10 46,30 38,30" fill="#a070d0" opacity="0.7"/>
+      <polygon points="32,10 38,30 32,24" fill="#d0b0f0" opacity="0.5"/>
+      <!-- Left crystal -->
+      <polygon points="20,18 10,34 16,50 26,46 28,26" fill="#5838a0" opacity="0.85"/>
+      <polygon points="20,18 28,26 22,28" fill="#9070c0" opacity="0.6"/>
+      <!-- Right crystal -->
+      <polygon points="44,20 54,36 48,50 38,48 36,28" fill="#8060c0" opacity="0.85"/>
+      <polygon points="44,20 36,28 42,30" fill="#c0a0e0" opacity="0.6"/>
+    </svg>`,
+
+    berries: `<svg viewBox="0 0 64 64" width="${s}" height="${s}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Vine/stem -->
+      <path d="M32 54 Q22 46 20 34 Q18 22 26 18 Q36 14 44 20 Q52 28 50 40 Q46 52 36 54 Z"
+            fill="none" stroke="#406030" stroke-width="2"/>
+      <!-- Leaf -->
+      <ellipse cx="44" cy="18" rx="6" ry="4" fill="#305020" transform="rotate(-30,44,18)"/>
+      <!-- Berry 1 (bottom left) -->
+      <circle cx="26" cy="40" r="8" fill="#5030a0"/>
+      <circle cx="26" cy="40" r="8" fill="none" stroke="#8060d0" stroke-width="1"/>
+      <circle cx="23" cy="37" r="3" fill="rgba(255,255,255,0.3)"/>
+      <!-- Berry 2 (top) -->
+      <circle cx="36" cy="22" r="7" fill="#6840b8"/>
+      <circle cx="36" cy="22" r="7" fill="none" stroke="#9070d8" stroke-width="1"/>
+      <circle cx="33" cy="20" r="2.5" fill="rgba(255,255,255,0.3)"/>
+      <!-- Berry 3 (right) -->
+      <circle cx="46" cy="36" r="8" fill="#4020a0"/>
+      <circle cx="46" cy="36" r="8" fill="none" stroke="#7050c0" stroke-width="1"/>
+      <circle cx="43" cy="33" r="3" fill="rgba(255,255,255,0.3)"/>
+      <!-- Berry 4 (center) -->
+      <circle cx="34" cy="44" r="7" fill="#7048c0"/>
+      <circle cx="34" cy="44" r="7" fill="none" stroke="#a070e0" stroke-width="1"/>
+      <circle cx="31" cy="41" r="2.5" fill="rgba(255,255,255,0.3)"/>
+    </svg>`,
+
+    mule: `<svg viewBox="0 0 32 32" width="26" height="26" xmlns="http://www.w3.org/2000/svg">
+      <!-- Body -->
+      <rect x="8" y="12" width="16" height="11" rx="2" fill="#4070c0"/>
+      <!-- Head -->
+      <rect x="10" y="5" width="12" height="9" rx="2" fill="#5080d0"/>
+      <!-- Visor/eyes -->
+      <rect x="11" y="7" width="10" height="4" rx="1" fill="#0a1020"/>
+      <rect x="12" y="8" width="3" height="2" rx="0.5" fill="#ff4040"/>
+      <rect x="17" y="8" width="3" height="2" rx="0.5" fill="#ff4040"/>
+      <!-- Antenna -->
+      <rect x="15" y="2" width="2" height="4" fill="#6090e0"/>
+      <circle cx="16" cy="2" r="2" fill="#80b0ff"/>
+      <!-- Legs -->
+      <rect x="10" y="23" width="4" height="6" rx="1" fill="#3060b0"/>
+      <rect x="18" y="23" width="4" height="6" rx="1" fill="#3060b0"/>
+      <!-- Arms -->
+      <rect x="3" y="14" width="6" height="3" rx="1" fill="#3060b0"/>
+      <rect x="23" y="14" width="6" height="3" rx="1" fill="#3060b0"/>
+      <!-- Panel details -->
+      <rect x="11" y="14" width="10" height="2" rx="1" fill="#2050a0"/>
+      <circle cx="16" cy="18" r="2" fill="#6090e0"/>
+    </svg>`,
+  };
+
+  return icons[type] || '';
+}
+
+// ======================================
+// MAIN RENDER
+// ======================================
+
+function render() {
+  renderBoard();
+  renderPlayerCards();
+  renderControls();
+  updateHeader();
+  updateBerryPrice();
+}
+
+function updateHeader() {
+  document.getElementById('round-info').textContent =
+    `Round ${state.currentRound} / ${state.maxRounds}`;
+  document.getElementById('phase-display').textContent =
+    PHASES[state.phase]?.label || state.phase.toUpperCase();
+  document.getElementById('phase-guide').textContent =
+    PHASES[state.phase]?.guide || '';
+}
+
+function updateBerryPrice() {
+  document.getElementById('berry-price').textContent = `$${state.berryPrice}`;
+}
+
+// ======================================
+// BOARD RENDER
+// ======================================
+
+function renderBoard() {
+  const board = document.getElementById('game-board');
+  board.innerHTML = '';
+
+  state.plots.forEach(plot => {
+    const resource = RESOURCES.find(r => r.id === plot.resourceId);
+    const owner = plot.ownerId !== null ? state.players[plot.ownerId] : null;
+    const terrain = TERRAIN[plot.terrain];
+
+    const tile = document.createElement('div');
+    tile.className = `plot ${terrain.cls}`;
+    tile.dataset.plotId = plot.id;
+
+    if (owner) {
+      tile.classList.add('owned');
+      tile.style.setProperty('--owner-color', owner.color);
+    }
+
+    if (plot.id === state.selectedPlotId) {
+      tile.classList.add('selected');
+    }
+
+    // Highlight clickable plots during auction (unowned)
+    if (state.phase === 'auction' && !owner) {
+      tile.classList.add('pulse');
+    }
+    // Highlight own plots during MULE placement (no MULE yet)
+    if (state.phase === 'mule_place' &&
+        plot.ownerId === state.currentPlayerIdx &&
+        !plot.hasMule) {
+      tile.classList.add('pulse');
+      tile.style.setProperty('--owner-color', state.players[state.currentPlayerIdx].color);
+    }
+
+    tile.innerHTML = `
+      <div class="resource-tint" style="background:${resource.tint};"></div>
+      <div class="owner-bar"></div>
+      <div class="resource-label">${resource.shortName}</div>
+      <div class="resource-icon">${getSVG(resource.id)}</div>
+      ${owner ? `<div class="owner-label">${owner.name.slice(0,6)}</div>` : ''}
+      ${plot.hasMule ? `<div class="mule-badge">${getSVG('mule')}</div>` : ''}
+      <div class="plot-id">${plot.id}</div>
+    `;
+
+    tile.addEventListener('click', () => onPlotClick(plot.id));
+    board.appendChild(tile);
+  });
+}
+
+// ======================================
+// PLAYER CARDS
+// ======================================
+
+function renderPlayerCards() {
+  const container = document.getElementById('player-cards');
+  container.innerHTML = '';
+
+  state.players.forEach((player, idx) => {
+    const card = document.createElement('div');
+    card.className = `player-card${idx === state.currentPlayerIdx && state.phase !== 'end' ? ' active' : ''}`;
+    card.style.borderLeftColor = player.color;
+
+    const ownedPlots = state.plots.filter(p => p.ownerId === idx);
+    const muleCount = ownedPlots.filter(p => p.hasMule).length;
+
+    card.innerHTML = `
+      <div class="player-name" style="color:${player.color};">
+        ${idx === state.currentPlayerIdx && state.phase !== 'production' && state.phase !== 'end' ? '▶ ' : ''}${player.name}
+      </div>
+      <div class="player-stats">
+        <div class="stat-row">💰 <span class="stat-val">$${player.money}</span></div>
+        <div class="stat-row">🌾 <span class="stat-val">${player.food}</span></div>
+        <div class="stat-row">⚡ <span class="stat-val">${player.energy}</span></div>
+        <div class="stat-row">🫐 <span class="stat-val">${player.berries}</span></div>
+        <div class="stat-row">🏠 <span class="stat-val">${ownedPlots.length} plots</span></div>
+        <div class="stat-row">🤖 <span class="stat-val">${muleCount} M.U.L.E.</span></div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+// ======================================
+// CONTROLS RENDER
+// ======================================
+
+function renderControls() {
+  const area = document.getElementById('controls-area');
+
+  if (state.phase === 'auction') {
+    renderAuctionControls(area);
+  } else if (state.phase === 'mule_place') {
+    renderMulePlacementControls(area);
+  } else if (state.phase === 'production') {
+    area.innerHTML = `<div style="color:var(--text-secondary); font-size:0.8rem; text-align:center; padding:20px;">
+      Production running...<br><br>
+      <button class="btn-primary btn-full" onclick="runProductionPhase()">RUN PRODUCTION ▶</button>
+    </div>`;
+  } else {
+    area.innerHTML = '';
+  }
+}
+
+function renderAuctionControls(area) {
+  const current = state.players[state.currentPlayerIdx];
+  area.innerHTML = `
+    <div class="current-player-display">
+      <div class="player-turn">BIDDING:</div>
+      <div class="player-turn-name" style="color:${current.color};">${current.name}</div>
+      <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:4px;">$${current.money} available</div>
+    </div>
+    <div style="margin-top:10px; font-size:0.72rem; color:var(--text-secondary);">
+      Click a glowing plot to bid on it
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn-secondary btn-full" onclick="advanceAuctionPlayer()">PASS TURN ↓</button>
+    </div>
+    <div style="margin-top:6px;">
+      <button class="btn-secondary btn-full" onclick="endAuctionPhase()" style="font-size:0.7rem;">
+        SKIP ALL → DEPLOY M.U.L.E.s
+      </button>
+    </div>
+  `;
+}
+
+function renderMulePlacementControls(area) {
+  const current = state.players[state.currentPlayerIdx];
+  const ownedPlots = state.plots.filter(p => p.ownerId === state.currentPlayerIdx && !p.hasMule);
+  area.innerHTML = `
+    <div class="current-player-display">
+      <div class="player-turn">DEPLOYING:</div>
+      <div class="player-turn-name" style="color:${current.color};">${current.name}</div>
+      <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:4px;">
+        $${current.money} · M.U.L.E. costs $100
+      </div>
+    </div>
+    <div style="margin-top:10px; font-size:0.72rem; color:var(--text-secondary);">
+      ${ownedPlots.length > 0
+        ? `${ownedPlots.length} plot(s) without M.U.L.E. — click to deploy`
+        : 'All your plots have M.U.L.E.s or no plots owned'}
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn-success btn-full" onclick="nextMuleplacePlayer()">
+        DONE → NEXT PLAYER ↓
+      </button>
+    </div>
+  `;
+}
+
+// ======================================
+// PLOT CLICK HANDLER
+// ======================================
+
+function onPlotClick(plotId) {
+  const plot = state.plots[plotId];
+  state.selectedPlotId = plotId;
+  updateSelectedPlotInfo(plot);
+
+  if (state.phase === 'auction') {
+    if (plot.ownerId !== null) {
+      addLog(`Plot #${plotId} is already owned by ${state.players[plot.ownerId].name}.`);
+      renderBoard();
+      return;
+    }
+    showAuctionModal(plot);
+  } else if (state.phase === 'mule_place') {
+    if (plot.ownerId !== state.currentPlayerIdx) {
+      addLog(`You don't own plot #${plotId}.`);
+      renderBoard();
+      return;
+    }
+    if (plot.hasMule) {
+      addLog(`Plot #${plotId} already has a M.U.L.E.`);
+      renderBoard();
+      return;
+    }
+    deployMule(plot);
+  }
+
+  renderBoard();
+}
+
+function updateSelectedPlotInfo(plot) {
+  const resource = RESOURCES.find(r => r.id === plot.resourceId);
+  const owner = plot.ownerId !== null ? state.players[plot.ownerId] : null;
+  const terrain = TERRAIN[plot.terrain];
+
+  const el = document.getElementById('selected-plot-info');
+  el.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+      ${getSVG(resource.id, 36)}
+      <div>
+        <div style="font-weight:bold; color:${resource.tint};">${resource.name}</div>
+        <div style="font-size:0.65rem; color:var(--text-secondary);">${terrain.label} · Plot #${plot.id}</div>
+      </div>
+    </div>
+    <div style="font-size:0.72rem; line-height:1.8;">
+      <div>Base price: <b>$${resource.basePrice}</b></div>
+      <div>Owner: <b style="color:${owner ? owner.color : 'var(--text-dim)'};">${owner ? owner.name : 'Unowned'}</b></div>
+      <div>M.U.L.E.: <b>${plot.hasMule ? '✓ Deployed' : '✗ None'}</b></div>
+      <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px;">
+        ${terrain.label === 'Mountain' ? '⛰️ Ore +50% · Energy +20%' :
+          terrain.label === 'River' ? '🌊 Food +40% · Berries +30%' :
+          '🌿 Standard production rates'}
+      </div>
+    </div>
+  `;
+}
+
+// ======================================
+// AUCTION MODAL
+// ======================================
+
+function showAuctionModal(plot) {
+  const resource = RESOURCES.find(r => r.id === plot.resourceId);
+  const current = state.players[state.currentPlayerIdx];
+  const terrain = TERRAIN[plot.terrain];
+
+  document.getElementById('modal-title').textContent = 'LAND AUCTION';
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;
+                padding:10px; background:rgba(0,0,0,0.3); border-radius:6px;">
+      ${getSVG(resource.id, 48)}
+      <div>
+        <div style="font-size:1.0rem; font-weight:bold; color:${resource.tint};">${resource.name}</div>
+        <div style="font-size:0.72rem; color:var(--text-secondary);">${terrain.label} terrain · Plot #${plot.id}</div>
+        <div style="font-size:0.72rem; color:var(--text-secondary);">Base value: $${resource.basePrice}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px; padding:8px; background:rgba(0,0,0,0.2); border-radius:4px;">
+      <div style="font-size:0.72rem; color:var(--text-secondary);">Current bidder:</div>
+      <div style="font-size:0.95rem; color:${current.color}; font-weight:bold;">${current.name} — $${current.money}</div>
+    </div>
+    <div>
+      <label>YOUR BID ($0 = PASS)</label>
+      <input type="number" id="bid-input" value="${resource.basePrice}" min="0" max="${current.money}"
+             onkeydown="if(event.key==='Enter') submitBid(${plot.id})">
+    </div>
+  `;
+
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="btn-secondary" onclick="closeModal()">CANCEL</button>
+    <button class="btn-primary" onclick="submitBid(${plot.id})">PLACE BID</button>
+  `;
+
+  openModal();
+
+  // Auto-focus bid input
+  setTimeout(() => {
+    const input = document.getElementById('bid-input');
+    if (input) { input.focus(); input.select(); }
+  }, 100);
+}
+
+function submitBid(plotId) {
+  const plot = state.plots[plotId];
+  const resource = RESOURCES.find(r => r.id === plot.resourceId);
+  const current = state.players[state.currentPlayerIdx];
+  const bid = parseInt(document.getElementById('bid-input').value) || 0;
+
+  closeModal();
+
+  if (bid === 0) {
+    addLog(`${current.name} passed on ${resource.name} plot #${plotId}.`);
+    advanceAuctionPlayer();
+    return;
+  }
+
+  if (bid > current.money) {
+    addLog(`${current.name} can't afford $${bid}! (has $${current.money})`, 'bad');
+    return;
+  }
+
+  // Successful bid
+  plot.ownerId = state.currentPlayerIdx;
+  current.money -= bid;
+  addLog(`${current.name} won ${resource.name} plot #${plotId} for $${bid}!`, 'good');
+  advanceAuctionPlayer();
+}
+
+function advanceAuctionPlayer() {
+  state.currentPlayerIdx++;
+  if (state.currentPlayerIdx >= state.players.length) {
+    // Check if any unowned plots remain
+    const unowned = state.plots.filter(p => p.ownerId === null);
+    if (unowned.length === 0) {
+      endAuctionPhase();
+      return;
+    }
+    // Start next auction round
+    state.currentPlayerIdx = 0;
+    addLog(`Auction continues — ${unowned.length} plots remaining.`);
+  } else {
+    const next = state.players[state.currentPlayerIdx];
+    addLog(`${next.name}'s turn to bid.`);
+  }
+  render();
+}
+
+function endAuctionPhase() {
+  addLog('Land auction complete! Proceeding to M.U.L.E. deployment...', 'important');
+  state.phase = 'mule_place';
+  state.currentPlayerIdx = 0;
+  render();
+}
+
+// ======================================
+// MULE PLACEMENT
+// ======================================
+
+function deployMule(plot) {
+  const current = state.players[state.currentPlayerIdx];
+  if (current.money < 100) {
+    addLog(`${current.name} can't afford a M.U.L.E. (costs $100, has $${current.money})`, 'bad');
+    return;
+  }
+  plot.hasMule = true;
+  current.money -= 100;
+  const resource = RESOURCES.find(r => r.id === plot.resourceId);
+  addLog(`${current.name} deployed M.U.L.E. on ${resource.name} plot #${plot.id}!`, 'good');
+  renderPlayerCards();
+  renderControls();
+}
+
+function nextMuleplacePlayer() {
+  state.currentPlayerIdx++;
+  if (state.currentPlayerIdx >= state.players.length) {
+    // All players done with MULE placement — run production
+    state.phase = 'production';
+    addLog('M.U.L.E. deployment complete!', 'important');
+    render();
+    // Slight delay so player sees the UI before auto-running
+    setTimeout(runProductionPhase, 500);
+    return;
+  }
+  const next = state.players[state.currentPlayerIdx];
+  addLog(`${next.name}'s turn to deploy M.U.L.E.s.`);
+  render();
+}
+
+// ======================================
+// PRODUCTION & CONSUMPTION
+// ======================================
+
+function runProductionPhase() {
+  addLog(`\n─── ROUND ${state.currentRound} PRODUCTION ───`, 'round');
+
+  const results = {};
+  state.players.forEach((player, idx) => {
+    results[player.name] = { food: 0, energy: 0, ore: 0, berries: 0, moneyFromOre: 0 };
+  });
+
+  state.plots.forEach(plot => {
+    if (!plot.hasMule || plot.ownerId === null) return;
+
+    const player = state.players[plot.ownerId];
+    const resource = RESOURCES.find(r => r.id === plot.resourceId);
+    const bonus = TERRAIN_BONUS[plot.terrain][plot.resourceId] || 1.0;
+
+    // Randomized production (3-8 base × terrain bonus)
+    const base = Math.floor(Math.random() * 6) + 3;
+    const amount = Math.round(base * bonus);
+
+    const r = results[player.name];
+
+    if (plot.resourceId === 'food') {
+      player.food += amount;
+      r.food += amount;
+    } else if (plot.resourceId === 'energy') {
+      player.energy += amount;
+      r.energy += amount;
+    } else if (plot.resourceId === 'ore') {
+      const money = amount * resource.basePrice;
+      player.money += money;
+      r.ore += amount;
+      r.moneyFromOre += money;
+    } else if (plot.resourceId === 'berries') {
+      player.berries += amount;
+      r.berries += amount;
+    }
+  });
+
+  // Log production
+  state.players.forEach(player => {
+    const r = results[player.name];
+    const parts = [];
+    if (r.food > 0) parts.push(`+${r.food} food`);
+    if (r.energy > 0) parts.push(`+${r.energy} energy`);
+    if (r.ore > 0) parts.push(`+${r.ore} ore → +$${r.moneyFromOre}`);
+    if (r.berries > 0) parts.push(`+${r.berries} 🫐`);
+    if (parts.length > 0) {
+      addLog(`${player.name}: ${parts.join(', ')}`, 'good');
+    } else {
+      addLog(`${player.name}: No production (no M.U.L.E.s).`);
+    }
+  });
+
+  // Run consumption
+  addLog(`─── CONSUMPTION ───`, 'round');
+  state.players.forEach(player => {
+    const foodNeeded = 10;
+    const energyNeeded = 10;
+
+    const foodConsumed = Math.min(player.food, foodNeeded);
+    const energyConsumed = Math.min(player.energy, energyNeeded);
+
+    player.food -= foodConsumed;
+    player.energy -= energyConsumed;
+
+    const foodDeficit = foodNeeded - foodConsumed;
+    const energyDeficit = energyNeeded - energyConsumed;
+    const penalty = (foodDeficit + energyDeficit) * 50;
+
+    if (penalty > 0) {
+      player.money = Math.max(0, player.money - penalty);
+      addLog(`${player.name}: Used ${foodConsumed} food, ${energyConsumed} energy. PENALTY -$${penalty}!`, 'bad');
+    } else {
+      addLog(`${player.name}: Used ${foodConsumed} food, ${energyConsumed} energy. OK.`);
+    }
+  });
+
+  // Update berry market
+  const variance = Math.floor(Math.random() * 61) - 30; // ±30%
+  state.berryPrice = Math.max(50, 100 + variance);
+  addLog(`🫐 Bunten Berry market: $${state.berryPrice}`, 'special');
+
+  // Berry value bonus: cash out berries at market price
+  state.players.forEach(player => {
+    if (player.berries > 0) {
+      const berryVal = player.berries * state.berryPrice;
+      addLog(`${player.name} holds ${player.berries} berries @ $${state.berryPrice} = $${berryVal}`, 'special');
+    }
+  });
+
+  // Check if game over
+  if (state.currentRound >= state.maxRounds) {
+    endGame();
+    return;
+  }
+
+  // Advance to next round
+  state.currentRound++;
+  state.phase = 'auction';
+  state.currentPlayerIdx = 0;
+  addLog(`\n═══ ROUND ${state.currentRound} BEGINS ═══`, 'round');
+
+  // Clear MULE deployments for the new round (reset to allow re-deployment)
+  // Actually in MULE, MULEs persist once deployed — keep them!
+
+  render();
+}
+
+// ======================================
+// END GAME
+// ======================================
+
+function endGame() {
+  state.phase = 'end';
+  addLog('\n🏆 GAME OVER! Final scores:', 'important');
+
+  // Calculate final scores (money + berry value)
+  const scores = state.players.map((player, idx) => ({
+    player,
+    idx,
+    berryValue: player.berries * state.berryPrice,
+    total: player.money + player.berries * state.berryPrice,
+  })).sort((a, b) => b.total - a.total);
+
+  scores.forEach((s, rank) => {
+    addLog(`${rank + 1}. ${s.player.name}: $${s.player.money} + ${s.player.berries}🫐×$${state.berryPrice} = $${s.total}`,
+           rank === 0 ? 'good' : '');
+  });
+
+  const winner = scores[0];
+
+  const endScreen = document.getElementById('endgame-screen');
+  endScreen.classList.add('active');
+
+  document.getElementById('endgame-content').innerHTML = `
+    <div style="font-size:1.2rem; color:${winner.player.color}; margin:10px 0;">
+      🥇 ${winner.player.name}
+    </div>
+    <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:20px;">
+      Final Score: $${winner.total}
+    </div>
+    <div class="final-scores">
+      ${scores.map((s, rank) => `
+        <div class="final-score-row ${rank === 0 ? 'winner' : ''}">
+          <div style="font-size:1.2rem;">${['🥇','🥈','🥉','4️⃣'][rank]}</div>
+          <div style="flex:1;">
+            <div style="color:${s.player.color}; font-weight:bold;">${s.player.name}</div>
+            <div style="font-size:0.7rem; color:var(--text-secondary);">
+              $${s.player.money} cash + ${s.player.berries}🫐 berries =
+            </div>
+          </div>
+          <div style="font-weight:bold; font-size:1.1rem;">$${s.total}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:10px;">
+      Berry Market Final Price: $${state.berryPrice}
+    </div>
+  `;
+
+  updateHeader();
+}
+
+// ======================================
+// MODAL HELPERS
+// ======================================
+
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+
+// Close modal on backdrop click
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ======================================
+// GAME LOG
+// ======================================
+
+function addLog(msg, type = '') {
+  state.gameLog.push({ msg, type, time: Date.now() });
+
+  const log = document.getElementById('game-log');
+  const entry = document.createElement('div');
+  entry.className = `log-entry${type ? ' ' + type : ''}`;
+  entry.textContent = msg;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+
+  // Keep log trimmed to 200 entries in DOM
+  while (log.children.length > 200) {
+    log.removeChild(log.firstChild);
+  }
+}
+
+// ======================================
+// KEYBOARD SHORTCUTS
+// ======================================
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('setup-screen').style.display !== 'none') return;
+  if (document.getElementById('modal-overlay').classList.contains('active')) {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Enter') {
+      const bid = document.getElementById('bid-input');
+      if (bid) {
+        // Find active plot
+        if (state.selectedPlotId !== null) submitBid(state.selectedPlotId);
+      }
+    }
+    return;
+  }
+  if (e.key === 'Escape') state.selectedPlotId = null;
+});
+</script>
+
+</body>
+</html>
