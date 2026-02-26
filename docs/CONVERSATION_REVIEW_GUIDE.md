@@ -53,6 +53,7 @@ Individual analysis files for each conversation in `~/claude_conversations/analy
 - ... (one per conversation)
 
 Each analysis contains:
+
 - Configuration insights
 - Problems solved
 - Best practices discovered
@@ -64,6 +65,7 @@ Each analysis contains:
 One comprehensive file: `~/claude_conversations/LESSONS_LEARNED.md`
 
 Contains:
+
 - **Consolidated lessons** - Common patterns across all conversations
 - **Prioritized** - Most important lessons first
 - **Actionable** - Clear guidance on what to do
@@ -154,7 +156,7 @@ For each session ID in ~/.claude/history.jsonl:
 
 Here's what you might discover:
 
-```markdown
+````markdown
 ### Memory Optimization for 16GB VRAM
 
 **Issue:** Large diffusion models OOM on RTX 5070 Ti (16GB VRAM)
@@ -162,6 +164,7 @@ Here's what you might discover:
 **Solution:** Use `enable_sequential_cpu_offload()` + environment variable
 
 **Implementation:**
+
 ```python
 # In launcher script BEFORE python command:
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
@@ -172,14 +175,17 @@ if hasattr(pipeline, 'vae'):
     pipeline.vae.enable_slicing()
     pipeline.vae.enable_tiling()
 ```
+````
 
 **Applied in:**
+
 - Z-Image Base (port 8011)
 - Qwen-Image-Layered (port 8013)
 - HeartMuLa (port 8004)
 
 **Related:** See CLAUDE.md section "Memory Optimization for Large Models"
-```
+
+````
 
 This specific lesson was discovered across 3-4 different conversations where you solved the same problem!
 
@@ -194,7 +200,7 @@ SESSION_IDS=$(jq -r 'select(.sessionId) | .sessionId' ~/.claude/history.jsonl | 
 
 # Or analyze only conversations with many messages (more substantial)
 # This requires modifying the script to count messages per session
-```
+````
 
 ### Resume Analysis After Failure
 
@@ -257,6 +263,7 @@ chmod +x scripts/synthesize_lessons.py
 1. **Review** `~/claude_conversations/LESSONS_LEARNED.md`
 
 2. **Merge** relevant lessons into project documentation:
+
    ```bash
    # Add to CLAUDE.md
    cat ~/claude_conversations/LESSONS_LEARNED.md >> /srv/containers/edq/CLAUDE.md
@@ -265,6 +272,7 @@ chmod +x scripts/synthesize_lessons.py
    ```
 
 3. **Update** auto memory:
+
    ```bash
    # Add key insights to MEMORY.md
    nano ~/.claude/projects/-srv-containers-edq/memory/MEMORY.md

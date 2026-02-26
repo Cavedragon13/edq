@@ -7,6 +7,7 @@
 **NEVER make the first run of a tool wait for downloads.**
 
 Instead:
+
 1. Create a standalone download script that can run during idle time
 2. Make the script resumable and idempotent
 3. Document the script in the tool's setup instructions
@@ -18,6 +19,7 @@ Instead:
 **Naming convention:** `scripts/download_<toolname>_models.sh`
 
 **Template:**
+
 ```bash
 #!/bin/bash
 # Download models for <ToolName>
@@ -72,22 +74,29 @@ chmod +x scripts/download_<toolname>_models.sh
 
 Add to tool's launch script or README:
 
-```markdown
+````markdown
 ## Setup
 
 ### Download Models (One-Time)
+
 Run this during idle time before first use:
+
 ```bash
 bash scripts/download_<toolname>_models.sh
 ```
+````
+
 Safe to interrupt and resume. Downloads ~XXX GB.
 
 ### Launch Tool
+
 Once models are downloaded:
+
 ```bash
 bash scripts/start_<toolname>.sh
 ```
-```
+
+````
 
 ### 4. Add to Dragonsuite Config
 
@@ -104,13 +113,14 @@ Include download instructions in the tool's features or description:
     "⚙️ Setup: download_toolname_models.sh"
   ]
 }
-```
+````
 
 ## Best Practices
 
 ### Use Python API, Not CLI
 
 **Good:**
+
 ```python
 from huggingface_hub import snapshot_download
 
@@ -121,12 +131,14 @@ snapshot_download(
 ```
 
 **Avoid:**
+
 ```bash
 huggingface-cli download org/repo  # CLI syntax varies between versions
 hf download org/repo                # May not be available
 ```
 
 ### Why Python API?
+
 - ✅ Consistent across huggingface-hub versions
 - ✅ Automatic resume on failure
 - ✅ Built-in progress bars
@@ -150,6 +162,7 @@ except Exception as e:
 ### Directory Structure
 
 **Standard model location:**
+
 ```
 /srv/containers/edq/models/
 ├── <toolname1>/
@@ -252,6 +265,7 @@ When adding a new tool, ensure:
 ## Anti-Patterns to Avoid
 
 ❌ **Don't download on first run:**
+
 ```python
 # BAD: User waits 30 minutes on first launch
 if not models_exist():
@@ -260,6 +274,7 @@ start_app()
 ```
 
 ✅ **Do separate download from launch:**
+
 ```python
 # GOOD: User runs download script once, tool launches instantly after
 if not models_exist():
@@ -269,22 +284,26 @@ start_app()
 ```
 
 ❌ **Don't use CLI commands:**
+
 ```bash
 hf download org/repo  # Version-dependent syntax
 ```
 
 ✅ **Do use Python API:**
+
 ```python
 snapshot_download(repo_id="org/repo", local_dir="...")
 ```
 
 ❌ **Don't block main process:**
+
 ```python
 app.launch()
 download_models_async()  # Still blocks event loop
 ```
 
 ✅ **Do check before launch:**
+
 ```python
 check_models_exist()  # Fast check
 app.launch()           # Immediate start
@@ -360,6 +379,7 @@ echo "✓ Models found"
 **The Rule:** Every tool requiring downloads gets a separate download script.
 
 **Benefits:**
+
 - ✅ Better UX (instant launches after setup)
 - ✅ Resumable downloads (network-safe)
 - ✅ Parallel setup (download multiple tools)
@@ -367,12 +387,14 @@ echo "✓ Models found"
 - ✅ Easy troubleshooting
 
 **When to Apply:** ANY time a tool needs to download:
+
 - Model weights (>100MB)
 - Checkpoints
 - Large assets
 - Pre-trained networks
 
 **When NOT to Apply:**
+
 - Small config files (<10MB)
 - Dependencies (use requirements.txt)
 - Code repositories (use git clone)

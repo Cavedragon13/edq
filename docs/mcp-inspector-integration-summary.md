@@ -7,7 +7,9 @@ The MCP Inspector now has full Supabase integration for historical tracking and 
 ## Key Features
 
 ### 1. **Automatic Audit Tracking**
+
 Every time a server is analyzed, the results are automatically saved to Supabase:
+
 - Trust scores (1-3 stars)
 - Danger patterns detected
 - Warning patterns
@@ -16,19 +18,24 @@ Every time a server is analyzed, the results are automatically saved to Supabase
 - NPM package stats
 
 ### 2. **Catalog Archiving**
+
 Servers from the official MCP registry are saved to the database:
+
 - Historical record of available servers
 - First/last seen timestamps
 - Verification status
 - Full metadata preservation
 
 ### 3. **Installation History**
+
 Tracks when servers are installed:
+
 - Timestamp of installation
 - Full configuration snapshot
 - Installation method (manual, UI, etc.)
 
 ### 4. **New API Endpoints**
+
 - `GET /api/history/audits` - Get audit scan history
 - `GET /api/history/audits?server=name` - Filter by server
 - `GET /api/history/trends?days=30` - Security trends
@@ -36,7 +43,9 @@ Tracks when servers are installed:
 - `GET /api/database/status` - Check Supabase connection
 
 ### 5. **History UI Tab**
+
 New "Audit History" tab in the web interface:
+
 - Timeline view of all scans
 - Grouped by server
 - Shows trust score changes
@@ -102,11 +111,13 @@ New "Audit History" tab in the web interface:
 ## Setup Required
 
 ### Prerequisites
+
 ✅ Supabase account exists
 ✅ Project created
 ✅ Credentials in `.env` file
 
 ### One-Time Setup
+
 1. Open Supabase Studio SQL Editor
 2. Copy contents of `docs/mcp-inspector-schema.sql`
 3. Execute SQL to create tables
@@ -117,21 +128,25 @@ See: `docs/mcp-inspector-supabase-setup.md` for detailed instructions
 ## Database Schema
 
 ### audit_scans
+
 - **Purpose**: Historical security scan results
 - **Key Fields**: server_name, trust_score, dangers, warnings, scan_timestamp
 - **Use Cases**: Track changes, detect regressions, trend analysis
 
 ### catalog_servers
+
 - **Purpose**: Archive of MCP registry discoveries
 - **Key Fields**: server_name, package_name, verified, stars, first_seen, last_seen
 - **Use Cases**: Search history, compare servers, track new releases
 
 ### installation_history
+
 - **Purpose**: Installation audit trail
 - **Key Fields**: server_name, installed_at, config, installation_method
 - **Use Cases**: Security compliance, rollback reference, configuration history
 
 ### vulnerability_alerts
+
 - **Purpose**: Track known security issues (future feature)
 - **Key Fields**: server_name, severity, cve_id, discovered_at, resolved_at
 - **Use Cases**: CVE tracking, security alerts, compliance reporting
@@ -139,6 +154,7 @@ See: `docs/mcp-inspector-supabase-setup.md` for detailed instructions
 ## How It Works
 
 ### Flow: Server Analysis
+
 1. User loads MCP Inspector UI
 2. Server fetches configured MCP servers from .mcp.json
 3. Each server is analyzed (trust scoring, pattern matching)
@@ -146,18 +162,21 @@ See: `docs/mcp-inspector-supabase-setup.md` for detailed instructions
 5. Results displayed in UI
 
 ### Flow: Browse Catalog
+
 1. User searches official MCP registry
 2. Registry returns server list
 3. **NEW**: Each server automatically archived to catalog_servers table
 4. UI shows results with install status
 
 ### Flow: Install Server
+
 1. User clicks "Install" on a catalog server
 2. Server config written to .mcp.json
 3. **NEW**: Installation recorded in installation_history table
 4. Success message shown
 
 ### Flow: View History
+
 1. User clicks "Audit History" tab
 2. UI fetches `/api/history/audits`
 3. Server queries audit_scans table
@@ -166,6 +185,7 @@ See: `docs/mcp-inspector-supabase-setup.md` for detailed instructions
 ## Integration Benefits
 
 ### Before Integration
+
 - ❌ No historical tracking
 - ❌ Can't detect trust score changes
 - ❌ No installation audit trail
@@ -173,6 +193,7 @@ See: `docs/mcp-inspector-supabase-setup.md` for detailed instructions
 - ❌ Limited analytics capability
 
 ### After Integration
+
 - ✅ Complete audit history
 - ✅ Trust score trend analysis
 - ✅ Installation tracking
@@ -258,16 +279,19 @@ curl http://localhost:8020/api/database/status
 ## Troubleshooting
 
 ### Server starts but no data saved
+
 - Check Supabase Studio → Table Editor for tables
 - Verify `SUPABASE_URL` and `SUPABASE_SECRET_KEY` in .env
 - Check server logs for database errors
 
 ### "Database not connected" in UI
+
 - Run schema SQL in Supabase Studio
 - Verify credentials are correct
 - Check Supabase project is not paused
 
 ### ImportError: No module named 'supabase'
+
 - Recreate venv: `rm -rf venv_mcp_inspector && python3 -m venv venv_mcp_inspector`
 - Install deps: `venv_mcp_inspector/bin/pip install supabase python-dotenv`
 

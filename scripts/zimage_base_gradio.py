@@ -466,14 +466,6 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
 
     with gr.Row():
         with gr.Column(scale=1):
-            # Model selector
-            model_type = gr.Radio(
-                choices=["Base", "Turbo"],
-                value="Base",
-                label="Model",
-                info="Base: 30-step with CFG and negative prompts | Turbo: 8-step fast inference with ControlNet"
-            )
-
             # Prompt
             prompt_input = gr.Textbox(
                 label="Prompt",
@@ -487,6 +479,8 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
                 placeholder="blurry, low quality, distorted, deformed, ugly, bad anatomy...",
                 lines=2
             )
+
+            generate_btn = gr.Button("Generate", variant="primary", size="lg")
 
             # ControlNet section (Turbo only) - Coming Soon
             with gr.Accordion("🚧 ControlNet Settings (Coming Soon)", open=False) as controlnet_accordion:
@@ -597,7 +591,13 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
                     info="-1 for random"
                 )
 
-            generate_btn = gr.Button("Generate", variant="primary", size="lg")
+            # Model selector (rarely changed)
+            model_type = gr.Radio(
+                choices=["Base", "Turbo"],
+                value="Base",
+                label="Model",
+                info="Base: 30-step with CFG and negative prompts | Turbo: 8-step fast inference with ControlNet"
+            )
 
         with gr.Column(scale=1):
             output_image = gr.Image(label="Generated Image", type="pil")
@@ -734,5 +734,6 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=8011,
         share=False,
+        favicon_path="/srv/containers/edq/media/favicons/zimage.svg",
         css=custom_css
     )

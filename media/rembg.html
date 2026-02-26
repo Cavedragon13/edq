@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rembg — Background Remover</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✂️</text></svg>">
+<style>
+  :root {
+    --bg:        #111318;
+    --panel:     #1a1d24;
+    --panel2:    #20242e;
+    --border:    #2d3140;
+    --accent:    #4fc3a1;
+    --accent2:   #7c6af7;
+    --text:      #e2e4ed;
+    --text-dim:  #7b8099;
+    --text-less: #454860;
+    --btn-bg:    #252936;
+    --btn-hover: #2f3448;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  #status {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-dim);
+    transition: color 0.2s;
+  }
+  #status.busy  { color: #f0a500; }
+  #status.done  { color: var(--accent); }
+  #status.error { color: #e8547a; }
+
+  /* ── Layout ── */
+  .layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    gap: 0;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-less);
+    margin-bottom: 6px;
+  }
+
+  select, input[type=range] {
+    width: 100%;
+  }
+
+  select {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+  }
+  select:focus { border-color: var(--accent); }
+  select option { background: #1e2130; }
+
+  /* Advanced accordion */
+  details { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  summary {
+    padding: 7px 10px;
+    cursor: pointer;
+    background: var(--panel2);
+    color: var(--text-dim);
+    font-size: 12px;
+    user-select: none;
+    list-style: none;
+  }
+  summary::after { content: ' ▸'; float: right; }
+  details[open] summary::after { content: ' ▾'; }
+  .adv-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+  .ctrl { display: flex; flex-direction: column; gap: 4px; }
+  .ctrl-row { display: flex; justify-content: space-between; align-items: center; }
+  .ctrl-val { font-size: 11px; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    background: var(--accent2);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle {
+    position: relative; width: 30px; height: 16px;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .tslider {
+    position: absolute; inset: 0;
+    background: var(--border); border-radius: 16px;
+    transition: background 0.2s; cursor: pointer;
+  }
+  .tslider:before {
+    content: ''; position: absolute;
+    width: 10px; height: 10px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: transform 0.2s;
+  }
+  .toggle input:checked + .tslider { background: var(--accent2); }
+  .toggle input:checked + .tslider:before { transform: translateX(14px); }
+  .toggle-label { font-size: 12px; color: var(--text-dim); }
+
+  /* Buttons */
+  .btn-primary {
+    width: 100%;
+    padding: 9px;
+    background: linear-gradient(135deg, rgba(79,195,161,0.2), rgba(124,106,247,0.15));
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .btn-primary:hover { background: linear-gradient(135deg, rgba(79,195,161,0.35), rgba(124,106,247,0.25)); }
+  .btn-primary:disabled { opacity: 0.3; cursor: default; }
+
+  .btn-dl {
+    width: 100%;
+    padding: 7px;
+    background: var(--btn-bg);
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+    display: none;
+  }
+  .btn-dl:hover { background: rgba(124,106,247,0.12); }
+
+  /* Model guide table */
+  .model-guide {
+    font-size: 11px;
+    border-collapse: collapse;
+    width: 100%;
+  }
+  .model-guide th {
+    text-align: left;
+    color: var(--text-less);
+    font-weight: 600;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .model-guide td {
+    padding: 4px 0;
+    color: var(--text-dim);
+    vertical-align: top;
+  }
+  .model-guide td:first-child {
+    color: var(--text);
+    padding-right: 8px;
+    white-space: nowrap;
+  }
+
+  /* ── Canvas area ── */
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  /* Drop zone */
+  #drop-zone {
+    width: 100%;
+    max-width: 680px;
+    min-height: 200px;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    padding: 32px;
+    text-align: center;
+  }
+  #drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(79,195,161,0.06);
+  }
+  #drop-zone.has-image { min-height: unset; padding: 0; border-style: solid; }
+
+  .drop-icon { font-size: 40px; line-height: 1; }
+  .drop-text { color: var(--text-dim); line-height: 1.5; }
+  .drop-text strong { color: var(--text); }
+
+  #file-input { display: none; }
+
+  /* Comparison viewer */
+  #compare-wrap {
+    position: relative;
+    display: none;
+    width: 100%;
+    max-width: 680px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    cursor: ew-resize;
+    user-select: none;
+    touch-action: none;
+  }
+
+  #img-original {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  #result-layer {
+    position: absolute;
+    inset: 0;
+    /* Checkerboard for transparency */
+    background-image: repeating-conic-gradient(#2a2a2a 0% 25%, #383838 0% 50%);
+    background-size: 20px 20px;
+  }
+
+  #img-result {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Clip from right: handle controls this */
+    clip-path: inset(0 50% 0 0);
+  }
+
+  #compare-handle {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 3px;
+    background: #fff;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  #compare-handle::before {
+    content: '◀ ▶';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    color: #111;
+    border-radius: 20px;
+    padding: 4px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+  }
+
+  /* View mode pills */
+  .view-modes {
+    display: none;
+    gap: 6px;
+  }
+  .view-btn {
+    padding: 4px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.15s;
+  }
+  .view-btn.active {
+    background: var(--panel);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .spinner {
+    display: none;
+    width: 28px; height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🐉 REMBG</div>
+  <span style="color:var(--text-less)">AI Background Remover</span>
+  <span id="status"></span>
+</header>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <div>
+      <div class="label">Model</div>
+      <select id="sel-model">
+        <option value="isnet-general-use">isnet-general-use — Fast &amp; Good</option>
+        <option value="u2net">u2net — Best Quality</option>
+        <option value="u2net_human_seg">u2net_human_seg — Portraits</option>
+        <option value="isnet-anime">isnet-anime — Anime / Illustrations</option>
+        <option value="silueta">silueta — Lightweight</option>
+        <option value="u2netp">u2netp — Fastest, Lower Quality</option>
+      </select>
+    </div>
+
+    <details>
+      <summary>Advanced Options</summary>
+      <div class="adv-body">
+
+        <label class="toggle-row">
+          <span class="toggle">
+            <input type="checkbox" id="tog-alpha">
+            <span class="tslider"></span>
+          </span>
+          <span class="toggle-label">Alpha Matting (better edges, slower)</span>
+        </label>
+
+        <div class="ctrl">
+          <div class="ctrl-row">
+            <span style="color:var(--text-dim);font-size:11px;">FG Threshold</span>
+            <span class="ctrl-val" id="val-fg">240</span>
+          </div>
+          <input type="range" id="sl-fg" min="0" max="255" value="240"
+                 oninput="document.getElementById('val-fg').textContent=this.value">
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-row">
+            <span style="color:var(--text-dim);font-size:11px;">BG Threshold</span>
+            <span class="ctrl-val" id="val-bg">10</span>
+          </div>
+          <input type="range" id="sl-bg" min="0" max="255" value="10"
+                 oninput="document.getElementById('val-bg').textContent=this.value">
+        </div>
+
+        <label class="toggle-row">
+          <span class="toggle">
+            <input type="checkbox" id="tog-post">
+            <span class="tslider"></span>
+          </span>
+          <span class="toggle-label">Post-process Mask</span>
+        </label>
+
+      </div>
+    </details>
+
+    <button class="btn-primary" id="btn-remove" onclick="doRemove()" disabled>
+      Remove Background
+    </button>
+
+    <button class="btn-dl" id="btn-dl" onclick="downloadResult()">
+      ⬇ Download PNG
+    </button>
+
+    <div style="margin-top:auto;">
+      <div class="label">Model Guide</div>
+      <table class="model-guide">
+        <tr><th>Model</th><th>Best For</th></tr>
+        <tr><td>isnet-general-use</td><td>General, good balance</td></tr>
+        <tr><td>u2net</td><td>Fine detail, hair, fur</td></tr>
+        <tr><td>u2net_human_seg</td><td>People &amp; portraits</td></tr>
+        <tr><td>isnet-anime</td><td>Anime, illustrations</td></tr>
+        <tr><td>silueta</td><td>Simple shapes</td></tr>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Canvas area -->
+  <div class="canvas-area">
+
+    <!-- Drop zone (hidden once image loaded) -->
+    <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="drop-icon">🖼</div>
+      <div class="drop-text">
+        <strong>Click to upload</strong> or drag &amp; drop<br>
+        <span style="font-size:11px;">PNG, JPEG, WEBP — paste from clipboard also works</span>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" onchange="loadFile(this.files[0])">
+
+    <div class="spinner" id="spinner"></div>
+
+    <!-- Comparison viewer (shown after processing) -->
+    <div id="compare-wrap"
+         onmousedown="startDrag(event)"
+         ontouchstart="startDrag(event)">
+      <img id="img-original" src="" alt="original">
+      <div id="result-layer">
+        <img id="img-result" src="" alt="result">
+      </div>
+      <div id="compare-handle"></div>
+    </div>
+
+    <!-- View mode pills -->
+    <div class="view-modes" id="view-modes">
+      <button class="view-btn active" onclick="setView('compare')">⬛ Compare</button>
+      <button class="view-btn" onclick="setView('result')">Result only</button>
+      <button class="view-btn" onclick="setView('original')">Original only</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+let originalFile  = null;
+let resultDataUrl = null;
+let resultBlob    = null;
+let viewMode      = 'compare';
+let isDragging    = false;
+
+// ── Upload / Drop ──────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadFile(f);
+});
+
+// Clipboard paste
+document.addEventListener('paste', e => {
+  const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'));
+  if (item) loadFile(item.getAsFile());
+});
+
+function loadFile(file) {
+  if (!file) return;
+  originalFile = file;
+  const url = URL.createObjectURL(file);
+
+  // Show in drop zone or in compare (original side)
+  const origImg = document.getElementById('img-original');
+  origImg.src = url;
+  origImg.onload = () => {
+    // Reset compare state
+    document.getElementById('compare-wrap').style.display = 'none';
+    document.getElementById('view-modes').style.display = 'none';
+    document.getElementById('btn-dl').style.display = 'none';
+    document.getElementById('img-result').src = '';
+    resultDataUrl = null; resultBlob = null;
+    setHandle(50);
+
+    // Show drop zone with the image as background hint
+    dropZone.style.display = 'flex';
+    dropZone.innerHTML = `<img src="${url}" style="max-width:100%;max-height:300px;border-radius:8px;object-fit:contain;">`;
+    dropZone.style.padding = '12px';
+    dropZone.style.borderStyle = 'solid';
+    dropZone.onclick = () => document.getElementById('file-input').click();
+  };
+  document.getElementById('btn-remove').disabled = false;
+  setStatus('', 'Image loaded. Click Remove Background.');
+}
+
+// ── Process ────────────────────────────────────────────────────────
+async function doRemove() {
+  if (!originalFile) return;
+
+  const btn = document.getElementById('btn-remove');
+  btn.disabled = true;
+  setStatus('busy', 'Removing background…');
+  document.getElementById('spinner').style.display = 'block';
+
+  const fd = new FormData();
+  fd.append('file',          originalFile);
+  fd.append('model',         document.getElementById('sel-model').value);
+  fd.append('alpha_matting', document.getElementById('tog-alpha').checked);
+  fd.append('fg_threshold',  document.getElementById('sl-fg').value);
+  fd.append('bg_threshold',  document.getElementById('sl-bg').value);
+  fd.append('post_process',  document.getElementById('tog-post').checked);
+
+  try {
+    const resp = await fetch('/api/remove', { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error(`Server error ${resp.status}`);
+
+    resultBlob    = await resp.blob();
+    resultDataUrl = URL.createObjectURL(resultBlob);
+
+    const resultImg = document.getElementById('img-result');
+    resultImg.src   = resultDataUrl;
+    resultImg.onload = () => showCompare();
+
+  } catch (err) {
+    setStatus('error', `Error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+  }
+}
+
+function showCompare() {
+  // Hide drop zone, show compare
+  dropZone.style.display = 'none';
+  const wrap = document.getElementById('compare-wrap');
+  wrap.style.display = 'block';
+  document.getElementById('view-modes').style.display = 'flex';
+  document.getElementById('btn-dl').style.display = 'block';
+  setHandle(50);
+  setView('compare');
+  setStatus('done', 'Done — drag the slider to compare.');
+}
+
+// ── Comparison slider ──────────────────────────────────────────────
+function setHandle(pct) {
+  document.getElementById('compare-handle').style.left = pct + '%';
+  document.getElementById('img-result').style.clipPath  = `inset(0 ${100 - pct}% 0 0)`;
+}
+
+function startDrag(e) {
+  if (viewMode !== 'compare') return;
+  isDragging = true;
+  moveDrag(e);
+  document.addEventListener('mousemove', moveDrag);
+  document.addEventListener('touchmove', moveDrag, { passive: false });
+  document.addEventListener('mouseup',  stopDrag);
+  document.addEventListener('touchend', stopDrag);
+}
+
+function moveDrag(e) {
+  if (!isDragging) return;
+  if (e.cancelable) e.preventDefault();
+  const wrap = document.getElementById('compare-wrap');
+  const rect = wrap.getBoundingClientRect();
+  const x    = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const pct  = Math.max(0, Math.min(100, (x / rect.width) * 100));
+  setHandle(pct);
+}
+
+function stopDrag() {
+  isDragging = false;
+  document.removeEventListener('mousemove', moveDrag);
+  document.removeEventListener('touchmove', moveDrag);
+  document.removeEventListener('mouseup',  stopDrag);
+  document.removeEventListener('touchend', stopDrag);
+}
+
+// ── View modes ─────────────────────────────────────────────────────
+function setView(mode) {
+  viewMode = mode;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const resultLayer  = document.getElementById('result-layer');
+  const origImg      = document.getElementById('img-original');
+  const handle       = document.getElementById('compare-handle');
+  const resultImg    = document.getElementById('img-result');
+
+  if (mode === 'compare') {
+    origImg.style.opacity     = '1';
+    resultLayer.style.display = 'block';
+    handle.style.display      = 'block';
+    setHandle(50);
+  } else if (mode === 'result') {
+    origImg.style.opacity     = '0';
+    resultLayer.style.display = 'block';
+    resultImg.style.clipPath  = 'none';
+    handle.style.display      = 'none';
+  } else {  // original
+    origImg.style.opacity     = '1';
+    resultLayer.style.display = 'none';
+    handle.style.display      = 'none';
+  }
+}
+
+// ── Download ───────────────────────────────────────────────────────
+function downloadResult() {
+  if (!resultBlob) return;
+  const a  = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  a.href     = URL.createObjectURL(resultBlob);
+  a.download = `rembg-${ts}.png`;
+  a.click();
+}
+
+// ── Status ─────────────────────────────────────────────────────────
+function setStatus(cls, msg) {
+  const el = document.getElementById('status');
+  el.className  = cls;
+  el.textContent = msg;
+}
+</script>
+</body>
+</html>

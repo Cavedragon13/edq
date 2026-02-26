@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dragonsong</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎶</text></svg>">
+<style>
+  :root {
+    --bg: #111318;
+    --panel: #1a1d24;
+    --panel2: #20242e;
+    --border: #2d3140;
+    --accent: #7c6af7;
+    --accent2: #4fc3a1;
+    --accent-hot: #e8547a;
+    --text: #e2e4ed;
+    --text-dim: #7b8099;
+    --text-dimmer: #454860;
+    --slider-track: #2d3140;
+    --slider-thumb: #7c6af7;
+    --btn-bg: #252936;
+    --btn-hover: #2f3448;
+    --preset-bg: #1e2130;
+    --preset-hover: #2a2f44;
+    --preset-active: #2d3060;
+    --playing-glow: rgba(76, 195, 161, 0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo span { font-size: 20px; -webkit-text-fill-color: initial; }
+
+  #status-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    transition: all 0.3s;
+    white-space: nowrap;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #status-pill.playing  { border-color: var(--accent2); color: var(--accent2); background: var(--playing-glow); }
+  #status-pill.paused   { border-color: #f0a500; color: #f0a500; }
+  #status-pill.error    { border-color: var(--accent-hot); color: var(--accent-hot); }
+  #status-pill.updated  { border-color: var(--accent); color: var(--accent); }
+
+  .transport {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: var(--btn-bg);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--btn-hover); }
+  .btn:disabled { opacity: 0.35; cursor: default; }
+
+  .btn-play  { border-color: var(--accent2); color: var(--accent2); }
+  .btn-play:hover { background: rgba(79,195,161,0.12); }
+  .btn-pause { border-color: #f0a500; color: #f0a500; }
+  .btn-pause:hover { background: rgba(240,165,0,0.1); }
+  .btn-stop  { border-color: #888; }
+
+  .btn-rec {
+    border-color: var(--accent-hot);
+    color: var(--accent-hot);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn-rec:hover { background: rgba(232,84,122,0.1); }
+  .btn-rec.recording { background: rgba(232,84,122,0.18); animation: pulse-rec 1.2s infinite; }
+  .rec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-hot); }
+
+  @keyframes pulse-rec {
+    0%,100% { opacity: 1; } 50% { opacity: 0.5; }
+  }
+
+  .btn-save { border-color: var(--accent); color: var(--accent); }
+  .btn-save:hover { background: rgba(124,106,247,0.1); }
+
+  #rec-timer {
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-hot);
+    font-size: 12px;
+    min-width: 40px;
+    display: none;
+  }
+
+  /* ── Visualizer ── */
+  #viz-wrap {
+    position: relative;
+    flex-shrink: 0;
+    background: #0d0f14;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #viz-canvas {
+    display: block;
+    width: 100%;
+    height: 120px;
+  }
+
+  #viz-label {
+    position: absolute;
+    bottom: 6px;
+    right: 10px;
+    font-size: 10px;
+    color: var(--text-dimmer);
+    pointer-events: none;
+  }
+
+  /* ── Main body ── */
+  .body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* ── Prompt panel ── */
+  .prompt-panel {
+    width: 340px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dimmer);
+    margin-bottom: 6px;
+  }
+
+  /* Style presets */
+  .preset-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .preset-btn {
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--preset-bg);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.15s;
+  }
+  .preset-btn:hover { background: var(--preset-hover); color: var(--text); border-color: var(--accent); }
+  .preset-btn.active { background: var(--preset-active); color: var(--accent); border-color: var(--accent); }
+
+  /* Prompt rows */
+  .prompt-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .prompt-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .prompt-row textarea {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+    resize: vertical;
+    min-height: 54px;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: border-color 0.15s;
+  }
+  .prompt-row textarea:focus { outline: none; border-color: var(--accent); }
+  .prompt-row textarea::placeholder { color: var(--text-dimmer); }
+
+  .weight-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .weight-row input[type=range] { flex: 1; }
+
+  .weight-val {
+    min-width: 28px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .btn-add-blend {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--text-dimmer);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-add-blend:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-apply {
+    width: 100%;
+    padding: 8px;
+    background: linear-gradient(135deg, rgba(124,106,247,0.2), rgba(76,195,161,0.15));
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+  .btn-apply:hover { background: linear-gradient(135deg, rgba(124,106,247,0.35), rgba(76,195,161,0.25)); }
+
+  /* ── Controls panel ── */
+  .controls-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 14px 20px;
+    gap: 18px;
+    min-width: 0;
+  }
+
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 28px;
+  }
+
+  .ctrl {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .ctrl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .ctrl-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  .ctrl-val {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* Sliders */
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--slider-track);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--slider-thumb);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(124,106,247,0.4);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--slider-thumb);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Selects */
+  select {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  select:focus { border-color: var(--accent); }
+  select option { background: #1e2130; }
+
+  /* Toggles */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 5px 0;
+    user-select: none;
+  }
+
+  .toggle {
+    position: relative;
+    width: 32px;
+    height: 17px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--slider-track);
+    border-radius: 17px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .toggle-slider:before {
+    content: '';
+    position: absolute;
+    width: 11px; height: 11px;
+    left: 3px; top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(15px); }
+
+  .toggle-label { font-size: 12px; color: var(--text-dim); }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo"><span>🎵</span> DRAGONSONG</div>
+  <div id="status-pill">Connecting…</div>
+
+  <div class="transport">
+    <span id="rec-timer">0:00</span>
+    <button class="btn btn-play"  id="btn-play"  onclick="sendPlay()"  disabled>▶ Play</button>
+    <button class="btn btn-pause" id="btn-pause" onclick="sendPause()" disabled>⏸ Pause</button>
+    <button class="btn btn-stop"  id="btn-stop"  onclick="sendStop()"  disabled>⏹ Stop</button>
+    <button class="btn btn-rec"   id="btn-rec"   onclick="toggleRecord()">
+      <span class="rec-dot"></span> Record
+    </button>
+    <button class="btn btn-save" id="btn-save" onclick="saveWav()" disabled>💾 Save WAV</button>
+  </div>
+</header>
+
+<!-- ── Visualizer ── -->
+<div id="viz-wrap">
+  <canvas id="viz-canvas"></canvas>
+  <span id="viz-label">WAVEFORM · 48kHz stereo</span>
+</div>
+
+<!-- ── Body ── -->
+<div class="body">
+
+  <!-- Prompt panel -->
+  <div class="prompt-panel">
+
+    <div>
+      <div class="section-label">Style Presets</div>
+      <div class="preset-grid" id="preset-grid"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="section-label">Prompts</div>
+
+      <div id="prompt-list" style="display:flex;flex-direction:column;gap:10px;">
+        <!-- prompt rows injected by JS -->
+      </div>
+
+      <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
+        <button class="btn-add-blend" onclick="addPromptRow()">+ Blend prompt</button>
+      </div>
+
+      <div style="margin-top:10px;">
+        <button class="btn-apply" onclick="applyPrompts()">Apply Prompts</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Controls panel -->
+  <div class="controls-panel">
+
+    <div>
+      <div class="section-label">Musical Controls</div>
+      <div class="controls-grid">
+
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-label">BPM</span>
+            <span class="ctrl-val" id="val-bpm">100</span>
+          </div>
+          <input type="range" id="sl-bpm" min="60" max="200" value="100"
+                 oninput="updateVal('bpm', this.value)" onchange="applyConfig()">
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-label">Density</span>
+            <span class="ctrl-val" id="val-density">0.50</span>
+          </div>
+          <input type="range" id="sl-density" min="0" max="1" step="0.01" value="0.5"
+                 oninput="updateVal('density', this.value)" onchange="applyConfig()">
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-label">Brightness</span>
+            <span class="ctrl-val" id="val-brightness">0.50</span>
+          </div>
+          <input type="range" id="sl-brightness" min="0" max="1" step="0.01" value="0.5"
+                 oninput="updateVal('brightness', this.value)" onchange="applyConfig()">
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-label">Guidance</span>
+            <span class="ctrl-val" id="val-guidance">3.0</span>
+          </div>
+          <input type="range" id="sl-guidance" min="0" max="6" step="0.1" value="3.0"
+                 oninput="updateVal('guidance', this.value)" onchange="applyConfig()">
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-label">Temperature</span>
+            <span class="ctrl-val" id="val-temperature">1.00</span>
+          </div>
+          <input type="range" id="sl-temperature" min="0.1" max="2" step="0.01" value="1.0"
+                 oninput="updateVal('temperature', this.value)" onchange="applyConfig()">
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="section-label">Key &amp; Mode</div>
+      <div class="controls-grid">
+        <div class="ctrl">
+          <div class="ctrl-label" style="margin-bottom:5px;">Scale / Key</div>
+          <select id="sel-scale" onchange="applyConfig()">
+            <option value="SCALE_UNSPECIFIED">Any Key</option>
+            <option value="C_MAJOR_A_MINOR">C Major / A Minor</option>
+            <option value="D_FLAT_MAJOR_B_FLAT_MINOR">D♭ Major / B♭ Minor</option>
+            <option value="D_MAJOR_B_MINOR">D Major / B Minor</option>
+            <option value="E_FLAT_MAJOR_C_MINOR">E♭ Major / C Minor</option>
+            <option value="E_MAJOR_D_FLAT_MINOR">E Major / D♭ Minor</option>
+            <option value="F_MAJOR_D_MINOR">F Major / D Minor</option>
+            <option value="G_FLAT_MAJOR_E_FLAT_MINOR">G♭ Major / E♭ Minor</option>
+            <option value="G_MAJOR_E_MINOR">G Major / E Minor</option>
+            <option value="A_FLAT_MAJOR_F_MINOR">A♭ Major / F Minor</option>
+            <option value="A_MAJOR_G_FLAT_MINOR">A Major / G♭ Minor</option>
+            <option value="B_FLAT_MAJOR_G_MINOR">B♭ Major / G Minor</option>
+            <option value="B_MAJOR_A_FLAT_MINOR">B Major / A♭ Minor</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-label" style="margin-bottom:5px;">Generation Mode</div>
+          <select id="sel-mode" onchange="applyConfig()">
+            <option value="QUALITY">Quality</option>
+            <option value="DIVERSITY">Diversity</option>
+            <option value="VOCALIZATION">Vocalization</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="section-label">Layer Muting</div>
+      <div style="display:flex;flex-direction:column;gap:2px;">
+
+        <label class="toggle-row">
+          <span class="toggle">
+            <input type="checkbox" id="tog-bass" onchange="applyConfig()">
+            <span class="toggle-slider"></span>
+          </span>
+          <span class="toggle-label">Mute Bass</span>
+        </label>
+
+        <label class="toggle-row">
+          <span class="toggle">
+            <input type="checkbox" id="tog-drums" onchange="applyConfig()">
+            <span class="toggle-slider"></span>
+          </span>
+          <span class="toggle-label">Mute Drums</span>
+        </label>
+
+        <label class="toggle-row">
+          <span class="toggle">
+            <input type="checkbox" id="tog-bassdrums" onchange="applyConfig()">
+            <span class="toggle-slider"></span>
+          </span>
+          <span class="toggle-label">Bass &amp; Drums Only</span>
+        </label>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Style presets ──────────────────────────────────────────────────
+const PRESETS = [
+  { label: 'Lo-fi Hip Hop',    text: 'lo-fi hip hop, relaxed jazz chords, vinyl warmth, dusty drums' },
+  { label: 'Jazz Trio',        text: 'jazz piano trio, improvised, swing, brushed snare, upright bass' },
+  { label: 'Ambient',          text: 'ambient drone, slowly evolving pads, atmospheric, peaceful' },
+  { label: 'Techno',           text: 'minimal techno, driving kick, hypnotic loop, dark synths' },
+  { label: 'Cinematic',        text: 'cinematic orchestral, strings and brass, epic, swelling dynamics' },
+  { label: 'Acoustic Folk',    text: 'acoustic folk, fingerpicked guitar, warm, organic, intimate' },
+  { label: 'Dark Ambient',     text: 'dark ambient, low drones, unsettling, mysterious, textural' },
+  { label: 'Meditation',       text: 'meditation, gentle bells, slow breathing space, serene, healing' },
+  { label: 'Synth Pop',        text: 'upbeat synth pop, bright arpeggios, catchy, energetic, 80s feel' },
+  { label: 'Classical Piano',  text: 'classical piano solo, delicate melodic lines, concert hall' },
+  { label: 'Funk',             text: 'retro funk, slap bass, tight groove, brass stabs, rhythm guitar' },
+  { label: 'Post-Rock',        text: 'post-rock, building dynamics, clean to distorted, emotional' },
+];
+
+// ── DOM ready ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  buildPresets();
+  addPromptRow();    // start with one prompt
+  initViz();
+  connectWs();
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+});
+
+// ── Preset grid ───────────────────────────────────────────────────
+let activePreset = null;
+
+function buildPresets() {
+  const grid = document.getElementById('preset-grid');
+  PRESETS.forEach((p, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.textContent = p.label;
+    btn.onclick = () => applyPreset(i, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function applyPreset(idx, btn) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activePreset = idx;
+  // Set first prompt row text
+  const first = document.querySelector('.prompt-textarea');
+  if (first) {
+    first.value = PRESETS[idx].text;
+    // If only one row, set weight 1.0
+    const weightInput = first.closest('.prompt-row').querySelector('.weight-input');
+    if (weightInput) weightInput.value = 1.0;
+    updateWeightDisplay(weightInput);
+  }
+}
+
+// ── Prompt rows ────────────────────────────────────────────────────
+let promptRowCount = 0;
+
+function addPromptRow(text = '', weight = 1.0) {
+  promptRowCount++;
+  const id = `pr-${promptRowCount}`;
+  const list = document.getElementById('prompt-list');
+
+  const row = document.createElement('div');
+  row.className = 'prompt-row';
+  row.id = id;
+  row.innerHTML = `
+    <div class="prompt-row-header">
+      <span class="section-label" style="margin-bottom:0;">Prompt ${promptRowCount > 1 ? promptRowCount : ''}</span>
+      ${promptRowCount > 1
+        ? `<button onclick="removePromptRow('${id}')" style="background:none;border:none;color:var(--text-dimmer);cursor:pointer;font-size:16px;line-height:1;">×</button>`
+        : ''}
+    </div>
+    <textarea class="prompt-textarea" placeholder="Describe the music…" rows="2">${text}</textarea>
+    <div class="weight-row">
+      <span style="color:var(--text-dimmer)">Weight</span>
+      <input type="range" class="weight-input" min="0" max="2" step="0.05" value="${weight}"
+             oninput="updateWeightDisplay(this)">
+      <span class="weight-val">${weight.toFixed(2)}</span>
+    </div>
+  `;
+  list.appendChild(row);
+}
+
+function removePromptRow(id) {
+  document.getElementById(id)?.remove();
+}
+
+function updateWeightDisplay(input) {
+  const val = input.closest('.weight-row').querySelector('.weight-val');
+  val.textContent = parseFloat(input.value).toFixed(2);
+}
+
+function applyPrompts() {
+  const prompts = [];
+  document.querySelectorAll('.prompt-row').forEach(row => {
+    const text = row.querySelector('.prompt-textarea')?.value?.trim();
+    const weight = parseFloat(row.querySelector('.weight-input')?.value ?? 1.0);
+    if (text) prompts.push({ text, weight });
+  });
+  if (!prompts.length) return;
+  send({ type: 'prompts', prompts });
+}
+
+// ── Config ─────────────────────────────────────────────────────────
+function updateVal(key, rawVal) {
+  const el = document.getElementById(`val-${key}`);
+  if (!el) return;
+  const n = parseFloat(rawVal);
+  el.textContent = Number.isInteger(n) && key === 'bpm' ? n : n.toFixed(2);
+}
+
+function applyConfig() {
+  send({
+    type: 'config',
+    bpm:        parseInt(document.getElementById('sl-bpm').value),
+    density:    parseFloat(document.getElementById('sl-density').value),
+    brightness: parseFloat(document.getElementById('sl-brightness').value),
+    guidance:   parseFloat(document.getElementById('sl-guidance').value),
+    temperature:parseFloat(document.getElementById('sl-temperature').value),
+    scale:      document.getElementById('sel-scale').value,
+    mode:       document.getElementById('sel-mode').value,
+    mute_bass:      document.getElementById('tog-bass').checked,
+    mute_drums:     document.getElementById('tog-drums').checked,
+    only_bass_and_drums: document.getElementById('tog-bassdrums').checked,
+  });
+}
+
+// ── Transport ──────────────────────────────────────────────────────
+function sendPlay()  {
+  resumeAudio();
+  send({ type: 'play' });
+}
+function sendPause() { send({ type: 'pause' }); }
+function sendStop()  {
+  send({ type: 'stop' });
+  nextStartTime = 0;
+}
+
+// ── WebSocket ──────────────────────────────────────────────────────
+let ws = null;
+
+function connectWs() {
+  const url = `ws://${location.host}/ws`;
+  setStatus('connecting', 'Connecting…');
+  ws = new WebSocket(url);
+  ws.binaryType = 'arraybuffer';
+
+  ws.onopen  = () => {};
+  ws.onclose = () => {
+    setStatus('error', 'Disconnected — refresh to reconnect');
+    setTransportEnabled(false);
+  };
+  ws.onerror = () => setStatus('error', 'WebSocket error');
+
+  ws.onmessage = (ev) => {
+    if (ev.data instanceof ArrayBuffer) {
+      handleAudioChunk(ev.data);
+    } else {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === 'status') {
+        setStatus(msg.state, msg.message || msg.state);
+        if (msg.state === 'connected') setTransportEnabled(true);
+      } else if (msg.type === 'error') {
+        setStatus('error', msg.message);
+      } else if (msg.type === 'filtered') {
+        setStatus('error', `Filtered: ${msg.prompt}`);
+      }
+    }
+  };
+}
+
+function send(obj) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(obj));
+  }
+}
+
+function setStatus(cls, text) {
+  const el = document.getElementById('status-pill');
+  el.className = cls;
+  el.textContent = text;
+}
+
+function setTransportEnabled(on) {
+  ['btn-play','btn-pause','btn-stop'].forEach(id => {
+    document.getElementById(id).disabled = !on;
+  });
+}
+
+// ── Web Audio ──────────────────────────────────────────────────────
+let audioCtx = null;
+let analyser  = null;
+let nextStartTime = 0;
+const SAMPLE_RATE = 48000;
+const CHANNELS = 2;
+
+// Recording state
+let isRecording = false;
+let recordedChunks = [];   // ArrayBuffers of raw Int16 PCM
+let recordStartTime = 0;
+let recTimerInterval = null;
+
+function resumeAudio() {
+  if (!audioCtx) {
+    audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+    analyser  = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function handleAudioChunk(buffer) {
+  if (!audioCtx) return;  // not playing yet
+
+  const pcm = new Int16Array(buffer);
+  const numFrames = pcm.length / CHANNELS;
+
+  // Build AudioBuffer
+  const ab = audioCtx.createBuffer(CHANNELS, numFrames, SAMPLE_RATE);
+  const left  = ab.getChannelData(0);
+  const right = ab.getChannelData(1);
+  for (let i = 0; i < numFrames; i++) {
+    left[i]  = pcm[i * 2]     / 32768;
+    right[i] = pcm[i * 2 + 1] / 32768;
+  }
+
+  // Schedule gaplessly
+  const now = audioCtx.currentTime;
+  const startAt = Math.max(now + 0.05, nextStartTime);
+  const src = audioCtx.createBufferSource();
+  src.buffer = ab;
+  src.connect(analyser);
+  src.start(startAt);
+  nextStartTime = startAt + ab.duration;
+
+  // Recording accumulation
+  if (isRecording) recordedChunks.push(buffer);
+}
+
+// ── Recording ──────────────────────────────────────────────────────
+function toggleRecord() {
+  if (!isRecording) {
+    isRecording = true;
+    recordedChunks = [];
+    recordStartTime = Date.now();
+    const btn = document.getElementById('btn-rec');
+    btn.classList.add('recording');
+    btn.innerHTML = '<span class="rec-dot"></span> Stop Rec';
+    document.getElementById('rec-timer').style.display = 'block';
+    recTimerInterval = setInterval(updateRecTimer, 500);
+    document.getElementById('btn-save').disabled = true;
+  } else {
+    isRecording = false;
+    clearInterval(recTimerInterval);
+    document.getElementById('btn-rec').classList.remove('recording');
+    document.getElementById('btn-rec').innerHTML = '<span class="rec-dot"></span> Record';
+    document.getElementById('rec-timer').style.display = 'none';
+    document.getElementById('btn-save').disabled = recordedChunks.length === 0;
+  }
+}
+
+function updateRecTimer() {
+  const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  document.getElementById('rec-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+function saveWav() {
+  if (!recordedChunks.length) return;
+
+  // Merge all Int16 PCM data
+  const totalBytes = recordedChunks.reduce((s, b) => s + b.byteLength, 0);
+  const merged = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of recordedChunks) {
+    merged.set(new Uint8Array(chunk), offset);
+    offset += chunk.byteLength;
+  }
+
+  // Build WAV
+  const numSamples = merged.byteLength / 2;    // Int16 = 2 bytes each
+  const byteRate   = SAMPLE_RATE * CHANNELS * 2;
+  const wav = new ArrayBuffer(44 + merged.byteLength);
+  const view = new DataView(wav);
+  const write = (off, val, len) => {
+    for (let i = 0; i < len; i++) view.setUint8(off + i, (val >> (i*8)) & 0xff);
+  };
+  const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off+i, s.charCodeAt(i)); };
+  writeStr(0,  'RIFF');
+  write(4,  36 + merged.byteLength, 4);
+  writeStr(8,  'WAVE');
+  writeStr(12, 'fmt ');
+  write(16, 16, 4);           // chunk size
+  write(20,  1, 2);           // PCM
+  write(22, CHANNELS, 2);
+  write(24, SAMPLE_RATE, 4);
+  write(28, byteRate, 4);
+  write(32, CHANNELS * 2, 2); // block align
+  write(34, 16, 2);           // bits per sample
+  writeStr(36, 'data');
+  write(40, merged.byteLength, 4);
+  new Uint8Array(wav, 44).set(merged);
+
+  const blob = new Blob([wav], { type: 'audio/wav' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const ts   = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  a.href     = url;
+  a.download = `dragonsong-${ts}.wav`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Waveform Visualizer ────────────────────────────────────────────
+let canvas, ctx2d;
+
+function initViz() {
+  canvas = document.getElementById('viz-canvas');
+  ctx2d  = canvas.getContext('2d');
+  drawIdle();
+  requestAnimationFrame(vizLoop);
+}
+
+function resizeCanvas() {
+  canvas.width  = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
+
+function vizLoop() {
+  requestAnimationFrame(vizLoop);
+  if (!analyser) { drawIdle(); return; }
+
+  const bufLen = analyser.frequencyBinCount;
+  const data   = new Uint8Array(bufLen);
+  analyser.getByteTimeDomainData(data);
+
+  const W = canvas.width, H = canvas.height;
+  ctx2d.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bg = ctx2d.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0d0f14');
+  bg.addColorStop(1, '#111520');
+  ctx2d.fillStyle = bg;
+  ctx2d.fillRect(0, 0, W, H);
+
+  // Waveform
+  ctx2d.lineWidth  = 1.5;
+  const wg = ctx2d.createLinearGradient(0, 0, W, 0);
+  wg.addColorStop(0,   '#4fc3a1');
+  wg.addColorStop(0.5, '#7c6af7');
+  wg.addColorStop(1,   '#4fc3a1');
+  ctx2d.strokeStyle = wg;
+  ctx2d.shadowColor  = '#7c6af7';
+  ctx2d.shadowBlur   = 6;
+
+  ctx2d.beginPath();
+  const sliceW = W / bufLen;
+  let x = 0;
+  for (let i = 0; i < bufLen; i++) {
+    const v = data[i] / 128.0;
+    const y = (v * H) / 2;
+    i === 0 ? ctx2d.moveTo(x, y) : ctx2d.lineTo(x, y);
+    x += sliceW;
+  }
+  ctx2d.lineTo(W, H / 2);
+  ctx2d.stroke();
+  ctx2d.shadowBlur = 0;
+
+  // Center line (dim)
+  ctx2d.strokeStyle = '#1e2235';
+  ctx2d.lineWidth   = 0.5;
+  ctx2d.beginPath();
+  ctx2d.moveTo(0, H/2); ctx2d.lineTo(W, H/2);
+  ctx2d.stroke();
+}
+
+function drawIdle() {
+  if (!canvas) return;
+  const W = canvas.width, H = canvas.height;
+  ctx2d.clearRect(0, 0, W, H);
+  ctx2d.fillStyle = '#0d0f14';
+  ctx2d.fillRect(0, 0, W, H);
+  ctx2d.strokeStyle = '#1e2235';
+  ctx2d.lineWidth = 0.5;
+  ctx2d.beginPath();
+  ctx2d.moveTo(0, H/2); ctx2d.lineTo(W, H/2);
+  ctx2d.stroke();
+}
+</script>
+</body>
+</html>

@@ -22,6 +22,7 @@
 ## Video Processing Pattern
 
 For vision models that don't support video:
+
 1. Extract keyframes using OpenCV (`cv2.VideoCapture`)
 2. Process each frame individually
 3. Combine descriptions/results
@@ -34,16 +35,21 @@ For vision models that don't support video:
 When frontend needs to call a local service that doesn't support CORS (e.g., Ollama):
 
 ### Problem
+
 Browser blocks cross-port requests (8080 → 11434) due to CORS policy.
 
 ### Solution
+
 Proxy through the frontend server to stay same-origin:
+
 ```
 Frontend (8080) → Server (8080) → Local API (11434)
 ```
 
 ### Implementation
+
 See `scripts/dragonsight_server.py`:
+
 - Use `BaseHTTPRequestHandler` (not `SimpleHTTPRequestHandler` - breaks POST override)
 - Add `Access-Control-Allow-Origin: *` to all responses
 - Handle OPTIONS for CORS preflight
@@ -51,6 +57,7 @@ See `scripts/dragonsight_server.py`:
 - Set adequate timeout (300s for model inference)
 
 ### Key Rules
+
 - **ALWAYS** use `127.0.0.1` for local services, never external IPs
 - **DO NOT** use `window.location.hostname` (returns external IP from LAN)
 - Test with: `curl -X POST http://127.0.0.1:8080/api/proxy/endpoint`
@@ -60,7 +67,9 @@ See `scripts/dragonsight_server.py`:
 ## Memory Optimization for Large Models (16GB VRAM)
 
 ### Environment Variable (REQUIRED)
+
 Add before python command in all GPU launcher scripts:
+
 ```bash
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 ```
@@ -86,6 +95,7 @@ pipeline.enable_sequential_cpu_offload()
 ### VAE Optimizations
 
 Always enable for image generation:
+
 ```python
 if hasattr(pipeline, 'vae'):
     pipeline.vae.enable_slicing()  # Batch memory reduction
@@ -110,18 +120,19 @@ clear_gpu_memory()
 
 ### Service VRAM Requirements
 
-| Service | VRAM | Offload Strategy |
-|---------|------|------------------|
+| Service            | VRAM    | Offload Strategy      |
+| ------------------ | ------- | --------------------- |
 | Qwen-Image-Layered | 14-16GB | Sequential (required) |
-| Z-Image Base | 13-14GB | Sequential |
-| HeartMuLa | ~12GB | Model |
-| Fish Speech | ~12GB | Model |
-| Hunyuan3D (shape) | ~6GB | Model |
-| SAM 2.1 | ~6GB | Model |
-| Real-ESRGAN | ~4GB | None needed |
-| LivePortrait | ~6GB | Model |
+| Z-Image Base       | 13-14GB | Sequential            |
+| HeartMuLa          | ~12GB   | Model                 |
+| Fish Speech        | ~12GB   | Model                 |
+| Hunyuan3D (shape)  | ~6GB    | Model                 |
+| SAM 2.1            | ~6GB    | Model                 |
+| Real-ESRGAN        | ~4GB    | None needed           |
+| LivePortrait       | ~6GB    | Model                 |
 
 ### General Guidelines
+
 - Only run ONE GPU-heavy service at a time
 - Use 640px resolution when possible (vs 1024px)
 - Limit video length for video generation
@@ -142,7 +153,7 @@ const handleGenerateClick = useCallback(async () => {
     sport: sportType,
     console: consoleType,
     magazineGenre: magazineGenre,
-    nonSportsCardStyle: nonSportsCardStyle,  // ← Must be in deps!
+    nonSportsCardStyle: nonSportsCardStyle, // ← Must be in deps!
   });
   // ...
 }, [editMode, sportType, consoleType, magazineGenre, nonSportsCardStyle]);
@@ -150,19 +161,22 @@ const handleGenerateClick = useCallback(async () => {
 ```
 
 ### Common Bug: Missing state in dependency array causes stale closures
+
 - **Symptom:** Dropdown selection takes 2-3 clicks to apply
 - **Cause:** Callback captures old state value, not current
 - **Fix:** Add missing state variable to dependency array
 
 ### Debugging Pattern
+
 ```typescript
 const handleGenerateClick = useCallback(async () => {
-  console.log('Current state:', { editMode, sportType, nonSportsCardStyle });
+  console.log("Current state:", { editMode, sportType, nonSportsCardStyle });
   // ↑ Verify all values are current, not stale
 }, [editMode, sportType, nonSportsCardStyle]);
 ```
 
 ### State Flow for Dropdowns
+
 ```
 User changes dropdown
     ↓

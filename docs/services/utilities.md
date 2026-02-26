@@ -6,6 +6,7 @@
 **Purpose:** Tencent's image-to-3D model generation
 
 ### Launch
+
 ```bash
 cd /srv/containers/edq
 bash scripts/start_hunyuan3d.sh
@@ -14,17 +15,20 @@ bash scripts/start_hunyuan3d.sh
 **Access at:** `http://192.168.7.226:8007`
 
 ### Configuration
+
 - **Location**: `projects/hunyuan3d/`
 - **Launcher**: `scripts/start_hunyuan3d.sh`
 - **Venv**: `venv_hunyuan3d`
 - **Requirements**: ~6GB VRAM (shape), ~16GB (with texture)
 
 ### Features
+
 - Image to 3D mesh
 - Texture synthesis
 - GLB/OBJ export
 
 ### Key Considerations
+
 - Upload image → generates 3D mesh
 - First launch downloads ~10GB of models
 - ~6GB VRAM for shape only, ~16GB for shape + texture
@@ -38,6 +42,7 @@ bash scripts/start_hunyuan3d.sh
 **Purpose:** Security auditing tool for Model Context Protocol servers
 
 ### Launch
+
 ```bash
 cd /srv/containers/edq
 bash scripts/start_mcp_inspector.sh
@@ -46,23 +51,27 @@ bash scripts/start_mcp_inspector.sh
 **Access at:** `http://192.168.7.226:8020`
 
 ### Overview
+
 Security auditing tool for Model Context Protocol servers. Follows the "write your own when you can" principle for security-critical tools.
 
 ### Features
 
 **Installed Servers Tab:**
+
 - Trust scoring (⭐⭐⭐ official, ⭐⭐ moderate, ⭐ unknown)
 - Security pattern detection (eval, exec, subprocess)
 - Source code viewing for local Python servers
 - NPM package statistics (stars, downloads)
 
 **Browse Catalog Tab:**
+
 - Search official MCP registry
 - One-click installation to .mcp.json
 - Trust scoring for external servers
 - Verification badges for official servers
 
 ### Architecture
+
 - Pure HTML/JS frontend (no framework dependencies for auditability)
 - Backend: Python HTTP server with SO_REUSEADDR
 - Cursor-based pagination for browse catalog
@@ -70,6 +79,7 @@ Security auditing tool for Model Context Protocol servers. Follows the "write yo
 - Atomic writes to prevent config corruption
 
 ### Key Considerations
+
 - **Official registry is incomplete** - Many MCP servers exist on NPM, PyPI, or GitHub but aren't listed in the registry yet
 - Registry uses cursor-based pagination ("Load More" to see additional servers)
 - Installed servers (like blender-mcp, obsidian-mcp-server) may not appear in browse results if not submitted to registry
@@ -85,11 +95,13 @@ Security auditing tool for Model Context Protocol servers. Follows the "write yo
 **Purpose:** Cross-platform launcher framework for AI apps
 
 ### Important Files
+
 - `.cursorrules`: Contains strict development guidelines (always reference when working with Pinokio)
 - `PINOKIO.md`: Full API documentation
 - `prototype/system/examples/`: Reference examples for all launcher patterns
 
 ### Critical Workflow
+
 1. Always reference `.cursorrules` before any Pinokio script changes
 2. Check `/home/edq/pinokio/prototype/system/examples` for reference patterns
 3. Review `PINOKIO.md` for API syntax
@@ -97,6 +109,7 @@ Security auditing tool for Model Context Protocol servers. Follows the "write yo
 5. Use relative paths (never absolute) in `shell.run` commands
 
 ### Key Patterns
+
 - Always use `venv` attribute for Python apps
 - Capture server URLs with regex patterns like `/(http:\/\/[0-9.:]+)/`
 - Set local variables with `local.set` using `{{input.event[1]}}`
@@ -104,6 +117,7 @@ Security auditing tool for Model Context Protocol servers. Follows the "write yo
 - Prefer `uv` over `pip` for Python package installation
 
 ### Project Structure
+
 ```
 launcher-root/
 ├── install.js    # Installation script
@@ -130,16 +144,20 @@ launcher-root/
 **Tech Stack:** React + TypeScript + Vite
 
 ### Overview
+
 Professional AI-powered image transformation tool with 70+ edit modes
 
 ### Production Deployment
+
 Dragonart Studio runs as a production service on port 8015, managed by the Dragonsuite Dashboard:
+
 - **Production URL:** `http://192.168.7.226:8015`
 - **Server:** `scripts/dragonart_server.py` (Python HTTP server)
 - **Launch:** `bash scripts/start_dragonart.sh` (auto-builds if needed)
 - **Dashboard:** Integrated into Dragonsuite on port 8100
 
 ### Making Changes
+
 ```bash
 # Option 1: Development (faster iteration)
 cd /srv/containers/edq/projects/dragonart-studio
@@ -153,6 +171,7 @@ bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
 **CRITICAL:** Type changes (types.ts) and constant changes (constants.ts) require `npm run build` to take effect in production. The dev server hot-reloads, but production serves static built files from `dist/`.
 
 ### Features
+
 - Image-to-image transformation with prompt control
 - 70+ edit modes: Trading cards, movie posters, magazine covers, comic art, etc.
 - Multi-model support: Gemini 3 Pro, Gemini 3 Flash, GPT-Image-1
@@ -163,6 +182,7 @@ bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
 - Export sessions as HTML galleries
 
 ### Key Modes
+
 - **Trading Cards**: MTG, Sports (7 types), Non-Sports (10 vintage styles)
 - **Posters**: Horror, Fantasy, Sci-Fi, Wanted
 - **Magazines**: Harper's, Syrens, Joxtrap, Freestyle (20 genres)
@@ -171,17 +191,20 @@ bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
 - **Art Styles**: Anime, Watercolor, Gothic, Illustration
 
 ### Models Available
+
 - Gemini 3 Pro → Veo 3.1 (best quality, all 70+ modes)
 - Gemini 3 Flash → Veo 3.1 Fast (faster, good quality)
 - GPT-Image-1 → Sora-2 (OpenAI models)
 
 ### Technical Notes
+
 - Uses React with TypeScript strict mode
 - State management via useState + useCallback hooks
 - All edit mode dropdowns have conditional sub-selectors (sports, genres, styles)
 - Prompts designed for fair use (no trademarked names in templates)
 
 ### Key Considerations
+
 - React + TypeScript app with strict mode enabled
 - Uses Gemini 3 Pro / Flash API (requires Google Cloud API key in `/srv/containers/edq/.env`)
 - All state managed via React hooks (useState, useCallback, useEffect)
@@ -192,6 +215,7 @@ bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
 ### Common Workflows
 
 **1. Adding a new edit mode:**
+
 - Add mode to `EditMode` type in `types.ts`
 - Create prompt template in `constants.ts`
 - Add to `MODE_CONFIGS` in `components/ControlPanel.tsx`
@@ -199,6 +223,7 @@ bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
 - If needs aspect ratio: add to `ASPECT_RATIO_MAP` in `App.tsx`
 
 **2. Adding a dropdown selector (like Non-Sports Card styles):**
+
 - Create new type in `types.ts` (e.g., `NonSportsCardStyle`)
 - Add state in `App.tsx`: `const [style, setStyle] = useState<Type>('default')`
 - Pass to ControlPanel props and add to function parameters
@@ -207,17 +232,20 @@ bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
 - **CRITICAL:** Add new state variable to `handleGenerateClick` dependency array!
 
 **3. Debugging state sync issues:**
+
 - Check useCallback dependency arrays include ALL state variables used
 - Missing dependencies cause stale closure bugs (dropdown changes don't apply)
 - Add console.log in handleGenerateClick to verify current state values
 - React StrictMode causes double-renders (normal in dev, not production)
 
 **4. Fair use / content filtering:**
+
 - Avoid trademarked names in prompts ("Star Wars" → "classic sci-fi movie")
 - Use generic style descriptors ("Marvel" → "superhero comic style")
 - Keep prompt_snippets focused on visual aesthetics, not brand names
 
 ### Troubleshooting
+
 - **Changes not appearing:** Rebuild with `npm run build` and restart via dashboard or launch script
 - **API errors:** Check Google Cloud API key has billing enabled in `/srv/containers/edq/.env`
 - **Content filtering:** Review prompts for trademarked names (use generic descriptors)

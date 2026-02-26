@@ -26,12 +26,14 @@ python3 scripts/export_conversations.py --list --limit 20
 ```
 
 **Output:**
+
 - `~/claude_conversations/INDEX.md` - Chronological index
 - `~/claude_conversations/session_<id>.md` - Individual session files
 
 ### 2. Analyze for Lessons Learned
 
 **Prerequisites:**
+
 - `ANTHROPIC_API_KEY` in `/srv/containers/edq/.env`
 - `pip install anthropic` in your Python environment
 
@@ -51,6 +53,7 @@ python3 scripts/analyze_conversations.py ~/claude_conversations \
 ```
 
 **Output:**
+
 - `~/claude_conversations/LESSONS_LEARNED.md` - Comprehensive synthesis
 - `~/claude_conversations/analysis_<session_id>.md` - Individual analyses (if --individual)
 
@@ -78,29 +81,34 @@ cat /srv/containers/edq/docs/LESSONS_LEARNED.md
 The analysis extracts:
 
 ### 1. Configuration Insights
+
 - Environment variables and setup
 - Tool configurations
 - Port assignments
 - Dependency management
 
 ### 2. Common Issues & Solutions
+
 - Problems encountered
 - Error resolutions
 - Workarounds
 - Debugging patterns
 
 ### 3. Best Practices
+
 - Successful workflows
 - Effective tool usage
 - Architecture decisions
 - Performance optimizations
 
 ### 4. Mistakes to Avoid
+
 - Anti-patterns
 - Failed approaches
 - Lessons from errors
 
 ### 5. Tool Usage Patterns
+
 - When to use specific tools
 - Tool combinations
 - Efficient workflows
@@ -114,6 +122,7 @@ The `analyze_conversations.py` script uses Claude Sonnet 4.5 via API:
 - **30 conversations:** ~$5-10 USD (as of 2026-02)
 
 **Tips to reduce cost:**
+
 - Use `--limit` to analyze fewer conversations
 - Start with 10-15 sessions to test
 - Focus on recent/substantial conversations
@@ -121,6 +130,7 @@ The `analyze_conversations.py` script uses Claude Sonnet 4.5 via API:
 ## Output Format
 
 ### INDEX.md
+
 ```markdown
 # Claude Code Conversation History
 
@@ -140,6 +150,7 @@ The `analyze_conversations.py` script uses Claude Sonnet 4.5 via API:
 ```
 
 ### LESSONS_LEARNED.md
+
 ```markdown
 # Lessons Learned from Claude Code Sessions
 
@@ -183,14 +194,17 @@ claude --resume $SESSION_ID
 ## Troubleshooting
 
 ### "No conversation files found"
+
 - Run `export_conversations.py` first
 - Check that `~/.claude/history.jsonl` exists
 
 ### "ANTHROPIC_API_KEY not found"
+
 - Ensure `/srv/containers/edq/.env` contains `ANTHROPIC_API_KEY=sk-ant-...`
 - Source the .env file: `source /srv/containers/edq/.env`
 
 ### "Analysis failed"
+
 - Check API key is valid and has credits
 - Reduce `--limit` if conversations are too large
 - Check individual error messages in output

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dolphin Vision 7B</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐬</text></svg>">
+<style>
+  :root {
+    --bg: #111318; --panel: #1a1d24; --panel2: #20242e; --border: #2d3140;
+    --accent: #4fc3a1; --accent2: #7c6af7; --hot: #e8547a;
+    --text: #e2e4ed; --text-dim: #7b8099; --text-less: #454860;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif;
+         font-size: 13px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 20px;
+           background: var(--panel); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .logo { font-size: 17px; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent2));
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  #status { margin-left: auto; font-size: 11px; color: var(--text-dim); }
+  #status.busy  { color: #f0a500; }
+  #status.error { color: var(--hot); }
+  #status.done  { color: var(--accent); }
+
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Left panel ── */
+  .left { width: 300px; flex-shrink: 0; border-right: 1px solid var(--border);
+          display: flex; flex-direction: column; overflow: hidden; }
+
+  .img-zone { padding: 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+
+  #drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 20px;
+               text-align: center; cursor: pointer; transition: all 0.15s;
+               color: var(--text-dim); font-size: 12px; min-height: 100px;
+               display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  #drop-zone.drag-over { border-color: var(--accent); background: rgba(79,195,161,0.06); }
+  #drop-zone.loaded { padding: 6px; border-style: solid; border-color: var(--border); }
+  #drop-zone img { max-width: 100%; max-height: 220px; border-radius: 5px; object-fit: contain; }
+  #file-input { display: none; }
+
+  .controls { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+
+  .label { font-size: 10px; font-weight: 600; text-transform: uppercase;
+           letter-spacing: 1.2px; color: var(--text-less); margin-bottom: 4px; }
+
+  textarea { width: 100%; background: var(--panel2); border: 1px solid var(--border);
+             color: var(--text); border-radius: 6px; padding: 8px; font-size: 12px;
+             font-family: inherit; resize: vertical; min-height: 80px; line-height: 1.4; }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  textarea::placeholder { color: var(--text-less); }
+
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { padding: 3px 9px; border-radius: 12px; border: 1px solid var(--border);
+          background: var(--panel2); color: var(--text-dim); cursor: pointer; font-size: 11px;
+          transition: all 0.12s; line-height: 1.4; }
+  .chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,195,161,0.08); }
+
+  .slider-ctrl { display: flex; flex-direction: column; gap: 4px; }
+  .slider-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); }
+  .slider-val { color: var(--text); font-variant-numeric: tabular-nums; }
+  input[type=range] { -webkit-appearance: none; width: 100%; height: 4px;
+                      background: var(--border); border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px;
+    background: var(--accent2); border-radius: 50%; cursor: pointer; }
+
+  .btn-analyze { width: 100%; padding: 9px; background: linear-gradient(135deg, rgba(79,195,161,0.2), rgba(124,106,247,0.15));
+                 border: 1px solid var(--accent); color: var(--accent); border-radius: 7px;
+                 cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+  .btn-analyze:hover { background: linear-gradient(135deg, rgba(79,195,161,0.35), rgba(124,106,247,0.25)); }
+  .btn-analyze:disabled { opacity: 0.3; cursor: default; }
+
+  /* ── Right panel: results ── */
+  .results-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .results-header { padding: 10px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+                    display: flex; align-items: center; justify-content: space-between; }
+  .results-header span { font-size: 10px; font-weight: 600; text-transform: uppercase;
+                         letter-spacing: 1.2px; color: var(--text-less); }
+  .btn-clear { font-size: 11px; padding: 3px 10px; border-radius: 5px; border: 1px solid var(--border);
+               background: transparent; color: var(--text-dim); cursor: pointer; transition: all 0.12s; }
+  .btn-clear:hover { border-color: var(--hot); color: var(--hot); }
+
+  #results-list { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center;
+                 justify-content: center; color: var(--text-less); gap: 8px; text-align: center; }
+  .empty-state .icon { font-size: 40px; }
+
+  /* Result cards */
+  .result-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .result-q { padding: 10px 14px; background: var(--panel2); border-bottom: 1px solid var(--border);
+              font-size: 12px; color: var(--text-dim); display: flex; gap: 8px; align-items: flex-start; }
+  .result-q .q-label { color: var(--accent2); font-weight: 700; flex-shrink: 0; }
+  .result-a { padding: 12px 14px; }
+  .result-a pre { white-space: pre-wrap; word-break: break-word; font-family: inherit;
+                  font-size: 12.5px; line-height: 1.6; color: var(--text); }
+  .result-footer { padding: 6px 14px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 6px; }
+  .btn-copy { font-size: 11px; padding: 3px 10px; border-radius: 5px; border: 1px solid var(--border);
+              background: transparent; color: var(--text-dim); cursor: pointer; transition: all 0.12s; }
+  .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-copy.copied { border-color: var(--accent); color: var(--accent); }
+
+  /* In-progress card */
+  .result-card.loading .result-a { display: flex; align-items: center; gap: 10px; color: var(--text-dim); }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent);
+             border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🐬 DOLPHIN VISION</div>
+  <span style="color:var(--text-less)">Uncensored Vision-Language Model</span>
+  <span id="status">Upload an image to begin</span>
+</header>
+
+<div class="layout">
+
+  <!-- Left panel -->
+  <div class="left">
+
+    <div class="img-zone">
+      <div class="label">Image</div>
+      <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <span style="font-size:28px;">🖼</span>
+        <span>Click or drag & drop<br><span style="font-size:11px;">paste from clipboard also works</span></span>
+      </div>
+      <input type="file" id="file-input" accept="image/*" onchange="loadFile(this.files[0])">
+    </div>
+
+    <div class="controls">
+
+      <div>
+        <div class="label">Prompt</div>
+        <textarea id="prompt" placeholder="Ask about the image…">Describe this image in detail.</textarea>
+      </div>
+
+      <div>
+        <div class="label">Example Prompts</div>
+        <div class="chip-grid">
+          <span class="chip" onclick="setPrompt(this)">Describe in detail</span>
+          <span class="chip" onclick="setPrompt(this)">What is happening?</span>
+          <span class="chip" onclick="setPrompt(this)">Extract all text</span>
+          <span class="chip" onclick="setPrompt(this)">List all objects</span>
+          <span class="chip" onclick="setPrompt(this)">Describe the mood</span>
+          <span class="chip" onclick="setPrompt(this)">Are there people?</span>
+          <span class="chip" onclick="setPrompt(this)">Analyze critically</span>
+          <span class="chip" onclick="setPrompt(this)">What style is this?</span>
+        </div>
+      </div>
+
+      <div class="slider-ctrl">
+        <div class="slider-row">
+          <span>Temperature</span>
+          <span class="slider-val" id="val-temp">0.10</span>
+        </div>
+        <input type="range" id="sl-temp" min="0.01" max="2" step="0.01" value="0.1"
+               oninput="document.getElementById('val-temp').textContent=parseFloat(this.value).toFixed(2)">
+      </div>
+
+      <div class="slider-ctrl">
+        <div class="slider-row">
+          <span>Max Tokens</span>
+          <span class="slider-val" id="val-tokens">512</span>
+        </div>
+        <input type="range" id="sl-tokens" min="100" max="2000" step="50" value="512"
+               oninput="document.getElementById('val-tokens').textContent=this.value">
+      </div>
+
+      <button class="btn-analyze" id="btn-analyze" onclick="doAnalyze()" disabled>
+        Analyze Image
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Right: results -->
+  <div class="results-panel">
+    <div class="results-header">
+      <span>Results</span>
+      <button class="btn-clear" onclick="clearResults()">Clear all</button>
+    </div>
+    <div id="results-list">
+      <div class="empty-state" id="empty-state">
+        <div class="icon">🐬</div>
+        <div>Upload an image, enter a prompt,<br>and click Analyze.</div>
+        <div style="font-size:11px;margin-top:4px;">Results accumulate here — run as many queries as you like on the same image.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentFile = null;
+
+// ── Upload ─────────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f?.type.startsWith('image/')) loadFile(f);
+});
+document.addEventListener('paste', e => {
+  const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'));
+  if (item) loadFile(item.getAsFile());
+});
+
+function loadFile(file) {
+  if (!file) return;
+  currentFile = file;
+  const url = URL.createObjectURL(file);
+  dropZone.classList.add('loaded');
+  dropZone.innerHTML = `<img src="${url}" alt="loaded">`;
+  dropZone.onclick   = () => document.getElementById('file-input').click();
+  document.getElementById('btn-analyze').disabled = false;
+  setStatus('', 'Image loaded — enter a prompt and analyze.');
+}
+
+// ── Example prompts ────────────────────────────────────────────────
+const PROMPT_MAP = {
+  'Describe in detail':   'Describe this image in detail.',
+  'What is happening?':   'What is happening in this image?',
+  'Extract all text':     'Extract all text visible in this image.',
+  'List all objects':     'What objects do you see? List them all.',
+  'Describe the mood':    'Describe the mood and atmosphere of this image.',
+  'Are there people?':    'Are there any people in this image? Describe them.',
+  'Analyze critically':   'Analyze this image critically.',
+  'What style is this?':  'What style or aesthetic does this image have?',
+};
+
+function setPrompt(el) {
+  document.getElementById('prompt').value = PROMPT_MAP[el.textContent] || el.textContent;
+}
+
+// ── Analyze ────────────────────────────────────────────────────────
+async function doAnalyze() {
+  if (!currentFile) return;
+  const prompt = document.getElementById('prompt').value.trim();
+  if (!prompt) return;
+
+  const btn = document.getElementById('btn-analyze');
+  btn.disabled = true;
+  setStatus('busy', 'Analyzing… (first run loads model ~30s)');
+
+  // Add loading card
+  const card = addResultCard(prompt, null);
+
+  const fd = new FormData();
+  fd.append('file',        currentFile);
+  fd.append('prompt',      prompt);
+  fd.append('temperature', document.getElementById('sl-temp').value);
+  fd.append('max_tokens',  document.getElementById('sl-tokens').value);
+
+  try {
+    const resp = await fetch('/api/query', { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error(`Server ${resp.status}`);
+    const data = await resp.json();
+    fillResultCard(card, data.response);
+    setStatus('done', 'Done.');
+  } catch (err) {
+    fillResultCard(card, `Error: ${err.message}`);
+    setStatus('error', err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Result cards ───────────────────────────────────────────────────
+function addResultCard(prompt, response) {
+  const empty = document.getElementById('empty-state');
+  if (empty) empty.remove();
+
+  const list = document.getElementById('results-list');
+  const card = document.createElement('div');
+  card.className = 'result-card' + (response === null ? ' loading' : '');
+  card.innerHTML = `
+    <div class="result-q">
+      <span class="q-label">Q</span>
+      <span>${escHtml(prompt)}</span>
+    </div>
+    <div class="result-a">
+      ${response === null
+        ? '<div class="spinner"></div><span>Analyzing…</span>'
+        : `<pre>${escHtml(response)}</pre>`}
+    </div>
+    ${response !== null ? `
+    <div class="result-footer">
+      <button class="btn-copy" onclick="copyResponse(this, ${JSON.stringify(response)})">Copy</button>
+    </div>` : ''}
+  `;
+  list.appendChild(card);
+  card.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  return card;
+}
+
+function fillResultCard(card, response) {
+  card.classList.remove('loading');
+  card.querySelector('.result-a').innerHTML = `<pre>${escHtml(response)}</pre>`;
+  card.insertAdjacentHTML('beforeend', `
+    <div class="result-footer">
+      <button class="btn-copy" onclick="copyResponse(this, ${JSON.stringify(response)})">Copy</button>
+    </div>
+  `);
+}
+
+function copyResponse(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+function clearResults() {
+  const list = document.getElementById('results-list');
+  list.innerHTML = `
+    <div class="empty-state" id="empty-state">
+      <div class="icon">🐬</div>
+      <div>Upload an image, enter a prompt,<br>and click Analyze.</div>
+    </div>`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setStatus(cls, msg) {
+  const el = document.getElementById('status');
+  el.className = cls; el.textContent = msg;
+}
+
+// Submit on Ctrl+Enter in textarea
+document.getElementById('prompt').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) doAnalyze();
+});
+</script>
+</body>
+</html>

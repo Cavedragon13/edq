@@ -7,9 +7,11 @@ This guide explains how to work seamlessly across macOS and Ubuntu while maintai
 ## Platform Roles
 
 ### Ubuntu Server (udragon - 192.168.7.226)
+
 **Role:** GPU Compute & Heavy Workloads
 
 **Strengths:**
+
 - RTX 5070 Ti GPU (16GB VRAM)
 - CUDA support for PyTorch/TensorFlow
 - Runs all GPU-intensive services (image gen, video gen, LLMs)
@@ -17,6 +19,7 @@ This guide explains how to work seamlessly across macOS and Ubuntu while maintai
 - Fast local disk I/O
 
 **Use for:**
+
 - Running Gradio services
 - Model inference (Ollama, LM Studio, custom models)
 - Video/image processing
@@ -24,15 +27,18 @@ This guide explains how to work seamlessly across macOS and Ubuntu while maintai
 - Docker containers with GPU access
 
 ### macOS (Client - Multiple Macs)
+
 **Role:** Development & Remote Access
 
 **Strengths:**
+
 - Portable (laptops)
 - Native macOS tools (Xcode, Safari debugging)
 - Better battery life than remoting into Ubuntu desktop
 - Clean development environment
 
 **Use for:**
+
 - Code editing (Python, JavaScript, HTML/CSS)
 - Git operations
 - Documentation writing
@@ -47,23 +53,27 @@ This guide explains how to work seamlessly across macOS and Ubuntu while maintai
 **Location:** `smb://192.168.7.226/knowledge-base`
 
 **Shared via Obsidian Vault:**
+
 1. **Documentation** (`CLAUDE.md`, `CLAUDE-MAC.md`, `docs/`)
 2. **Memory** (lessons learned, troubleshooting guides)
 3. **Organization principles** (RTFM, no duplicates, etc.)
 
 **Access:**
+
 - **Ubuntu:** Native filesystem at `/home/edq/knowledge-base/`
 - **Mac:** SMB mount at `/Volumes/knowledge-base/`
 
 ### What's Platform-Specific
 
 **Ubuntu-Only:**
+
 - `/srv/containers/edq/` - Main project directory
 - `venv_*` - GPU-dependent virtual environments
 - `models/` - Downloaded model weights (large files)
 - `.mcp.json` - GPU service MCPs
 
 **Mac-Only:**
+
 - `~/Projects/dragonsuite/` - Mac development workspace
 - Mac-specific venvs (non-GPU projects)
 - `.mcp.json` - Mac-compatible MCPs (GitHub, Obsidian, filesystem)
@@ -77,18 +87,22 @@ This guide explains how to work seamlessly across macOS and Ubuntu while maintai
 **Use Case:** Creating a new Gradio service
 
 **Steps:**
+
 1. **Mac:** Write Python code in VS Code
+
    ```bash
    cd ~/Projects/dragonsuite/
    code new_service_gradio.py
    ```
 
 2. **Mac:** Test logic locally (mock data, no GPU)
+
    ```bash
    python3 new_service_gradio.py --mock
    ```
 
 3. **Mac:** Commit to Git
+
    ```bash
    git add new_service_gradio.py
    git commit -m "Add new service UI"
@@ -96,6 +110,7 @@ This guide explains how to work seamlessly across macOS and Ubuntu while maintai
    ```
 
 4. **Ubuntu:** Pull and deploy
+
    ```bash
    ssh edq@192.168.7.226
    cd /srv/containers/edq/projects/YOUR_PROJECT
@@ -113,18 +128,22 @@ This guide explains how to work seamlessly across macOS and Ubuntu while maintai
 **Use Case:** Tweaking a live service
 
 **Steps:**
+
 1. **Mac:** SSH into Ubuntu
+
    ```bash
    ssh edq@192.168.7.226
    ```
 
 2. **Ubuntu:** Edit file with nano/vim
+
    ```bash
    cd /srv/containers/edq/scripts/
    nano start_service.sh
    ```
 
 3. **Ubuntu:** Restart service
+
    ```bash
    bash start_service.sh
    ```
@@ -139,11 +158,13 @@ This guide explains how to work seamlessly across macOS and Ubuntu while maintai
 **Use Case:** Update CLAUDE.md or add to memory
 
 **Option A - Mac:**
+
 1. Open Obsidian on Mac
 2. Edit file (auto-synced via SMB)
 3. Changes immediately visible on Ubuntu
 
 **Option B - Ubuntu:**
+
 1. Edit file directly: `nano /srv/containers/edq/CLAUDE.md`
 2. Changes immediately visible on Mac via SMB
 
@@ -154,6 +175,7 @@ This guide explains how to work seamlessly across macOS and Ubuntu while maintai
 **Use Case:** Start/stop Ubuntu services from Mac
 
 **Method 1: SSH Commands**
+
 ```bash
 # Start Dragonsuite Dashboard
 ssh edq@192.168.7.226 "cd /srv/containers/edq && bash scripts/start_dragonsuite.sh"
@@ -166,6 +188,7 @@ ssh edq@192.168.7.226 "pkill -f 'python.*dragonsuite'"
 ```
 
 **Method 2: Dashboard Web UI**
+
 ```
 # Open Dashboard in browser
 http://192.168.7.226:8100
@@ -174,6 +197,7 @@ http://192.168.7.226:8100
 ```
 
 **Method 3: Custom MCP Server (Future)**
+
 ```
 # TODO: Create ubuntu-services MCP that wraps SSH commands
 # Would allow Claude Code on Mac to start/stop Ubuntu services
@@ -184,6 +208,7 @@ http://192.168.7.226:8100
 ### Recommended: Git for Projects
 
 **Setup:**
+
 ```bash
 # Ubuntu: Initialize repo
 cd /srv/containers/edq/projects/YOUR_PROJECT
@@ -196,6 +221,7 @@ git clone git@github.com:USERNAME/project.git
 ```
 
 **Workflow:**
+
 ```bash
 # Mac: Make changes, commit, push
 git add .
@@ -211,6 +237,7 @@ git pull
 ### Alternative: Direct SMB Access (Docs Only)
 
 **For documentation and configs, NOT code:**
+
 ```bash
 # Mac: Edit directly on SMB mount
 code /Volumes/knowledge-base/AI\ Projects/CLAUDE.md
@@ -230,6 +257,7 @@ cat /home/edq/knowledge-base/AI\ Projects/CLAUDE.md
 **Mac Access Options:**
 
 **Option 1: Symlink via SMB (Preferred)**
+
 ```bash
 # Assumes SMB is mounted and .env is shared
 ln -s /Volumes/knowledge-base/.env ~/.dragonsuite.env
@@ -237,6 +265,7 @@ source ~/.dragonsuite.env
 ```
 
 **Option 2: SSH to Read (Secure)**
+
 ```bash
 # Fetch .env from Ubuntu when needed
 scp edq@192.168.7.226:/srv/containers/edq/.env ~/.dragonsuite.env
@@ -247,6 +276,7 @@ echo ".dragonsuite.env" >> ~/.gitignore
 ```
 
 **Option 3: Local Copy with Sync Script**
+
 ```bash
 #!/bin/bash
 # sync_env.sh - Run before starting work
@@ -269,6 +299,7 @@ echo "✓ Environment synced from Ubuntu"
 **Problem:** Script with `/srv/containers/edq/` won't work on Mac
 
 **Solution:** Use platform detection:
+
 ```python
 import platform
 import os
@@ -290,6 +321,7 @@ elif platform.system() == "Linux":
 **Problem:** SMB share unmounts, breaking symlinks
 
 **Solution:** Auto-reconnect script:
+
 ```bash
 #!/bin/bash
 # check_smb.sh - Add to cron or LaunchAgent
@@ -303,6 +335,7 @@ fi
 **Problem:** Edited same file on both platforms, merge conflict
 
 **Solution:**
+
 1. **Always pull before editing:** `git pull`
 2. **Use branches:** Mac = `feature/mac-dev`, Ubuntu = `main`
 3. **Communicate:** If working simultaneously, use different files
@@ -311,29 +344,30 @@ fi
 
 ### Mac → Ubuntu Quick Reference
 
-| Mac Command | Ubuntu Equivalent | Notes |
-|-------------|-------------------|-------|
-| `open .` | `xdg-open .` | Open directory in GUI |
-| `pbcopy < file` | `xclip -sel clip < file` | Copy file to clipboard |
-| `brew install pkg` | `sudo apt install pkg` | Package manager |
-| `/Users/user/` | `/home/user/` | Home directory |
-| `~/Library/` | `~/.config/` | App config dir |
-| `launchctl` | `systemctl` | Service management |
+| Mac Command        | Ubuntu Equivalent        | Notes                  |
+| ------------------ | ------------------------ | ---------------------- |
+| `open .`           | `xdg-open .`             | Open directory in GUI  |
+| `pbcopy < file`    | `xclip -sel clip < file` | Copy file to clipboard |
+| `brew install pkg` | `sudo apt install pkg`   | Package manager        |
+| `/Users/user/`     | `/home/user/`            | Home directory         |
+| `~/Library/`       | `~/.config/`             | App config dir         |
+| `launchctl`        | `systemctl`              | Service management     |
 
 ### Common Paths Translation
 
-| Purpose | Mac | Ubuntu |
-|---------|-----|--------|
-| Home | `/Users/edq/` | `/home/edq/` |
-| Projects | `~/Projects/dragonsuite/` | `/srv/containers/edq/` |
+| Purpose        | Mac                                    | Ubuntu                                  |
+| -------------- | -------------------------------------- | --------------------------------------- |
+| Home           | `/Users/edq/`                          | `/home/edq/`                            |
+| Projects       | `~/Projects/dragonsuite/`              | `/srv/containers/edq/`                  |
 | Obsidian Vault | `/Volumes/knowledge-base/AI Projects/` | `/home/edq/knowledge-base/AI Projects/` |
-| Temp Files | `/tmp/` or `~/Downloads/` | `/tmp/` or `~/Downloads/` |
+| Temp Files     | `/tmp/` or `~/Downloads/`              | `/tmp/` or `~/Downloads/`               |
 
 ## When Things Go Wrong
 
 ### Can't Access Ubuntu Services from Mac
 
 **Check:**
+
 1. Ubuntu server is running: `ping 192.168.7.226`
 2. Service is running on Ubuntu: SSH in and check `netstat -tulpn | grep 8100`
 3. Firewall allows access: `sudo ufw status` on Ubuntu
@@ -342,6 +376,7 @@ fi
 ### SMB Share Not Mounting
 
 **Check:**
+
 1. Network connectivity: `ping 192.168.7.226`
 2. Samba is running: `ssh edq@192.168.7.226 'sudo systemctl status smbd'`
 3. Share is exported: `ssh edq@192.168.7.226 'cat /etc/samba/smb.conf | grep knowledge-base'`
@@ -350,6 +385,7 @@ fi
 ### Git Sync Issues
 
 **Check:**
+
 1. SSH keys configured: `ssh -T git@github.com`
 2. Correct remote: `git remote -v`
 3. No uncommitted changes: `git status`
@@ -358,6 +394,7 @@ fi
 ## Best Practices Summary
 
 ### Do's ✅
+
 1. **Use Git for code sync** - Don't rely on SMB for active development
 2. **Edit docs on either platform** - They sync via SMB automatically
 3. **Keep secrets centralized** - One `.env`, symlink or sync to Mac
@@ -366,6 +403,7 @@ fi
 6. **Follow same org principles** - RTFM, no duplicates, parallel execution
 
 ### Don'ts ❌
+
 1. **Don't create duplicate configs** - Use symlinks or sync scripts
 2. **Don't hardcode IP addresses** - Use env vars or platform detection
 3. **Don't run GPU services on Mac** - CUDA won't work
@@ -375,6 +413,7 @@ fi
 ## Future Enhancements
 
 **Planned:**
+
 1. **Custom MCP Server** - Control Ubuntu services from Mac Claude Code
 2. **Auto-sync script** - Cron job to keep Mac .env in sync
 3. **Platform-aware launcher** - Detect platform and adjust paths automatically
@@ -383,6 +422,7 @@ fi
 ---
 
 **Questions?** See platform-specific docs:
+
 - [CLAUDE.md](../CLAUDE.md) - Ubuntu setup
 - [CLAUDE-MAC.md](CLAUDE-MAC.md) - macOS setup
 - [organization-principles.md](organization-principles.md) - Shared principles

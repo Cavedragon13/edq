@@ -7,6 +7,7 @@ Topaz Labs AI provides professional image enhancement via cloud API. We've built
 ## Components
 
 ### 1. MCP Server (✅ Complete)
+
 - **Location:** `/srv/containers/edq/mcp-servers/topaz-labs/`
 - **Status:** Functional, tested
 - **Tools:**
@@ -18,12 +19,14 @@ Topaz Labs AI provides professional image enhancement via cloud API. We've built
   - `topaz_estimate_cost` - Cost calculator
 
 ### 2. Dragonsuite Web UI (✅ Created)
+
 - **Location:** `/srv/containers/edq/scripts/topaz_labs_gradio.py`
 - **Port:** 8019
 - **Launch:** Dashboard → "Topaz Labs AI" → Start
 - **Features:** All 4 enhancement operations with previews
 
 ### 3. Dashboard Integration (✅ Added)
+
 - Service ID: `topaz-labs`
 - Category: Image
 - Icon: ⭐ (star)
@@ -31,6 +34,7 @@ Topaz Labs AI provides professional image enhancement via cloud API. We've built
 ## Configuration
 
 **API Key Required:**
+
 ```bash
 # Add to /srv/containers/edq/.env
 TOPAZ_API_KEY=your_api_key_here
@@ -66,6 +70,7 @@ TOPAZ_API_KEY=your_api_key_here
 **Feasibility:** ✅ **Highly Compatible**
 
 **Why it works:**
+
 - Dragonart already calls external APIs (Gemini, GPT)
 - Same pattern: Upload → Process → Return result
 - API key management already in place (.env file)
@@ -77,30 +82,27 @@ TOPAZ_API_KEY=your_api_key_here
 // File: src/services/topazLabsService.ts
 
 interface TopazEnhanceOptions {
-  model: 'v2' | 'recover3';
+  model: "v2" | "recover3";
   scale: 2 | 3 | 4;
 }
 
-export const topazEnhance = async (
-  imageFile: File,
-  options: TopazEnhanceOptions
-): Promise<Blob> => {
+export const topazEnhance = async (imageFile: File, options: TopazEnhanceOptions): Promise<Blob> => {
   const API_KEY = import.meta.env.VITE_TOPAZ_API_KEY;
-  const BASE_URL = 'https://api.topazlabs.com';
+  const BASE_URL = "https://api.topazlabs.com";
 
   // Create FormData with file
   const formData = new FormData();
-  formData.append('image', imageFile);
-  formData.append('model', options.model === 'v2' ? 'V2 Standard' : 'Recover 3 Generative');
-  formData.append('scale', options.scale.toString());
+  formData.append("image", imageFile);
+  formData.append("model", options.model === "v2" ? "V2 Standard" : "Recover 3 Generative");
+  formData.append("scale", options.scale.toString());
 
   try {
-    if (options.model === 'v2') {
+    if (options.model === "v2") {
       // Synchronous V2 Standard
       const response = await fetch(`${BASE_URL}/image/v1/enhance`, {
-        method: 'POST',
-        headers: { 'X-API-Key': API_KEY },
-        body: formData
+        method: "POST",
+        headers: { "X-API-Key": API_KEY },
+        body: formData,
       });
 
       if (!response.ok) {
@@ -110,13 +112,12 @@ export const topazEnhance = async (
       const result = await response.json();
       const imageResponse = await fetch(result.output_url);
       return await imageResponse.blob();
-
     } else {
       // Async Recover 3 Generative
       const response = await fetch(`${BASE_URL}/image/v1/enhance-gen/async`, {
-        method: 'POST',
-        headers: { 'X-API-Key': API_KEY },
-        body: formData
+        method: "POST",
+        headers: { "X-API-Key": API_KEY },
+        body: formData,
       });
 
       if (!response.ok) {
@@ -131,7 +132,7 @@ export const topazEnhance = async (
       return await imageResponse.blob();
     }
   } catch (error) {
-    console.error('Topaz Labs enhancement failed:', error);
+    console.error("Topaz Labs enhancement failed:", error);
     throw error;
   }
 };
@@ -141,23 +142,22 @@ async function pollTopazJob(jobId: string, apiKey: string): Promise<any> {
   const pollInterval = 5000; // 5 seconds
 
   for (let i = 0; i < maxAttempts; i++) {
-    const response = await fetch(
-      `https://api.topazlabs.com/image/v1/enhance-gen/async/${jobId}`,
-      { headers: { 'X-API-Key': apiKey } }
-    );
+    const response = await fetch(`https://api.topazlabs.com/image/v1/enhance-gen/async/${jobId}`, {
+      headers: { "X-API-Key": apiKey },
+    });
 
     const status = await response.json();
 
-    if (status.status === 'completed') {
+    if (status.status === "completed") {
       return status;
-    } else if (status.status === 'failed') {
-      throw new Error(status.error || 'Enhancement failed');
+    } else if (status.status === "failed") {
+      throw new Error(status.error || "Enhancement failed");
     }
 
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
   }
 
-  throw new Error('Enhancement timed out');
+  throw new Error("Enhancement timed out");
 }
 ```
 
@@ -187,10 +187,10 @@ const [enhanceScale, setEnhanceScale] = useState<2 | 3 | 4>(2);
 
 // After transformation
 if (enhanceOutput && transformedImage) {
-  setStatus('Enhancing with Topaz Labs...');
+  setStatus("Enhancing with Topaz Labs...");
   const enhanced = await topazEnhance(transformedImage, {
-    model: 'recover3',
-    scale: enhanceScale
+    model: "recover3",
+    scale: enhanceScale,
   });
   // Use enhanced image as final result
 }
@@ -199,23 +199,27 @@ if (enhanceOutput && transformedImage) {
 **Environment Variables:**
 
 Add to `/srv/containers/edq/.env`:
+
 ```bash
 # Topaz Labs API (for Dragonart Studio)
 VITE_TOPAZ_API_KEY=your_api_key_here
 ```
 
 **Cost Considerations:**
+
 - V2 Standard: ~0.5-1 credit per image
 - Recover 3 Generative: ~1-2 credits per image
 - Add credit check before enhancement
 - Show estimated cost in UI
 
 **Error Handling:**
+
 - API rate limits (429): Retry with exponential backoff
 - Insufficient credits (402): Show user-friendly error
 - Network errors: Graceful degradation (skip enhancement)
 
 **Testing Plan:**
+
 1. Test with sample image (low-res → 2x V2)
 2. Test with AI output (1024px → 4x Recover 3)
 3. Test error cases (no API key, no credits)
@@ -228,6 +232,7 @@ VITE_TOPAZ_API_KEY=your_api_key_here
 ### Evaluation: Before vs After RTFM
 
 **Original Version (Built on Assumptions):**
+
 - ❌ Wrong base URL (`/v1` in wrong place)
 - ❌ Wrong auth (`Authorization: Bearer` instead of `X-API-Key`)
 - ❌ Wrong request format (JSON with URLs instead of multipart/form-data)
@@ -235,6 +240,7 @@ VITE_TOPAZ_API_KEY=your_api_key_here
 - ❌ Couldn't work - would fail on every call
 
 **Corrected Version (Built from Docs):**
+
 - ✅ Correct base URL: `https://api.topazlabs.com`
 - ✅ Correct auth: `X-API-Key` header
 - ✅ Correct format: multipart/form-data with actual files
@@ -290,6 +296,7 @@ Before publishing:
 4. **Well-structured:** Good example for other API integrations
 
 **Potential users:**
+
 - Photographers using Claude Code
 - Archivists restoring old photos
 - Developers learning MCP server patterns
@@ -298,18 +305,21 @@ Before publishing:
 ## Next Steps
 
 ### Immediate (Today)
+
 1. ✅ Document lesson learned (dashboard checking)
 2. ✅ Create Gradio web UI
 3. ✅ Add to dashboard
 4. Test Topaz Labs service via dashboard
 
 ### Short-term (This Week)
+
 1. Solve image upload challenge (add temp server)
 2. Test Dragonart Studio integration
 3. Add MCP server README
 4. Test with real Topaz API key
 
 ### Long-term (Month)
+
 1. Publish MCP server to GitHub
 2. Submit to MCP Server Registry
 3. Blog post / tutorial

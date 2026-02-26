@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dragonsuite v2 - Project Dashboard</title>
-    <link rel="icon" type="image/svg+xml" href="/media/favicon.svg">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
     <style>
         * {
             margin: 0;
@@ -315,9 +315,6 @@
         .service-description {
             font-size: 0.8em;
             color: #6b7280;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         body.dark-mode .service-description {
@@ -970,7 +967,7 @@
         });
 
         // Category icons and order (image/vision first, then video/3d, audio, segmentation)
-        const categoryOrder = ['image', 'video', '3d', 'audio', 'segmentation', 'llm', 'game'];
+        const categoryOrder = ['image', 'video', '3d', 'audio', 'segmentation', 'llm', 'game', 'dev'];
         const categoryIcons = {
             'image': '&#128444;',
             'video': '&#127916;',
@@ -979,6 +976,7 @@
             'segmentation': '&#127919;',
             'llm': '&#129302;',
             'game': '&#127918;',
+            'dev': '&#9878;',
             'default': '&#128187;'
         };
         const categoryNames = {
@@ -988,7 +986,8 @@
             'audio': 'Audio / TTS / Music',
             'segmentation': 'Segmentation / Matting',
             'llm': 'Language Models',
-            'game': 'Games'
+            'game': 'Games',
+            'dev': 'Dev / Test UIs'
         };
 
         // Filter chips
@@ -1097,6 +1096,7 @@
                 networkUrlEl.textContent = `http://${localIp}:8100`;
 
                 renderServices();
+                fetchLLMModels();
             } catch (error) {
                 console.error('Error fetching status:', error);
                 servicesContainer.innerHTML = `
@@ -1107,6 +1107,45 @@
                 `;
             } finally {
                 refreshBtn.classList.remove('spinning');
+            }
+        }
+
+        // Fetch installed LLM models and populate llm-models divs
+        async function fetchLLMModels() {
+            try {
+                const response = await fetch('/api/llm-models');
+                if (!response.ok) return;
+                const data = await response.json();
+
+                // Ollama models
+                const ollamaEl = document.getElementById('llm-models-ollama');
+                if (ollamaEl) {
+                    if (data.ollama && data.ollama.length > 0) {
+                        ollamaEl.innerHTML = data.ollama.map(m =>
+                            `<span style="display:inline-block;margin-right:0.5rem;">${m.name} <span style="opacity:0.5;">${m.size_gb}GB</span></span>`
+                        ).join('');
+                    } else if (data.ollama === null) {
+                        ollamaEl.textContent = 'offline';
+                    } else {
+                        ollamaEl.textContent = 'no models installed';
+                    }
+                }
+
+                // LM Studio models
+                const lmsEl = document.getElementById('llm-models-lm-studio');
+                if (lmsEl) {
+                    if (data.lmstudio && data.lmstudio.length > 0) {
+                        lmsEl.innerHTML = data.lmstudio.map(id =>
+                            `<span style="display:inline-block;margin-right:0.5rem;">${id}</span>`
+                        ).join('');
+                    } else if (data.lmstudio === null) {
+                        lmsEl.textContent = 'offline';
+                    } else {
+                        lmsEl.textContent = 'no models loaded';
+                    }
+                }
+            } catch {
+                // silently ignore — LLM tab just won't show models
             }
         }
 
@@ -1266,6 +1305,13 @@
                 ? `<a href="${service.url}" target="_blank">${service.url}</a>`
                 : '<span style="color: #9ca3af;">N/A</span>';
 
+            const pagesDisplay = service.pages_url
+                ? `<div class="info-row">
+                        <span class="info-label">Live</span>
+                        <span class="info-value"><a href="${service.pages_url}" target="_blank" style="color: #22c55e;">&#127760; GH Pages</a></span>
+                   </div>`
+                : '';
+
             const portDisplay = service.port || 'N/A';
 
             // Determine which buttons to show
@@ -1309,7 +1355,11 @@
                             <span class="info-label">URL</span>
                             <span class="info-value">${urlDisplay}</span>
                         </div>
+                        ${pagesDisplay}
                         <div class="git-info" id="git-${service.id}" style="display: none;"></div>
+                        ${service.category === 'llm'
+                            ? `<div class="llm-models" id="llm-models-${service.id}" style="margin-top:0.4rem;font-size:0.78rem;opacity:0.7;"></div>`
+                            : ''}
                     </div>
                     <div class="card-actions">
                         ${actionButtons}

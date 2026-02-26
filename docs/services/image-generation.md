@@ -6,6 +6,7 @@
 **Purpose:** FLUX.2-klein image generation with LoRA support
 
 ### Launch
+
 ```bash
 cd /srv/containers/edq
 bash scripts/start_flux2_klein.sh
@@ -14,16 +15,19 @@ bash scripts/start_flux2_klein.sh
 **Access at:** `http://192.168.7.226:8001`
 
 ### Configuration
+
 - **Script**: `scripts/flux2_klein_gradio.py`
 - **Launcher**: `scripts/start_flux2_klein.sh`
 - **Venv**: `venv_flux2`
 
 ### Features
+
 - LoRA model loading from `~/models/loras/flux-klein/`
 - Output saves to `~/ai_generated/flux2-klein/`
 - Gradio interface
 
 ### Key Considerations
+
 - GPU-heavy (loads FLUX model into VRAM)
 - LoRA support via `~/models/loras/flux-klein/`
 - Output saves to `~/ai_generated/flux2-klein/`
@@ -36,6 +40,7 @@ bash scripts/start_flux2_klein.sh
 **Purpose:** Alibaba Tongyi's 6B parameter text-to-image with dual model support
 
 ### Launch
+
 ```bash
 cd /srv/containers/edq
 bash scripts/start_zimage.sh
@@ -44,6 +49,7 @@ bash scripts/start_zimage.sh
 **Access at:** `http://192.168.7.226:8011`
 
 ### Configuration
+
 - **Script**: `scripts/zimage_base_gradio.py`
 - **Launcher**: `scripts/start_zimage.sh`
 - **Venv**: `venv_zimage`
@@ -51,6 +57,7 @@ bash scripts/start_zimage.sh
 - **Output**: `~/ai_generated/zimage/`
 
 ### Models
+
 - **Base**: Tongyi-MAI/Z-Image (Apache 2.0 license) ✅ Available
   - 30-step inference with CFG scaling (7-10 recommended)
   - Negative prompt support
@@ -71,6 +78,7 @@ bash scripts/start_zimage.sh
   - Workaround: Use [VideoX-Fun](https://github.com/aigc-apps/VideoX-Fun) repository
 
 ### Features
+
 - Model selector (Base vs Turbo)
 - Fast Mode checkbox for distilled LoRA (4-step or 8-step)
 - LoRA support from `~/models/loras/zimage/`
@@ -78,6 +86,7 @@ bash scripts/start_zimage.sh
 - Control image preprocessing (ready for ControlNet when available)
 
 ### Key Considerations
+
 - Dual model support: Base (30-step CFG) or Turbo (8-step fast)
 - **Base model features:**
   - CFG scaling 7-10 recommended
@@ -105,6 +114,7 @@ bash scripts/start_zimage.sh
 - opencv-python installed for future ControlNet preprocessing
 
 ### Tips
+
 - **Base mode**: CFG 7-10, 30 steps, use negative prompts
 - **Turbo mode**: 8 steps (CFG fixed at 1.0), ~5-10 seconds per image
 - **Fast Mode**: Enable checkbox, use 4 or 8 steps, LoRA scale 0.7-0.8, CFG auto-set to 1.0
@@ -118,6 +128,7 @@ bash scripts/start_zimage.sh
 **Purpose:** Decompose images into multiple RGBA layers for advanced editing
 
 ### Launch
+
 ```bash
 cd /srv/containers/edq
 bash scripts/start_qwen_image_layered.sh
@@ -126,6 +137,7 @@ bash scripts/start_qwen_image_layered.sh
 **Access at:** `http://192.168.7.226:8013`
 
 ### Configuration
+
 - **Script**: `scripts/qwen_image_layered_gradio.py`
 - **Launcher**: `scripts/start_qwen_image_layered.sh`
 - **Venv**: `venv_qwen_image_layered`
@@ -134,6 +146,7 @@ bash scripts/start_qwen_image_layered.sh
 - **Output**: `~/ai_generated/qwen-layered/`
 
 ### Features
+
 - Variable layer count (2-8 layers)
 - RGBA PNG export for each layer
 - ZIP download of all layers
@@ -141,6 +154,7 @@ bash scripts/start_qwen_image_layered.sh
 - Recursive decomposition possible
 
 ### Key Considerations
+
 - First launch downloads ~12GB of model weights
 - Uses ~14-16GB VRAM with CPU offloading enabled
 - Close other GPU services before use
@@ -155,6 +169,7 @@ bash scripts/start_qwen_image_layered.sh
 **Purpose:** AI image upscaling with multiple models
 
 ### Launch
+
 ```bash
 cd /srv/containers/edq
 bash scripts/start_realesrgan.sh
@@ -163,6 +178,7 @@ bash scripts/start_realesrgan.sh
 **Access at:** `http://192.168.7.226:8010`
 
 ### Configuration
+
 - **Script**: `scripts/realesrgan_gradio.py`
 - **Launcher**: `scripts/start_realesrgan.sh`
 - **Venv**: `venv_realesrgan`
@@ -170,18 +186,21 @@ bash scripts/start_realesrgan.sh
 - **Output**: `~/ai_generated/realesrgan/`
 
 ### Models
+
 - RealESRGAN_x4plus - General photos (default)
 - RealESRGAN_x4plus_anime_6B - Anime/illustration
 - RealESRGAN_x2plus - 2x upscaling (faster)
 - realesr-general-x4v3 - Compact with denoise
 
 ### Features
+
 - Up to 8x output scaling
 - Face enhancement (GFPGAN)
 - Tiling for large images
 - Clipboard paste support
 
 ### Key Considerations
+
 - First launch downloads ~200MB of model weights
 - ~4GB VRAM for most models
 - Use tiling (256/512) for large images to save VRAM
@@ -196,4 +215,5 @@ bash scripts/start_realesrgan.sh
 **Purpose:** Remove backgrounds from images
 
 ### Configuration
+
 - **Venv**: `venv_rembg`

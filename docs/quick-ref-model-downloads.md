@@ -3,11 +3,13 @@
 **When adding ANY tool that needs model downloads:**
 
 ## 1️⃣ Copy Template
+
 ```bash
 cp scripts/template_download_models.sh scripts/download_TOOLNAME_models.sh
 ```
 
 ## 2️⃣ Customize (Replace ALL_CAPS)
+
 ```bash
 TOOL_NAME="mytool"
 VENV_PATH="/srv/containers/edq/venv_mytool"
@@ -17,16 +19,19 @@ ESTIMATED_SIZE="10 GB"
 ```
 
 ## 3️⃣ Make Executable
+
 ```bash
 chmod +x scripts/download_TOOLNAME_models.sh
 ```
 
 ## 4️⃣ Test Download
+
 ```bash
 bash scripts/download_TOOLNAME_models.sh
 ```
 
 ## 5️⃣ Add Check to Launch Script
+
 ```bash
 # In scripts/start_TOOLNAME.sh
 MODELS_DIR="/srv/containers/edq/models/TOOLNAME"
@@ -38,6 +43,7 @@ fi
 ```
 
 ## 6️⃣ Document
+
 - Add to tool's README/setup guide
 - Update [docs/model-downloads-guide.md](model-downloads-guide.md)
 - Mention in dragonsuite.json features

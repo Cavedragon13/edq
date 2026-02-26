@@ -5,6 +5,11 @@
 
 set -e
 
+# Load nvm to ensure Node 20+ is used (required by @google/genai >= 1.33)
+export NVM_DIR="/home/edq/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+nvm use 20 --silent 2>/dev/null || true
+
 cd /srv/containers/edq
 
 echo ""

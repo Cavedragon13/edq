@@ -174,7 +174,10 @@ async def get_all_status():
             "description": service.get("description"),
             "launch_command": service.get("launch_command"),
             "project_path": service.get("project_path"),
-            "icon": service.get("icon")
+            "icon": service.get("icon"),
+            "thumbnail": service.get("thumbnail"),
+            "github_url": service.get("github_url"),
+            "pages_url": service.get("pages_url"),
         })
 
     return {
@@ -255,6 +258,38 @@ async def get_git_revision(service_id: str):
         return {"git": None, "message": "Not a git repository"}
 
     return {"git": git_info}
+
+
+@app.get("/api/llm-models")
+async def get_llm_models():
+    """Query installed models from Ollama and LM Studio (if running)."""
+    import urllib.request, json as _json
+
+    result = {}
+
+    # Ollama — GET /api/tags
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2) as r:
+            data = _json.loads(r.read())
+        result["ollama"] = [
+            {
+                "name": m["name"],
+                "size_gb": round(m.get("size", 0) / 1e9, 1),
+            }
+            for m in data.get("models", [])
+        ]
+    except Exception:
+        result["ollama"] = None  # not running or unreachable
+
+    # LM Studio — OpenAI-compatible GET /v1/models
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:1234/v1/models", timeout=2) as r:
+            data = _json.loads(r.read())
+        result["lmstudio"] = [m["id"] for m in data.get("data", [])]
+    except Exception:
+        result["lmstudio"] = None
+
+    return result
 
 
 @app.get("/api/gpu-stats")

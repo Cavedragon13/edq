@@ -34,7 +34,7 @@
     },
     "obsidian": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-obsidian", "/home/edq/knowledge-base"],
+      "args": ["-y", "obsidian-mcp", "/home/edq/knowledge-base"],
       "description": "Access and manage Obsidian knowledge base via direct file access"
     },
     "filesystem": {
@@ -49,15 +49,11 @@
     },
     "supabase": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-supabase"],
-      "env": {
-        "SUPABASE_URL": "${SUPABASE_URL}",
-        "SUPABASE_SECRET_KEY": "${SUPABASE_SECRET_KEY}"
-      },
+      "args": ["-y", "@supabase/mcp-server-supabase", "--access-token", "${SUPABASE_ACCESS_TOKEN}"],
       "description": "Database operations with Supabase"
     },
     "mongodb": {
-      "command": "npx",
+      "command": "/srv/containers/edq/scripts/npx-node20.sh",
       "args": ["-y", "@mongodb-js/mongodb-mcp-server"],
       "env": {
         "MONGODB_URI": "${MONGODB_URI}"

@@ -35,6 +35,7 @@
 ## Rules
 
 ### ✅ DO
+
 1. **Centralize configs** at `/srv/containers/edq/` top level
 2. **Use symlinks** when a file must exist elsewhere:
    ```bash
@@ -49,18 +50,22 @@
 5. **Use absolute paths** in scripts: `/srv/containers/edq/...` not `~/containers/...`
 
 ### ❌ DON'T
+
 1. **Never duplicate `.env`** - Use symlinks or `source /srv/containers/edq/.env`
 2. **Never duplicate `.mcp.json`** - VS Code reads from parent directory automatically
 3. **Don't scatter configs** - If you create a new config, put it in `config/` or document why it's elsewhere
 4. **Don't hardcode API keys** - Always use `.env` variables
 5. **Don't create venvs inside projects/** - Create them at top level as `venv_<project_name>`
+6. **Never put source code in `ai_generated/`** - That directory is for output files only (images, audio, video). Source code belongs in `projects/`. If you find `package.json` or `.py` files in `ai_generated/`, delete them.
 
 ## Development Best Practices
 
 ### Parallel Execution
+
 **Whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.**
 
 **Examples:**
+
 ```bash
 # ✅ GOOD - Parallel execution
 # Run multiple independent checks at once
@@ -75,16 +80,19 @@ git log --oneline -5
 ```
 
 **When working with Claude Code:**
+
 - Reading multiple unrelated files → call Read tool multiple times in one message
 - Searching different patterns → call Grep multiple times in parallel
 - Running independent bash commands → use multiple Bash tool calls
 
 **Benefits:**
+
 - Faster execution (no waiting between operations)
 - More efficient use of resources
 - Better overall workflow speed
 
 **When NOT to parallelize:**
+
 - Operations with dependencies (e.g., must `cd` before running command in that directory)
 - Commands that modify state sequentially (e.g., `git add && git commit`)
 - Operations where output order matters
@@ -92,6 +100,7 @@ git log --oneline -5
 ## Symlink Examples
 
 ### When Blender needs the addon in its config dir:
+
 ```bash
 # Addon MUST be at: /home/edq/.config/blender/5.0/scripts/addons/
 # (Blender hardcoded path - can't change)
@@ -99,6 +108,7 @@ git log --oneline -5
 ```
 
 ### When a script needs the .env file:
+
 ```bash
 # WRONG: Copy .env to project directory
 # RIGHT: Source it from central location
@@ -110,6 +120,7 @@ load_dotenv('/srv/containers/edq/.env')
 ```
 
 ### Large caches moved to 4TB SSD (2026-02-18):
+
 ```bash
 # HuggingFace cache (~181GB) - models, datasets
 ~/.cache/huggingface -> /srv/containers/edq/cache_huggingface
@@ -119,6 +130,7 @@ load_dotenv('/srv/containers/edq/.env')
 ```
 
 ### When Obsidian needs access to docs:
+
 ```bash
 # Create symlinks IN the Obsidian vault pointing TO central docs
 cd /home/edq/knowledge-base/AI\ Projects/
@@ -131,6 +143,7 @@ ln -s /srv/containers/edq/docs/venvs.md "Virtual Environments.md"
 The dashboard at `http://192.168.7.226:8100` serves as the **visual registry** of all services.
 
 **When adding a new service:**
+
 1. Create launch script in `scripts/start_<service>.sh`
 2. Add entry to `config/dragonsuite.json`:
    ```json
@@ -173,6 +186,7 @@ cat /srv/containers/edq/config/dragonsuite.json | jq '.services[].name'
 ## Recovery from Chaos
 
 If you find yourself with duplicate configs:
+
 1. Identify the **canonical location** (usually `/srv/containers/edq/`)
 2. Backup duplicates: `mv duplicate.json duplicate.json.backup`
 3. Create symlink if needed: `ln -s /srv/containers/edq/config.json /other/location/`

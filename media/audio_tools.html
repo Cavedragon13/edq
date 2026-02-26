@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audio Processing Suite</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
+<style>
+  :root {
+    --bg: #111318; --panel: #1a1d24; --panel2: #20242e; --border: #2d3140;
+    --accent: #4fc3a1; --accent2: #7c6af7; --hot: #e8547a;
+    --text: #e2e4ed; --text-dim: #7b8099; --text-less: #454860;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif;
+         font-size: 13px; min-height: 100vh; }
+
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 20px;
+           background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+  .logo { font-size: 17px; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent2));
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  .page { max-width: 960px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* Section cards */
+  .section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .section-head { padding: 12px 16px; border-bottom: 1px solid var(--border);
+                  display: flex; align-items: center; gap: 10px; }
+  .section-icon { font-size: 18px; }
+  .section-title { font-size: 14px; font-weight: 600; }
+  .section-desc { font-size: 11px; color: var(--text-dim); margin-left: auto; }
+  .section-body { padding: 16px; display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+
+  /* Upload zone */
+  .upload-col { display: flex; flex-direction: column; gap: 10px; }
+  .drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center;
+               cursor: pointer; transition: all 0.15s; color: var(--text-dim); font-size: 12px;
+               display: flex; flex-direction: column; align-items: center; justify-content: center;
+               gap: 6px; min-height: 90px; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: rgba(79,195,161,0.05); }
+  .drop-zone.loaded { border-color: var(--accent2); border-style: solid; }
+  .drop-zone .fname { font-size: 11px; color: var(--accent2); word-break: break-all; }
+  .file-input { display: none; }
+
+  .btn-process { width: 100%; padding: 8px; background: linear-gradient(135deg, rgba(79,195,161,0.2), rgba(124,106,247,0.15));
+                 border: 1px solid var(--accent); color: var(--accent); border-radius: 7px;
+                 cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+  .btn-process:hover { background: linear-gradient(135deg, rgba(79,195,161,0.35), rgba(124,106,247,0.25)); }
+  .btn-process:disabled { opacity: 0.3; cursor: default; }
+
+  /* Result area */
+  .result-col { display: flex; flex-direction: column; gap: 12px; }
+  .result-placeholder { display: flex; align-items: center; justify-content: center;
+                        height: 100%; min-height: 80px; color: var(--text-less); font-size: 12px; }
+
+  /* Audio player cards */
+  .audio-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .audio-card-head { padding: 8px 12px; border-bottom: 1px solid var(--border);
+                     display: flex; align-items: center; justify-content: space-between; }
+  .audio-card-label { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+  .btn-dl { font-size: 11px; padding: 2px 9px; border-radius: 5px; border: 1px solid var(--border);
+            background: transparent; color: var(--text-dim); cursor: pointer; text-decoration: none;
+            transition: all 0.12s; }
+  .btn-dl:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .waveform-canvas { display: block; width: 100%; height: 56px; background: #0d0f14; }
+  audio { display: block; width: 100%; }
+
+  /* ASR transcript */
+  .transcript-wrap { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px;
+                     max-height: 320px; overflow-y: auto; }
+  .transcript-empty { padding: 20px; text-align: center; color: var(--text-less); font-size: 12px; }
+  .seg { display: flex; gap: 10px; padding: 7px 12px; border-bottom: 1px solid var(--border);
+         cursor: pointer; transition: background 0.12s; }
+  .seg:last-child { border-bottom: none; }
+  .seg:hover { background: rgba(79,195,161,0.06); }
+  .seg-ts { font-size: 10px; color: var(--accent2); font-variant-numeric: tabular-nums;
+            white-space: nowrap; padding-top: 2px; min-width: 90px; }
+  .seg-text { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+
+  .lang-sel { background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+              border-radius: 6px; padding: 5px 8px; font-size: 12px; outline: none; width: 100%; }
+  .lang-sel:focus { border-color: var(--accent); }
+  .lang-sel option { background: #1e2130; }
+
+  .status-line { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+  .spinner { width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--accent);
+             border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎵 AUDIO PROCESSING SUITE</div>
+  <span style="color:var(--text-less);font-size:12px;">Stem Separation · Dereverb · ASR</span>
+</header>
+
+<div class="page">
+
+  <!-- ── Karaoke Maker ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-icon">🎤</span>
+      <span class="section-title">Karaoke Maker</span>
+      <span class="section-desc">Mel-Band-Roformer · Vocals &amp; Instrumental stems</span>
+    </div>
+    <div class="section-body">
+
+      <div class="upload-col">
+        <div class="drop-zone" id="k-drop" onclick="document.getElementById('k-file').click()">
+          <span style="font-size:24px;">🎵</span>
+          <span>Click or drag &amp; drop audio</span>
+        </div>
+        <input class="file-input" type="file" id="k-file" accept="audio/*" onchange="loadAudio('k', this.files[0])">
+        <button class="btn-process" id="k-btn" onclick="doKaraoke()" disabled>Separate Vocals</button>
+        <div class="status-line" id="k-status"></div>
+      </div>
+
+      <div class="result-col" id="k-results">
+        <div class="result-placeholder">Results appear here after processing.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Vocal Dereverb ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-icon">🎙️</span>
+      <span class="section-title">Vocal Dereverb</span>
+      <span class="section-desc">Remove room reverb · Dereverb-Mel-Band-Roformer</span>
+    </div>
+    <div class="section-body">
+
+      <div class="upload-col">
+        <div class="drop-zone" id="d-drop" onclick="document.getElementById('d-file').click()">
+          <span style="font-size:24px;">🎙️</span>
+          <span>Click or drag &amp; drop vocals</span>
+        </div>
+        <input class="file-input" type="file" id="d-file" accept="audio/*" onchange="loadAudio('d', this.files[0])">
+        <button class="btn-process" id="d-btn" onclick="doDereverb()" disabled>Remove Reverb</button>
+        <div class="status-line" id="d-status"></div>
+      </div>
+
+      <div class="result-col" id="d-results">
+        <div class="result-placeholder">Results appear here after processing.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── ASR ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-icon">📝</span>
+      <span class="section-title">Speech-to-Text</span>
+      <span class="section-desc">Word timestamps · EN (Parakeet-TDT) · ZH / YUE (Paraformer)</span>
+    </div>
+    <div class="section-body">
+
+      <div class="upload-col">
+        <div class="drop-zone" id="a-drop" onclick="document.getElementById('a-file').click()">
+          <span style="font-size:24px;">📝</span>
+          <span>Click or drag &amp; drop audio</span>
+        </div>
+        <input class="file-input" type="file" id="a-file" accept="audio/*" onchange="loadAudio('a', this.files[0])">
+        <select class="lang-sel" id="a-lang">
+          <option>Mandarin (Chinese)</option>
+          <option>Cantonese</option>
+          <option>English</option>
+        </select>
+        <button class="btn-process" id="a-btn" onclick="doTranscribe()" disabled>Transcribe</button>
+        <div class="status-line" id="a-status"></div>
+      </div>
+
+      <div class="result-col" id="a-results">
+        <div class="transcript-wrap">
+          <div class="transcript-empty">Transcript appears here with timestamps.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const files = { k: null, d: null, a: null };
+
+// ── Upload handling (shared) ───────────────────────────────────────
+function loadAudio(key, file) {
+  if (!file) return;
+  files[key] = file;
+  const drop = document.getElementById(`${key}-drop`);
+  drop.classList.add('loaded');
+  drop.innerHTML = `<span style="font-size:18px;">✓</span><span class="fname">${file.name}</span>`;
+  drop.onclick = () => document.getElementById(`${key}-file`).click();
+  document.getElementById(`${key}-btn`).disabled = false;
+  setStatus(key, '');
+}
+
+// Register drag-drop for all three
+['k','d','a'].forEach(key => {
+  const drop = document.getElementById(`${key}-drop`);
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f?.type.startsWith('audio/')) loadAudio(key, f);
+  });
+});
+
+// ── Karaoke ───────────────────────────────────────────────────────
+async function doKaraoke() {
+  const file = files.k;
+  if (!file) return;
+  setBusy('k', true, 'Separating vocals (loads model on first run)…');
+
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const resp = await fetch('/api/karaoke', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    const results = document.getElementById('k-results');
+    results.innerHTML = `
+      ${audioCard('Vocals', data.vocals, 'vocals')}
+      ${audioCard('Instrumental', data.instrumental, 'instrumental')}
+    `;
+    drawWaveforms([
+      [data.vocals,       'wv-vocals'],
+      [data.instrumental, 'wv-instrumental'],
+    ]);
+    setStatus('k', '✓ Done');
+  } catch (err) {
+    setStatus('k', `Error: ${err.message}`);
+  } finally {
+    setBusy('k', false);
+  }
+}
+
+// ── Dereverb ──────────────────────────────────────────────────────
+async function doDereverb() {
+  const file = files.d;
+  if (!file) return;
+  setBusy('d', true, 'Removing reverb…');
+
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const resp = await fetch('/api/dereverb', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    const results = document.getElementById('d-results');
+    results.innerHTML = audioCard('Dry Vocals', data.dry, 'dry');
+    drawWaveforms([[data.dry, 'wv-dry']]);
+    setStatus('d', '✓ Done');
+  } catch (err) {
+    setStatus('d', `Error: ${err.message}`);
+  } finally {
+    setBusy('d', false);
+  }
+}
+
+// ── Transcribe ────────────────────────────────────────────────────
+async function doTranscribe() {
+  const file = files.a;
+  if (!file) return;
+  const lang = document.getElementById('a-lang').value;
+  setBusy('a', true, 'Transcribing…');
+
+  const fd = new FormData();
+  fd.append('file',     file);
+  fd.append('language', lang);
+  try {
+    const resp = await fetch('/api/transcribe', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    const results = document.getElementById('a-results');
+    if (!data.segments?.length) {
+      results.innerHTML = `<div class="transcript-wrap"><div class="transcript-empty">No speech detected.</div></div>`;
+    } else {
+      const segs = data.segments.map(s => `
+        <div class="seg">
+          <span class="seg-ts">${fmtTime(s.start)} – ${fmtTime(s.end)}</span>
+          <span class="seg-text">${escHtml(s.text)}</span>
+        </div>`).join('');
+      results.innerHTML = `<div class="transcript-wrap">${segs}</div>`;
+    }
+    setStatus('a', '✓ Done');
+  } catch (err) {
+    setStatus('a', `Error: ${err.message}`);
+  } finally {
+    setBusy('a', false);
+  }
+}
+
+// ── Audio card HTML ────────────────────────────────────────────────
+function audioCard(label, url, id) {
+  const filename = url.split('/').pop();
+  return `
+    <div class="audio-card">
+      <div class="audio-card-head">
+        <span class="audio-card-label">${label}</span>
+        <a class="btn-dl" href="${url}" download="${filename}">⬇ Download</a>
+      </div>
+      <canvas class="waveform-canvas" id="wv-${id}"></canvas>
+      <audio controls src="${url}" style="width:100%;"></audio>
+    </div>`;
+}
+
+// ── Waveform drawing ──────────────────────────────────────────────
+async function drawWaveforms(pairs) {
+  const ctx = new AudioContext();
+  await Promise.all(pairs.map(([url, canvasId]) => drawWaveform(ctx, url, canvasId)));
+}
+
+async function drawWaveform(audioCtx, url, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  canvas.width  = canvas.offsetWidth || 600;
+  canvas.height = 56;
+  const ctx2d = canvas.getContext('2d');
+
+  try {
+    const arrayBuf = await (await fetch(url)).arrayBuffer();
+    const buffer   = await audioCtx.decodeAudioData(arrayBuf);
+    const data     = buffer.getChannelData(0);
+    const W = canvas.width, H = canvas.height;
+    const step = Math.ceil(data.length / W);
+
+    ctx2d.fillStyle = '#0d0f14';
+    ctx2d.fillRect(0, 0, W, H);
+
+    const grad = ctx2d.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0,   '#4fc3a1');
+    grad.addColorStop(0.5, '#7c6af7');
+    grad.addColorStop(1,   '#4fc3a1');
+
+    ctx2d.fillStyle = grad;
+    for (let i = 0; i < W; i++) {
+      let min = 1, max = -1;
+      for (let j = 0; j < step; j++) {
+        const d = data[i * step + j] ?? 0;
+        if (d < min) min = d;
+        if (d > max) max = d;
+      }
+      const top = (1 + min) / 2 * H;
+      const ht  = Math.max(1, (max - min) / 2 * H);
+      ctx2d.fillRect(i, top, 1, ht);
+    }
+  } catch (e) {
+    ctx2d.fillStyle = '#1a1d24';
+    ctx2d.fillRect(0, 0, canvas.width, canvas.height);
+    ctx2d.fillStyle = '#454860';
+    ctx2d.font = '11px sans-serif';
+    ctx2d.textAlign = 'center';
+    ctx2d.fillText('Waveform unavailable', canvas.width / 2, 32);
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = (s % 60).toFixed(1).padStart(4, '0');
+  return `${m}:${sec}`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setStatus(key, msg) {
+  const el = document.getElementById(`${key}-status`);
+  el.innerHTML = msg ? `<span>${msg}</span>` : '';
+}
+
+function setBusy(key, busy, msg = '') {
+  document.getElementById(`${key}-btn`).disabled = busy;
+  const el = document.getElementById(`${key}-status`);
+  el.innerHTML = busy ? `<div class="spinner"></div><span>${msg}</span>` : '';
+}
+</script>
+</body>
+</html>

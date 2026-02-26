@@ -108,13 +108,14 @@
       "port": 8010,
       "path": null,
       "icon": "&#128200;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_realesrgan.sh",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_realesrgan_native.sh",
       "project_path": null,
       "features": [
         "Upscale",
         "Face Enhance",
         "Anime"
-      ]
+      ],
+      "stop_command": "pkill -f \"realesrgan_server.py\" || true"
     },
     {
       "id": "creative-upscale",
@@ -370,13 +371,14 @@
       "port": 8012,
       "path": null,
       "icon": "&#9986;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_rembg.sh",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_rembg_native.sh",
       "project_path": null,
       "features": [
         "BG Remove",
         "Alpha PNG",
         "Multi-Model"
-      ]
+      ],
+      "stop_command": "pkill -f \"rembg_server.py\" || true"
     },
     {
       "id": "facefusion",
@@ -413,27 +415,48 @@
     },
     {
       "id": "horse-racing",
-      "name": "Horse Racing Simulator",
-      "description": "Browser-based wagering game with AI opponents + persistent progression",
+      "name": "Horse Racing v2",
+      "description": "Win/Place/Show betting, parlay tickets, AI opponents",
       "category": "game",
       "port": 8030,
       "path": null,
       "icon": "&#127943;",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_horse_racing.sh",
-      "project_path": "/srv/containers/edq/projects/horse-racing-simulator",
+      "project_path": "/srv/containers/edq/projects/horse-racing-v2",
+      "github_url": "https://github.com/Cavedragon13/horse-racing-v2",
+      "pages_url": "https://cavedragon13.github.io/horse-racing-v2/",
       "features": [
-        "Wagering",
-        "AI Opponents",
-        "Save/Load"
+        "Win/Place/Show",
+        "Parlay Tickets",
+        "AI Opponents"
       ],
-      "stop_command": "ps aux | grep horse-racing-simulator | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true"
+      "stop_command": "ps aux | grep horse-racing-v2 | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true"
+    },
+    {
+      "id": "interactive-games",
+      "name": "Interactive Games",
+      "description": "Survival Decision Series + Selene Lunar Reckoning",
+      "category": "game",
+      "port": 8031,
+      "path": null,
+      "icon": "&#127918;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_interactive_games.sh",
+      "project_path": "/srv/containers/edq/projects/interactive-games",
+      "github_url": "https://github.com/Cavedragon13/interactive-games",
+      "pages_url": "https://cavedragon13.github.io/interactive-games/",
+      "features": [
+        "Survival Series",
+        "Lunar Reckoning",
+        "Text Adventures"
+      ],
+      "stop_command": "pkill -f \"http.server 8031\" || true"
     },
     {
       "id": "mule-game",
       "name": "M.U.L.E.",
       "description": "Economic Strategy Game - Tribute to Dani Bunten Berry",
       "category": "game",
-      "port": 8016,
+      "port": 8032,
       "path": "/mule_game.html",
       "icon": "&#127918;",
       "thumbnail": "/media/thumbnails/mule-game.png",
@@ -445,7 +468,7 @@
         "Terrain Bonuses",
         "SVG Graphics"
       ],
-      "stop_command": "pkill -f 'http.server.*8016' || pkill -f 'mule_game_web.py' || true"
+      "stop_command": "pkill -f 'http.server 8032' || pkill -f 'mule_game_web.py' || true"
     },
     {
       "id": "homeassistant",
@@ -523,14 +546,14 @@
       "port": 8025,
       "path": "/",
       "icon": "&#128065;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_dolphin_vision.sh",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dolphin_vision_native.sh",
       "project_path": null,
       "features": [
         "Uncensored VLM",
         "Image Q&A",
         "Visual Analysis"
       ],
-      "stop_command": "pkill -f \"dolphin_vision_gradio.py\" || true"
+      "stop_command": "pkill -f \"dolphin_vision_server.py\" || true"
     },
     {
       "id": "audio-tools",
@@ -540,14 +563,14 @@
       "port": 8026,
       "path": "/",
       "icon": "&#127911;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_audio_tools.sh",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_audio_tools_native.sh",
       "project_path": null,
       "features": [
         "Stem Separation",
         "Dereverberation",
         "ASR (EN/ZH/YUE)"
       ],
-      "stop_command": "pkill -f \"audio_tools_gradio.py\" || true"
+      "stop_command": "pkill -f \"audio_tools_server.py\" || true"
     },
     {
       "id": "audiomass",
@@ -565,6 +588,74 @@
         "Client-Side"
       ],
       "stop_command": "pkill -f \"http.server 8027\" || true"
+    },
+    {
+      "id": "concert-shirt",
+      "name": "Concert Shirt",
+      "description": "Upload tickets → AI extracts concerts → custom print-on-demand shirt",
+      "category": "automation",
+      "port": 8033,
+      "path": "/",
+      "icon": "&#127908;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_concert_shirt.sh",
+      "project_path": "/srv/containers/edq/projects/concert-shirt",
+      "features": [
+        "OCR",
+        "Setlist.fm",
+        "Printful"
+      ],
+      "stop_command": "pkill -f \"concert-shirt/server.py\" || true"
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama",
+      "description": "Local LLM inference — deepseek-r1, qwen3, llama3.2, qwen3-vl",
+      "category": "llm",
+      "port": 11434,
+      "path": "/",
+      "icon": "&#129302;",
+      "launch_command": "sudo snap start ollama",
+      "features": [
+        "deepseek-r1:14b",
+        "qwen3:8b",
+        "qwen3-vl:8b",
+        "llama3.2"
+      ],
+      "stop_command": "sudo snap stop ollama"
+    },
+    {
+      "id": "lm-studio",
+      "name": "LM Studio",
+      "description": "OpenAI-compatible local inference — start from LM Studio app",
+      "category": "llm",
+      "port": 1234,
+      "path": "/",
+      "icon": "&#127981;",
+      "launch_command": "echo 'Start LM Studio app and enable the local server from within it'",
+      "features": [
+        "OpenAI API",
+        "Model browser",
+        "GGUF support"
+      ],
+      "stop_command": "pkill -f lms || true"
+    },
+    {
+      "id": "dragonclawd",
+      "name": "Dragonclawd",
+      "description": "Personal AI agent — Telegram bot for service control & AI pipelines",
+      "category": "automation",
+      "port": null,
+      "path": null,
+      "icon": "&#129409;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonclawd.sh",
+      "project_path": null,
+      "features": [
+        "Telegram bot",
+        "Claude Haiku",
+        "Service control",
+        "AI pipelines"
+      ],
+      "stop_command": "pkill -f dragonclawd_server.py || true"
     }
   ],
   "categories": {

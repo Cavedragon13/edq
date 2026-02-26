@@ -375,6 +375,7 @@ if __name__ == "__main__":
         server_port=8013,
         share=False,
         show_error=True,
+        favicon_path="/srv/containers/edq/media/favicons/qwen-image.svg",
         allowed_paths=[str(OUTPUT_DIR)],
         theme=gr.themes.Soft(primary_hue="violet", secondary_hue="pink"),
     )

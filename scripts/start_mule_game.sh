@@ -7,7 +7,7 @@ set -e
 # Served as standalone HTML5 game (no Gradio needed)
 
 MEDIA_DIR="/srv/containers/edq/media"
-PORT=8016
+PORT=8032
 
 echo "🌌 Starting M.U.L.E. - Planet Irata..."
 echo "🫐 Featuring Bunten Berries - tribute to Dani Bunten Berry"

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real-ESRGAN — AI Upscaler</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+<style>
+  :root {
+    --bg:       #111318; --panel: #1a1d24; --panel2: #20242e;
+    --border:   #2d3140; --accent: #4fc3a1; --accent2: #7c6af7;
+    --text:     #e2e4ed; --text-dim: #7b8099; --text-less: #454860;
+    --btn-bg:   #252936; --btn-hover: #2f3448;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif;
+         font-size: 13px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 20px;
+           background: var(--panel); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .logo { font-size: 17px; font-weight: 700; letter-spacing: 0.5px;
+          background: linear-gradient(135deg, var(--accent), var(--accent2));
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  #status { margin-left: auto; font-size: 12px; color: var(--text-dim); transition: color 0.2s; max-width: 400px; }
+  #status.busy  { color: #f0a500; }
+  #status.done  { color: var(--accent); }
+  #status.error { color: #e8547a; }
+
+  .layout { display: flex; flex: 1; min-height: 0; }
+  .sidebar { width: 280px; flex-shrink: 0; border-right: 1px solid var(--border);
+             padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+  .label { font-size: 10px; font-weight: 600; text-transform: uppercase;
+           letter-spacing: 1.2px; color: var(--text-less); margin-bottom: 5px; }
+
+  select { width: 100%; background: var(--panel2); border: 1px solid var(--border);
+           color: var(--text); border-radius: 6px; padding: 7px 10px; font-size: 12px;
+           outline: none; cursor: pointer; }
+  select:focus { border-color: var(--accent); }
+  select option { background: #1e2130; }
+
+  .ctrl { display: flex; flex-direction: column; gap: 4px; }
+  .ctrl-row { display: flex; justify-content: space-between; }
+  .ctrl-val { font-size: 11px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .ctrl-sub { font-size: 10px; color: var(--text-less); margin-top: 2px; }
+
+  input[type=range] { -webkit-appearance: none; width: 100%; height: 4px;
+                      background: var(--border); border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px;
+    background: var(--accent2); border-radius: 50%; cursor: pointer; }
+
+  .toggle-row { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .toggle { position: relative; width: 30px; height: 16px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .tslider { position: absolute; inset: 0; background: var(--border); border-radius: 16px; transition: background 0.2s; cursor: pointer; }
+  .tslider:before { content: ''; position: absolute; width: 10px; height: 10px; left: 3px; top: 3px;
+                    background: #fff; border-radius: 50%; transition: transform 0.2s; }
+  .toggle input:checked + .tslider { background: var(--accent2); }
+  .toggle input:checked + .tslider:before { transform: translateX(14px); }
+  .toggle-label { font-size: 12px; color: var(--text-dim); }
+
+  .dims-box { background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
+              padding: 8px 10px; font-size: 11px; color: var(--text-dim); display: none; }
+  .dims-box .dim-val { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .dims-arrow { color: var(--accent); margin: 0 4px; }
+
+  .btn-primary { width: 100%; padding: 9px; background: linear-gradient(135deg, rgba(79,195,161,0.2), rgba(124,106,247,0.15));
+                 border: 1px solid var(--accent); color: var(--accent); border-radius: 7px;
+                 cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+  .btn-primary:hover { background: linear-gradient(135deg, rgba(79,195,161,0.35), rgba(124,106,247,0.25)); }
+  .btn-primary:disabled { opacity: 0.3; cursor: default; }
+  .btn-dl { width: 100%; padding: 7px; background: var(--btn-bg); border: 1px solid var(--accent2);
+            color: var(--accent2); border-radius: 7px; cursor: pointer; font-size: 12px;
+            transition: all 0.15s; display: none; }
+  .btn-dl:hover { background: rgba(124,106,247,0.12); }
+
+  .canvas-area { flex: 1; display: flex; flex-direction: column; align-items: center;
+                 justify-content: center; padding: 24px; gap: 14px; min-width: 0; }
+
+  #drop-zone { width: 100%; max-width: 700px; min-height: 180px; border: 2px dashed var(--border);
+               border-radius: 12px; display: flex; flex-direction: column; align-items: center;
+               justify-content: center; gap: 10px; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+               padding: 32px; text-align: center; }
+  #drop-zone.drag-over { border-color: var(--accent); background: rgba(79,195,161,0.06); }
+  #drop-zone.has-image { min-height: unset; padding: 12px; border-style: solid; }
+  .drop-text { color: var(--text-dim); line-height: 1.5; }
+  .drop-text strong { color: var(--text); }
+  #file-input { display: none; }
+
+  #compare-wrap { position: relative; display: none; width: 100%; max-width: 700px;
+                  border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
+                  cursor: ew-resize; user-select: none; touch-action: none; }
+  #img-original { display: block; width: 100%; height: auto; }
+  #img-result { position: absolute; inset: 0; width: 100%; height: 100%;
+                object-fit: cover; clip-path: inset(0 50% 0 0); }
+  #compare-handle { position: absolute; top: 0; bottom: 0; left: 50%; width: 3px;
+                    background: #fff; transform: translateX(-50%); pointer-events: none; }
+  #compare-handle::before { content: '◀ ▶'; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); background: #fff; color: #111; border-radius: 20px;
+    padding: 4px 8px; font-size: 11px; white-space: nowrap; box-shadow: 0 1px 6px rgba(0,0,0,0.4); }
+
+  .labels-row { position: absolute; top: 8px; left: 0; right: 0; display: flex;
+                justify-content: space-between; pointer-events: none; padding: 0 10px; }
+  .img-label { background: rgba(0,0,0,0.55); color: #fff; font-size: 10px; padding: 3px 8px;
+               border-radius: 4px; backdrop-filter: blur(4px); }
+
+  .view-modes { display: none; gap: 6px; }
+  .view-btn { padding: 4px 12px; border-radius: 14px; border: 1px solid var(--border);
+              background: var(--panel2); color: var(--text-dim); cursor: pointer; font-size: 11px; transition: all 0.15s; }
+  .view-btn.active { background: var(--panel); border-color: var(--accent); color: var(--accent); }
+
+  .spinner { display: none; width: 32px; height: 32px; border: 3px solid var(--border);
+             border-top-color: var(--accent); border-radius: 50%;
+             animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .denoise-row { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🔍 Real-ESRGAN</div>
+  <span style="color:var(--text-less)">AI Upscaler</span>
+  <span id="status"></span>
+</header>
+
+<div class="layout">
+  <div class="sidebar">
+
+    <div>
+      <div class="label">Model</div>
+      <select id="sel-model" onchange="onModelChange()">
+        <option value="RealESRGAN_x4plus">RealESRGAN x4+ — General (4×)</option>
+        <option value="RealESRGAN_x4plus_anime_6B">RealESRGAN x4+ Anime (4×)</option>
+        <option value="RealESRGAN_x2plus">RealESRGAN x2+ (2×)</option>
+        <option value="realesr-general-x4v3">Real-ESRGAN General v3 (4×)</option>
+      </select>
+    </div>
+
+    <div class="ctrl">
+      <div class="ctrl-row">
+        <span style="color:var(--text-dim);font-size:11px;">Output Scale</span>
+        <span class="ctrl-val" id="val-scale">4×</span>
+      </div>
+      <input type="range" id="sl-scale" min="1" max="8" step="0.5" value="4"
+             oninput="document.getElementById('val-scale').textContent=this.value+'×'">
+      <div class="ctrl-sub">Model scale × this = final upscale</div>
+    </div>
+
+    <div class="ctrl">
+      <div class="ctrl-row">
+        <span style="color:var(--text-dim);font-size:11px;">Tile Size</span>
+        <span class="ctrl-val" id="val-tile">Off</span>
+      </div>
+      <input type="range" id="sl-tile" min="0" max="512" step="64" value="0"
+             oninput="document.getElementById('val-tile').textContent=this.value==0?'Off':this.value+'px'">
+      <div class="ctrl-sub">0 = no tiling (faster). Use 256+ for large images</div>
+    </div>
+
+    <div class="ctrl denoise-row" id="denoise-row">
+      <div class="ctrl-row">
+        <span style="color:var(--text-dim);font-size:11px;">Denoise Strength</span>
+        <span class="ctrl-val" id="val-denoise">0.5</span>
+      </div>
+      <input type="range" id="sl-denoise" min="0" max="1" step="0.1" value="0.5"
+             oninput="document.getElementById('val-denoise').textContent=parseFloat(this.value).toFixed(1)">
+      <div class="ctrl-sub">v3 model only</div>
+    </div>
+
+    <label class="toggle-row">
+      <span class="toggle">
+        <input type="checkbox" id="tog-face">
+        <span class="tslider"></span>
+      </span>
+      <span class="toggle-label">Face Enhancement (GFPGAN)</span>
+    </label>
+
+    <div class="dims-box" id="dims-box">
+      <span id="dim-in" class="dim-val">—</span>
+      <span class="dims-arrow">→</span>
+      <span id="dim-out" class="dim-val">—</span>
+    </div>
+
+    <button class="btn-primary" id="btn-upscale" onclick="doUpscale()" disabled>Upscale</button>
+    <button class="btn-dl" id="btn-dl" onclick="downloadResult()">⬇ Download PNG</button>
+
+  </div>
+
+  <div class="canvas-area">
+
+    <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div style="font-size:36px;">🖼</div>
+      <div class="drop-text">
+        <strong>Click to upload</strong> or drag &amp; drop<br>
+        <span style="font-size:11px;">PNG, JPEG, WEBP — paste from clipboard also works</span>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" onchange="loadFile(this.files[0])">
+
+    <div class="spinner" id="spinner"></div>
+
+    <div id="compare-wrap"
+         onmousedown="startDrag(event)"
+         ontouchstart="startDrag(event)">
+      <img id="img-original" src="" alt="original">
+      <img id="img-result"   src="" alt="upscaled">
+      <div id="compare-handle"></div>
+      <div class="labels-row">
+        <span class="img-label">Original</span>
+        <span class="img-label">Upscaled</span>
+      </div>
+    </div>
+
+    <div class="view-modes" id="view-modes">
+      <button class="view-btn active" onclick="setView('compare', event)">⬛ Compare</button>
+      <button class="view-btn" onclick="setView('result', event)">Upscaled only</button>
+      <button class="view-btn" onclick="setView('original', event)">Original only</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let originalFile = null;
+let resultBlob   = null;
+let isDragging   = false;
+let viewMode     = 'compare';
+
+// ── Model change: show/hide denoise ───────────────────────────────
+function onModelChange() {
+  const m  = document.getElementById('sel-model').value;
+  const dr = document.getElementById('denoise-row');
+  dr.style.display = m === 'realesr-general-x4v3' ? 'flex' : 'none';
+}
+
+// ── Upload / Drop ──────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f?.type.startsWith('image/')) loadFile(f);
+});
+document.addEventListener('paste', e => {
+  const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'));
+  if (item) loadFile(item.getAsFile());
+});
+
+function loadFile(file) {
+  if (!file) return;
+  originalFile = file;
+  const url = URL.createObjectURL(file);
+  const img = new window.Image();
+  img.onload = () => {
+    document.getElementById('dim-in').textContent = `${img.width}×${img.height}`;
+    document.getElementById('dim-out').textContent = '—';
+    document.getElementById('dims-box').style.display = 'block';
+    document.getElementById('img-original').src = url;
+    document.getElementById('img-result').src = '';
+    document.getElementById('compare-wrap').style.display = 'none';
+    document.getElementById('view-modes').style.display = 'none';
+    document.getElementById('btn-dl').style.display = 'none';
+    resultBlob = null; setHandle(50);
+
+    dropZone.style.display = 'flex';
+    dropZone.innerHTML = `<img src="${url}" style="max-width:100%;max-height:280px;border-radius:8px;object-fit:contain;">`;
+    dropZone.style.padding = '12px';
+    dropZone.style.borderStyle = 'solid';
+    dropZone.onclick = () => document.getElementById('file-input').click();
+  };
+  img.src = url;
+  document.getElementById('btn-upscale').disabled = false;
+  setStatus('', 'Image loaded — click Upscale.');
+}
+
+// ── Process ────────────────────────────────────────────────────────
+async function doUpscale() {
+  if (!originalFile) return;
+  const btn = document.getElementById('btn-upscale');
+  btn.disabled = true;
+  setStatus('busy', 'Upscaling… (GPU processing, may take a moment)');
+  document.getElementById('spinner').style.display = 'block';
+
+  const fd = new FormData();
+  fd.append('file',             originalFile);
+  fd.append('model',            document.getElementById('sel-model').value);
+  fd.append('output_scale',     document.getElementById('sl-scale').value);
+  fd.append('face_enhance',     document.getElementById('tog-face').checked);
+  fd.append('tile_size',        document.getElementById('sl-tile').value);
+  fd.append('denoise_strength', document.getElementById('sl-denoise').value);
+
+  try {
+    const resp = await fetch('/api/upscale', { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error(`Server error ${resp.status}`);
+
+    const outSize = resp.headers.get('X-Output-Size') || '—';
+    document.getElementById('dim-out').textContent = outSize;
+    resultBlob = await resp.blob();
+
+    const resultImg = document.getElementById('img-result');
+    resultImg.src   = URL.createObjectURL(resultBlob);
+    resultImg.onload = showCompare;
+
+    setStatus('done', `Done — ${document.getElementById('dim-in').textContent} → ${outSize}`);
+  } catch (err) {
+    setStatus('error', `Error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+  }
+}
+
+function showCompare() {
+  dropZone.style.display = 'none';
+  document.getElementById('compare-wrap').style.display = 'block';
+  document.getElementById('view-modes').style.display  = 'flex';
+  document.getElementById('btn-dl').style.display = 'block';
+  setHandle(50); setView('compare', null);
+}
+
+// ── Comparison slider ──────────────────────────────────────────────
+function setHandle(pct) {
+  document.getElementById('compare-handle').style.left = pct + '%';
+  document.getElementById('img-result').style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+}
+
+function startDrag(e) {
+  if (viewMode !== 'compare') return;
+  isDragging = true; moveDrag(e);
+  document.addEventListener('mousemove', moveDrag);
+  document.addEventListener('touchmove', moveDrag, { passive: false });
+  document.addEventListener('mouseup',  stopDrag);
+  document.addEventListener('touchend', stopDrag);
+}
+function moveDrag(e) {
+  if (!isDragging) return;
+  if (e.cancelable) e.preventDefault();
+  const wrap = document.getElementById('compare-wrap');
+  const rect = wrap.getBoundingClientRect();
+  const x    = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  setHandle(Math.max(0, Math.min(100, (x / rect.width) * 100)));
+}
+function stopDrag() {
+  isDragging = false;
+  document.removeEventListener('mousemove', moveDrag);
+  document.removeEventListener('touchmove', moveDrag);
+  document.removeEventListener('mouseup',  stopDrag);
+  document.removeEventListener('touchend', stopDrag);
+}
+
+// ── View modes ─────────────────────────────────────────────────────
+function setView(mode, evt) {
+  viewMode = mode;
+  if (evt) {
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    evt.target.classList.add('active');
+  }
+  const origImg = document.getElementById('img-original');
+  const resImg  = document.getElementById('img-result');
+  const handle  = document.getElementById('compare-handle');
+  const labels  = document.querySelector('.labels-row');
+  if (mode === 'compare') {
+    origImg.style.opacity = '1'; resImg.style.clipPath = 'inset(0 50% 0 0)';
+    handle.style.display = 'block'; labels.style.display = 'flex'; setHandle(50);
+  } else if (mode === 'result') {
+    origImg.style.opacity = '0'; resImg.style.clipPath = 'none';
+    handle.style.display = 'none'; labels.style.display = 'none';
+  } else {
+    origImg.style.opacity = '1'; resImg.style.clipPath = 'inset(0 100% 0 0)';
+    handle.style.display = 'none'; labels.style.display = 'none';
+  }
+}
+
+// ── Download ───────────────────────────────────────────────────────
+function downloadResult() {
+  if (!resultBlob) return;
+  const a  = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  a.href = URL.createObjectURL(resultBlob);
+  a.download = `realesrgan-${ts}.png`;
+  a.click();
+}
+
+function setStatus(cls, msg) {
+  const el = document.getElementById('status');
+  el.className = cls; el.textContent = msg;
+}
+</script>
+</body>
+</html>

@@ -33,43 +33,52 @@ This is a personal AI development environment focused on video generation, visio
 
 ## Port Layout
 
-| Port | Service | Type | Documentation |
-|------|---------|------|---------------|
-| 1234 | LM Studio API | On-demand (manual) | - |
-| 8080 | Dragonsight 4 | Static file server | [Vision AI](docs/services/vision-ai.md) |
-| 8100 | Dragonsuite Dashboard | On-demand | Central launcher |
-| 8001 | DragonFlux Klein | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
-| 8002 | Wan2GP | On-demand (GPU) | [Video & Music](docs/services/video-music.md) |
-| 8003 | Fish Speech | On-demand (GPU) | [Audio & TTS](docs/services/audio-tts.md) |
-| 8004 | HeartMuLa | On-demand (GPU) | [Video & Music](docs/services/video-music.md) |
-| 8005 | SAM 2.1 | On-demand (GPU) | [Vision AI](docs/services/vision-ai.md) |
-| 8006 | LivePortrait | On-demand (GPU) | [Vision AI](docs/services/vision-ai.md) |
-| 8007 | Hunyuan3D-2 | On-demand (GPU) | [Utilities](docs/services/utilities.md) |
-| 8009 | Qwen3-TTS | On-demand (GPU) | [Audio & TTS](docs/services/audio-tts.md) |
-| 8010 | Real-ESRGAN | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
-| 8011 | Z-Image Base | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
-| 8012 | Rembg | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
-| 8013 | Qwen-Image-Layered | On-demand (GPU) | [Image Generation](docs/services/image-generation.md) |
-| 8014 | Qwen3-Audiobook | On-demand | [Audio & TTS](docs/services/audio-tts.md) |
-| 8015 | Dragonart Studio | Production | [Utilities](docs/services/utilities.md) |
-| 8020 | MCP Inspector | On-demand | [Utilities](docs/services/utilities.md) |
-| 8021 | ACE-Step 1.5 | On-demand (GPU) | [Video & Music](docs/services/video-music.md) |
-| 8025 | Dolphin Vision 7B | On-demand (GPU) | Uncensored VLM image Q&A |
-| 8026 | Audio Processing Suite | On-demand (GPU) | Karaoke/dereverb/ASR from SoulX-Singer models |
-| 8027 | AudioMass Editor | On-demand | Web audio editor (Audacity-like, client-side) |
-| 8888 | Jupyter (reserved) | Future | - |
-| 11434 | Ollama API | Always-on (snap) | - |
+| Port  | Service                | Type               | Documentation                                         |
+| ----- | ---------------------- | ------------------ | ----------------------------------------------------- |
+| 1234  | LM Studio API          | On-demand (manual) | -                                                     |
+| 8080  | Dragonsight 4          | Static file server | [Vision AI](docs/services/vision-ai.md)               |
+| 8100  | Dragonsuite Dashboard  | On-demand          | Central launcher                                      |
+| 8001  | DragonFlux Klein       | On-demand (GPU)    | [Image Generation](docs/services/image-generation.md) |
+| 8002  | Wan2GP                 | On-demand (GPU)    | [Video & Music](docs/services/video-music.md)         |
+| 8003  | Fish Speech            | On-demand (GPU)    | [Audio & TTS](docs/services/audio-tts.md)             |
+| 8004  | HeartMuLa              | On-demand (GPU)    | [Video & Music](docs/services/video-music.md)         |
+| 8005  | SAM 2.1                | On-demand (GPU)    | [Vision AI](docs/services/vision-ai.md)               |
+| 8006  | LivePortrait           | On-demand (GPU)    | [Vision AI](docs/services/vision-ai.md)               |
+| 8007  | Hunyuan3D-2            | On-demand (GPU)    | [Utilities](docs/services/utilities.md)               |
+| 8009  | Qwen3-TTS              | On-demand (GPU)    | [Audio & TTS](docs/services/audio-tts.md)             |
+| 8010  | Real-ESRGAN            | On-demand (GPU)    | [Image Generation](docs/services/image-generation.md) |
+| 8011  | Z-Image Base           | On-demand (GPU)    | [Image Generation](docs/services/image-generation.md) |
+| 8012  | Rembg                  | On-demand (GPU)    | [Image Generation](docs/services/image-generation.md) |
+| 8013  | Qwen-Image-Layered     | On-demand (GPU)    | [Image Generation](docs/services/image-generation.md) |
+| 8014  | Qwen3-Audiobook        | On-demand          | [Audio & TTS](docs/services/audio-tts.md)             |
+| 8015  | Dragonart Studio       | Production         | [Utilities](docs/services/utilities.md)               |
+| 8016  | Wan2.1 T2V 1.3B        | On-demand (GPU)    | Standalone fast text-to-video (~8GB VRAM)             |
+| 8020  | MCP Inspector          | On-demand          | [Utilities](docs/services/utilities.md)               |
+| 8021  | ACE-Step 1.5           | On-demand (GPU)    | [Video & Music](docs/services/video-music.md)         |
+| 8025  | Dolphin Vision 7B      | On-demand (GPU)    | Uncensored VLM image Q&A                              |
+| 8026  | Audio Processing Suite | On-demand (GPU)    | Karaoke/dereverb/ASR from SoulX-Singer models         |
+| 8027  | AudioMass Editor       | On-demand          | Web audio editor (Audacity-like, client-side)         |
+| 8028  | LTX-Video 0.9.7        | On-demand (GPU)    | Standalone T2V+I2V, 7-step distilled, 3-pass upscale  |
+| 8029  | Dragonsong             | On-demand          | Lyria RealTime music - live prompt steering, record    |
+| 8030  | Horse Racing v2        | On-demand          | Win/Place/Show betting, parlay tickets, AI opponents   |
+| 8031  | Interactive Games      | On-demand          | Survival Series, Lunar Reckoning, text adventures      |
+| 8032  | M.U.L.E.               | On-demand          | Economic strategy game, tribute to Dani Bunten Berry   |
+| 8033  | Concert Shirt          | On-demand          | Ticket OCR → concert list → print-on-demand shirt      |
+| 8888  | Jupyter (reserved)     | Future             | -                                                     |
+| 11434 | Ollama API             | Always-on (snap)   | -                                                     |
 
 ## Service Quick Reference
 
 ### Core Services
 
 **Dragonsuite Dashboard** (port 8100)
+
 - Central launcher hub for all services
 - Status monitoring, QR codes, git revision info
 - **Launch:** `bash scripts/start_dragonsuite.sh`
 
 **Dragonsight 4** (port 8080) - [Full docs](docs/services/vision-ai.md)
+
 - Vision AI with Ollama backend (qwen3-vl:8b, llama3.2-vision:11b)
 - Drag-and-drop image analysis, smart file naming
 - **Launch:** `bash scripts/start_dragonsight.sh`
@@ -84,6 +93,8 @@ This is a personal AI development environment focused on video generation, visio
 ### Video & Music - [Full docs](docs/services/video-music.md)
 
 - **Wan2GP** (8002) - Video generation (Wan 2.0)
+- **Wan2.1 T2V 1.3B** (8016) - Fast standalone text-to-video, ~8GB VRAM, diffusers
+- **LTX-Video 0.9.7** (8028) - 7-step distilled T2V+I2V with 3-pass upscale, diffusers
 - **HeartMuLa** (8004) - Music generation from lyrics (~12GB VRAM)
 - **ACE-Step 1.5** (8021) - Ultra-fast music generation (<4GB VRAM)
 
@@ -113,6 +124,7 @@ This is a personal AI development environment focused on video generation, visio
 ### Working with the Dashboard
 
 **Launch:**
+
 ```bash
 cd /srv/containers/edq
 bash scripts/start_dragonsuite.sh
@@ -125,6 +137,7 @@ From here you can start/stop all other services.
 ### Launching Services
 
 All services follow the same pattern:
+
 ```bash
 cd /srv/containers/edq
 bash scripts/start_<service>.sh
@@ -133,6 +146,7 @@ bash scripts/start_<service>.sh
 Access via: `http://192.168.7.226:<port>`
 
 See service documentation for detailed usage:
+
 - [Vision AI Services](docs/services/vision-ai.md)
 - [Image Generation Services](docs/services/image-generation.md)
 - [Video & Music Generation](docs/services/video-music.md)
@@ -142,6 +156,7 @@ See service documentation for detailed usage:
 ## Architecture Patterns
 
 For detailed technical patterns, see [Architecture Patterns Documentation](docs/architecture-patterns.md):
+
 - Python Script Structure
 - Server Launching Pattern
 - Video Processing Pattern
@@ -156,12 +171,14 @@ For detailed technical patterns, see [Architecture Patterns Documentation](docs/
 This file contains API keys for external services. **Always use this file** when writing code that needs API access.
 
 ### Available Keys
+
 - `OPENAI_API_KEY` - OpenAI API access
 - `GOOGLE_API_KEY` - Google API access
 - `ANTHROPIC_API_KEY` - Anthropic/Claude API access
 - `POE_API_KEY` - Poe.com API access
 
 ### Usage in Python
+
 ```python
 from dotenv import load_dotenv
 import os
@@ -172,14 +189,16 @@ google_key = os.getenv('GOOGLE_API_KEY')
 ```
 
 ### Usage in Bash/Shell Scripts
+
 ```bash
 source /srv/containers/edq/.env
 # Keys are now available as $OPENAI_API_KEY, $GOOGLE_API_KEY
 ```
 
 ### Usage in Node.js
+
 ```javascript
-require('dotenv').config({ path: '/srv/containers/edq/.env' });
+require("dotenv").config({ path: "/srv/containers/edq/.env" });
 const openaiKey = process.env.OPENAI_API_KEY;
 const googleKey = process.env.GOOGLE_API_KEY;
 ```
@@ -205,6 +224,7 @@ const googleKey = process.env.GOOGLE_API_KEY;
 ## Important Notes
 
 ### Pinokio Development
+
 - **ALWAYS** check `.cursorrules` before modifying Pinokio scripts
 - **ALWAYS** reference examples in `system/examples/`
 - **ALWAYS** use relative paths in `shell.run` commands
@@ -214,11 +234,13 @@ const googleKey = process.env.GOOGLE_API_KEY;
 See [Utilities Documentation](docs/services/utilities.md#pinokio-launcher-system) for details.
 
 ### Model Backend Selection
+
 - **Ollama**: Better for local deployment, easier setup
 - **LM Studio**: OpenAI-compatible API, good for uncensored models
 - Scripts often support both via backend selector
 
 ### Hardware Constraints
+
 - **GPU**: RTX 5070 Ti with 16GB VRAM
 - **Architecture**: Blackwell (sm_120 / CUDA compute capability 12.0)
 - **PyTorch requirement**: Must use CUDA 12.8 builds (`--index-url https://download.pytorch.org/whl/cu128`)
@@ -228,27 +250,31 @@ See [Utilities Documentation](docs/services/utilities.md#pinokio-launcher-system
 - Scripts include fallbacks and cloud service options
 
 ### Cloud/Remote Fallbacks (via MCP)
+
 When local GPU is occupied, these Hugging Face Spaces are available via Claude Code MCP tools:
 
-| Task | Space | Notes |
-|------|-------|-------|
-| Image Generation | `mcp-tools/Qwen-Image-Fast` | High quality, good text rendering |
-| Image Editing | `mcp-tools/FLUX.1-Kontext-Dev` | Edit images with prompts |
-| Video Generation | `mcp-tools/wan2-2-fp8da-aoti-faster` | Image-to-video |
-| Background Removal | `not-lain/background-removal` | Quick background removal |
-| OCR | `mcp-tools/DeepSeek-OCR-experimental` | Extract text from images |
-| TTS | `ResembleAI/Chatterbox` | Voice cloning TTS |
-| Segmentation | `prithivMLmods/SAM3-Image-Segmentation` | Object detection/masking |
+| Task               | Space                                   | Notes                             |
+| ------------------ | --------------------------------------- | --------------------------------- |
+| Image Generation   | `mcp-tools/Qwen-Image-Fast`             | High quality, good text rendering |
+| Image Editing      | `mcp-tools/FLUX.1-Kontext-Dev`          | Edit images with prompts          |
+| Video Generation   | `mcp-tools/wan2-2-fp8da-aoti-faster`    | Image-to-video                    |
+| Background Removal | `not-lain/background-removal`           | Quick background removal          |
+| OCR                | `mcp-tools/DeepSeek-OCR-experimental`   | Extract text from images          |
+| TTS                | `ResembleAI/Chatterbox`                 | Voice cloning TTS                 |
+| Segmentation       | `prithivMLmods/SAM3-Image-Segmentation` | Object detection/masking          |
 
 Use `dynamic_space` tool with `operation: "view_parameters"` to inspect before invoking.
 
 ### PyTorch Installation Template
+
 When creating new venvs that need PyTorch + CUDA:
+
 ```bash
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 ```
 
 ### File Paths
+
 - Use `Path.home()` or `os.path.expanduser("~")` for home directory
 - Scripts assume running from `/srv/containers/edq`
 - Virtual environments: `/srv/containers/edq/venv_<project>` (see `docs/venvs.md`)
@@ -262,6 +288,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 - Clear user-facing messages with emoji (🚀, ✓, ❌, etc.)
 
 ### Parallel Execution
+
 **Whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.**
 
 - Reading multiple files → use multiple Read tool calls in one message
@@ -275,6 +302,7 @@ See [Development Best Practices](docs/organization-principles.md#development-bes
 ## Web Development Standards
 
 ### Dark Mode Requirements
+
 **CRITICAL**: When coding for the web (HTML/CSS/JavaScript), **ALWAYS** include:
 
 1. **Dark mode toggle** - Circular button with moon/sun icon (🌙/☀️)
@@ -285,8 +313,9 @@ See [Development Best Practices](docs/organization-principles.md#development-bes
 2. **Default to dark mode** - Dark theme should be the default state on first load
 
 3. **Persistent preference** - Use `localStorage` to remember user's choice:
+
    ```javascript
-   localStorage.setItem('app-theme', isDark ? 'dark' : 'light');
+   localStorage.setItem("app-theme", isDark ? "dark" : "light");
    ```
 
 4. **Complete coverage** - Theme must affect:
@@ -305,30 +334,33 @@ See [Development Best Practices](docs/organization-principles.md#development-bes
    - **Maintain brand colors** but mute them for dark mode
 
 6. **Implementation pattern**:
+
    ```css
    body.dark-mode .element {
-       /* dark mode styles */
+     /* dark mode styles */
    }
    ```
 
 7. **JavaScript initialization (default to dark)**:
    ```javascript
-   const savedTheme = localStorage.getItem('app-theme');
-   if (savedTheme === 'light') {
-       // Only use light mode if explicitly chosen
-       themeToggle.textContent = '🌙';
+   const savedTheme = localStorage.getItem("app-theme");
+   if (savedTheme === "light") {
+     // Only use light mode if explicitly chosen
+     themeToggle.textContent = "🌙";
    } else {
-       // Default to dark mode
-       body.classList.add('dark-mode');
-       themeToggle.textContent = '☀️';
-       if (!savedTheme) {
-           localStorage.setItem('app-theme', 'dark');
-       }
+     // Default to dark mode
+     body.classList.add("dark-mode");
+     themeToggle.textContent = "☀️";
+     if (!savedTheme) {
+       localStorage.setItem("app-theme", "dark");
+     }
    }
    ```
 
 ### Example Implementation
+
 See `media/dragonsight4.html` for reference implementation with:
+
 - Toggle button in header
 - **Defaults to dark mode** on first load
 - localStorage persistence
@@ -338,6 +370,7 @@ See `media/dragonsight4.html` for reference implementation with:
 ## Known Issues & Cleanup Tasks
 
 ### ✅ Completed Fixes (2026-01-20)
+
 1. **✅ Port standardization**: Moved all Dragonsuite tools to 8xxx ports
 2. **✅ Removed legacy components**: Deleted Qwen Vision, LTX-Video, orphaned directories
 3. **✅ Created venv registry**: `docs/venvs.md` tracks all virtual environments
@@ -345,13 +378,38 @@ See `media/dragonsight4.html` for reference implementation with:
 5. **✅ Updated dashboard config**: `config/dragonsuite.json` reflects current tools
 
 ### Venv Management
+
 - All venvs centralized at `/srv/containers/edq/venv_*`
 - Registry at `docs/venvs.md` - update when adding/removing projects
 - When removing a project: delete venv, update registry, update `config/dragonsuite.json`
 
 ### Future Additions (reserved ports)
+
 - 8888: Jupyter Notebook
 - Additional tools: assign next available 800x port
+
+## Shorthand Commands
+
+### "update the kb"
+
+When the user says **"update the kb"** (or close variants), perform all of the following:
+
+1. **Update memory files** — review the session and update `~/.claude/projects/-srv-containers-edq/memory/MEMORY.md` and any relevant topic files (`common_issues.md`, `gpu_optimization.md`, `web_ui_patterns.md`, etc.) with new lessons, patterns, or corrections.
+
+2. **Update CLAUDE.md** — if any port assignments, architecture patterns, service names, or project-level facts changed, update this file immediately.
+
+3. **Create or update today's daily note** in Obsidian at `/home/edq/knowledge-base/Daily Notes/YYYY-MM-DD.md` using the template in `Directions/Daily Note Template.md`. The note should include:
+   - A 2-3 sentence summary of what the session accomplished
+   - Bullet list of what was done
+   - Any new lessons learned (beyond what went to memory files)
+   - Which meta-files were updated
+   - Open items / follow-ups
+
+**Format**: `YYYY-MM-DD.md` using today's date. If the file already exists, append to it rather than overwrite.
+
+Do this thoroughly — this is the persistent record of the work. "No summary provided" and "No new lessons captured" are not acceptable outputs.
+
+---
 
 ## Standard Operating Procedures (SOPs)
 
@@ -360,12 +418,14 @@ See `media/dragonsight4.html` for reference implementation with:
 **Rule:** NEVER make the first run of a tool wait for model downloads.
 
 **Instead:**
+
 1. Create standalone download script: `scripts/download_<toolname>_models.sh`
 2. Use Python `snapshot_download()` API (resumable, idempotent)
 3. Document in setup instructions
 4. Add model check to launch script (fail fast if missing)
 
 **Template:**
+
 ```bash
 #!/bin/bash
 source /srv/containers/edq/venv_toolname/bin/activate
@@ -384,6 +444,7 @@ PYEOF
 **See:** [docs/sop-model-downloads.md](docs/sop-model-downloads.md) for complete guide, examples, and best practices.
 
 **Benefits:**
+
 - ✅ Better UX (instant launches after setup)
 - ✅ Resumable downloads (network-safe)
 - ✅ Parallel setup (download multiple tools during idle time)
@@ -398,6 +459,7 @@ PYEOF
 Before suggesting paid APIs, cloud services, or complex architectures, ask: "Can this be done locally with basic file operations?"
 
 Example: Conversation analysis task
+
 - ❌ Initial approach: Use Claude API ($5-10) to analyze conversations
 - ✅ Better approach: Export to markdown (free), read locally (free), synthesize (free)
 - **Result**: Same quality, $0 cost
@@ -410,6 +472,7 @@ Example: Conversation analysis task
 4. **Using Gradio for everything** - Switch to HTML/JS when clipboard operations or custom interactions needed
 5. **Assuming model censorship is OK** - Always offer uncensored alternatives (LM Studio + Dolphin)
 6. **Adding unrequested features** - Do exactly what's requested, offer enhancements separately
+7. **Asking the user to run terminal commands** - Use the Bash tool directly. Never say "run this command and paste the output" — just run it. The user should not be doing work that Claude Code can do. This ranks alongside RTFM as a core behavioral rule.
 
 ### Most Common Recurring Issues
 
@@ -422,6 +485,7 @@ Example: Conversation analysis task
 7. **Documentation drift** - Update CLAUDE.md and venvs.md IMMEDIATELY after changes
 
 **See also:**
+
 - Full analysis: `~/claude_conversations_review/LESSONS_LEARNED.md`
 - Critical lessons: `~/.claude/projects/-srv-containers-edq/memory/MEMORY.md`
 - [Architecture Patterns](docs/architecture-patterns.md) for technical details
@@ -433,6 +497,7 @@ Example: Conversation analysis task
 **Solution:** Use MEMORY.md as an **index** that references detailed topic files.
 
 **Structure:**
+
 ```
 ~/.claude/projects/-srv-containers-edq/memory/
 ├── MEMORY.md                  # <200 lines, auto-loaded, quick reference
@@ -447,11 +512,13 @@ Example: Conversation analysis task
 ### Image Generation Best Practices
 
 **Social Media Assets:**
+
 - og-preview.png standard: 1200×630px
 - Closest diffusion-compatible: 1200×640px (divisible by 16)
 - Use Z-Image Base for text rendering (better than FLUX for readable text)
 
 **Calling Local Gradio APIs Programmatically:**
+
 ```python
 from gradio_client import Client
 
@@ -473,6 +540,7 @@ image_path = result[0]
 ```
 
 **Key Requirements:**
+
 - Dimensions must be divisible by 16 for diffusion models (e.g., 640 not 630)
 - Use `127.0.0.1` not external IP for local services
 - Check service is running first (see port list)

@@ -10,6 +10,7 @@ bash scripts/download_new_models.sh
 ```
 
 This is:
+
 - ✅ **Safe to interrupt** (Ctrl+C) and resume later
 - ✅ **Idempotent** (won't re-download existing files)
 - ✅ **Resumable** (uses `--resume-download` flag)
@@ -37,6 +38,7 @@ hf download Soul-AILab/SoulX-Singer-Preprocess \
 ```
 
 **Launch:**
+
 ```bash
 bash scripts/start_soulxsinger.sh
 # Access at http://192.168.7.226:8023
@@ -60,6 +62,7 @@ hf download justdubit/justdubit \
 ```
 
 **After download, locate these files in the model directory:**
+
 - `ltx-2-19b-dev.safetensors` (main model)
 - `ltx-2-19b-ic-lora-lipdubbing.safetensors` (lip-sync LoRA)
 - `ltx-2-19b-distilled-lora-384.safetensors` (distilled LoRA)
@@ -68,6 +71,7 @@ hf download justdubit/justdubit \
 
 **Update script paths:**
 Edit `/srv/containers/edq/scripts/justdubit_gradio.py`:
+
 ```python
 # Replace these placeholders:
 "--checkpoint_path", "/srv/containers/edq/models/justdubit/ltx-2-19b-dev.safetensors",
@@ -78,6 +82,7 @@ Edit `/srv/containers/edq/scripts/justdubit_gradio.py`:
 ```
 
 **Launch:**
+
 ```bash
 bash scripts/start_justdubit.sh
 # Access at http://192.168.7.226:8022
@@ -90,18 +95,21 @@ bash scripts/start_justdubit.sh
 **Status:** ⚠️ Dependencies resolved, models needed, inference incomplete
 
 #### Step 1: Verify Dependencies
+
 ```bash
 source /srv/containers/edq/venv_deepgen/bin/activate
 pip list | grep -E "xtuner|mmengine|transformers"
 ```
 
 Should show:
+
 - ✅ xtuner==0.2.0
 - ✅ mmengine==0.10.6
 - ✅ bitsandbytes==0.45.0
 - ⚠️ transformers==5.1.0 (xtuner wants 4.48.0)
 
 #### Step 2: Test with Current Versions (Recommended First)
+
 ```bash
 bash scripts/start_deepgen.sh
 # Access at http://192.168.7.226:8024
@@ -110,12 +118,14 @@ bash scripts/start_deepgen.sh
 The UI will show if model loading works with newer transformers.
 
 #### Step 3: If It Fails, Downgrade Transformers
+
 ```bash
 bash scripts/fix_deepgen_deps.sh
 # Choose option 2 to downgrade transformers to 4.48.0
 ```
 
 #### Step 4: Download Models
+
 ```bash
 source /srv/containers/edq/venv_deepgen/bin/activate
 huggingface-cli download deepgenteam/DeepGen-1.0 \
@@ -123,6 +133,7 @@ huggingface-cli download deepgenteam/DeepGen-1.0 \
 ```
 
 #### Step 5: Complete Inference Pipeline
+
 The Gradio UI (v2) can load the model but needs the inference call completed.
 Reference: `/srv/containers/edq/projects/deepgen/scripts/text2image.py`
 
@@ -133,11 +144,13 @@ Reference: `/srv/containers/edq/projects/deepgen/scripts/text2image.py`
 ### DeepGen xtuner/mmengine Workaround
 
 **The Problem:**
+
 - DeepGen's `requirements.txt` has many version conflicts
 - xtuner requires specific versions of transformers, mmengine, etc.
 - Full `pip install -r requirements.txt` fails
 
 **The Solution:**
+
 1. Install core dependencies first (PyTorch, transformers, diffusers)
 2. Install xtuner without dependencies (`--no-deps`)
 3. Install mmengine with exact version xtuner needs
@@ -155,18 +168,19 @@ Reference: `/srv/containers/edq/projects/deepgen/scripts/text2image.py`
 
 ## Disk Space Summary
 
-| Tool | Models | Venv | Total |
-|------|--------|------|-------|
-| SoulX-Singer | ~8GB | ~8GB | ~16GB |
-| JustDubit | ~50GB | ~8GB | ~58GB |
-| DeepGen | ~10GB | ~6GB | ~16GB |
-| **TOTAL** | **~68GB** | **~22GB** | **~90GB** |
+| Tool         | Models    | Venv      | Total     |
+| ------------ | --------- | --------- | --------- |
+| SoulX-Singer | ~8GB      | ~8GB      | ~16GB     |
+| JustDubit    | ~50GB     | ~8GB      | ~58GB     |
+| DeepGen      | ~10GB     | ~6GB      | ~16GB     |
+| **TOTAL**    | **~68GB** | **~22GB** | **~90GB** |
 
 ---
 
 ## Testing Checklist
 
 ### SoulX-Singer
+
 - [ ] Models downloaded to `/srv/containers/edq/models/SoulX-Singer`
 - [ ] Preprocessing models downloaded
 - [ ] webui.py updated with model paths
@@ -174,12 +188,14 @@ Reference: `/srv/containers/edq/projects/deepgen/scripts/text2image.py`
 - [ ] Test singing synthesis with sample audio
 
 ### JustDubit
+
 - [ ] All 5 model files located in downloaded repo
 - [ ] Model paths updated in `justdubit_gradio.py`
 - [ ] Launch successful on port 8022
 - [ ] Test video dubbing with short sample
 
 ### DeepGen
+
 - [ ] Dependencies verified (xtuner, mmengine)
 - [ ] Models downloaded to `/srv/containers/edq/models/deepgen-1.0`
 - [ ] Launch successful on port 8024
@@ -193,6 +209,7 @@ Reference: `/srv/containers/edq/projects/deepgen/scripts/text2image.py`
 ## Troubleshooting
 
 ### "Models not found" Error
+
 ```bash
 # Check model directory
 ls -lh /srv/containers/edq/models/
@@ -202,6 +219,7 @@ bash scripts/download_new_models.sh
 ```
 
 ### DeepGen Import Errors
+
 ```bash
 # Verify dependencies
 source /srv/containers/edq/venv_deepgen/bin/activate
@@ -212,6 +230,7 @@ bash scripts/fix_deepgen_deps.sh
 ```
 
 ### CUDA Out of Memory
+
 ```bash
 # Each tool already sets this, but verify:
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True

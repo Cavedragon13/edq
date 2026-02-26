@@ -477,6 +477,7 @@ if __name__ == "__main__":
         server_port=8014,
         share=False,
         show_error=True,
+        favicon_path="/srv/containers/edq/media/favicons/qwen-audiobook.svg",
         allowed_paths=[str(OUTPUT_DIR)],
         theme=gr.themes.Soft(primary_hue="orange", secondary_hue="red"),
     )

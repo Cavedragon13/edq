@@ -5,6 +5,7 @@ This guide walks you through setting up the Supabase database for MCP Inspector'
 ## Overview
 
 The Supabase integration adds:
+
 - **Audit History**: Track security scans over time, detect changes
 - **Catalog Archive**: Search historical MCP registry data
 - **Installation Tracking**: Monitor when servers were installed
@@ -68,21 +69,25 @@ After running the schema, verify these tables exist in Supabase Studio:
 ## Step 5: Test the Integration
 
 1. Start MCP Inspector:
+
    ```bash
    bash scripts/start_mcp_inspector.sh
    ```
 
 2. Look for this message in the output:
+
    ```
    ✓ Supabase integration enabled
    ```
 
 3. Check database status via API:
+
    ```bash
    curl http://localhost:8020/api/database/status
    ```
 
    Expected response:
+
    ```json
    {
      "enabled": true,
@@ -105,6 +110,7 @@ After running the schema, verify these tables exist in Supabase Studio:
 Once configured, these endpoints become available:
 
 ### Audit History
+
 ```bash
 # Get all audit scans
 GET /api/history/audits?limit=100
@@ -114,18 +120,21 @@ GET /api/history/audits?server=dragonsuite&limit=50
 ```
 
 ### Security Trends
+
 ```bash
 # Get security trends (30 days)
 GET /api/history/trends?days=30
 ```
 
 ### Installation History
+
 ```bash
 # Get installation history
 GET /api/history/installations
 ```
 
 ### Database Status
+
 ```bash
 # Check connection status
 GET /api/database/status
@@ -134,7 +143,9 @@ GET /api/database/status
 ## Schema Overview
 
 ### `audit_scans`
+
 Stores security scan results for each server:
+
 - Trust scores (1-3 stars)
 - Danger patterns detected (eval, exec, etc.)
 - Warning patterns (subprocess, requests, etc.)
@@ -143,21 +154,27 @@ Stores security scan results for each server:
 - NPM stats (stars, license, version)
 
 ### `catalog_servers`
+
 Historical archive of MCP registry:
+
 - Server metadata from official registry
 - First/last seen timestamps
 - Verification status
 - Repository and documentation links
 
 ### `installation_history`
+
 Tracks when servers were installed:
+
 - Installation timestamp
 - Full configuration snapshot
 - Installation method (manual, UI, external)
 - Optional user notes
 
 ### `vulnerability_alerts`
+
 Future feature for tracking known vulnerabilities:
+
 - CVE tracking
 - Severity ratings
 - Resolution status
@@ -166,30 +183,37 @@ Future feature for tracking known vulnerabilities:
 ## Views and Functions
 
 ### `latest_audit_per_server`
+
 View showing most recent audit for each server.
 
 ### `security_trends`
+
 View aggregating security scores over time.
 
 ### `record_catalog_server()`
+
 Function for upserting catalog servers (handles duplicates).
 
 ## Troubleshooting
 
 ### "Supabase credentials not found"
+
 - Check `/srv/containers/edq/.env` contains `SUPABASE_URL` and `SUPABASE_SECRET_KEY`
 - Restart the server after updating `.env`
 
 ### "Database connection failed"
+
 - Verify credentials are correct
 - Check Supabase project is active (not paused)
 - Verify network connectivity to Supabase
 
 ### "Table does not exist"
+
 - Run the schema SQL in Supabase Studio
 - Check table names match exactly (case-sensitive)
 
 ### No data appearing in tables
+
 - Check browser console for errors
 - Verify server is using venv: `ps aux | grep mcp_inspector`
 - Check server logs for database errors
@@ -197,6 +221,7 @@ Function for upserting catalog servers (handles duplicates).
 ## Future Enhancements
 
 Planned features:
+
 - 📊 **Dashboard Tab**: Charts and visualizations of trends
 - 🔔 **Vulnerability Alerts**: Integration with security databases
 - 📈 **Comparison Views**: Compare trust scores across servers

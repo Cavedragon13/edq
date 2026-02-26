@@ -29,6 +29,7 @@ git checkout <commit-hash> -- path/to/file
 ### Automatic Snapshots
 
 **Pre-Reboot Protection** (optional setup):
+
 ```bash
 # Install systemd service for automatic snapshots before shutdown
 sudo cp scripts/dragonsuite-snapshot.service /etc/systemd/system/
@@ -93,20 +94,22 @@ git branch -D experiment-new-ui
 ## What's Tracked
 
 ✅ **Tracked** (committed to git):
-- Scripts (start_*.sh, *_gradio.py)
+
+- Scripts (start\__.sh, _\_gradio.py)
 - Configuration (config/dragonsuite.json, .env.example)
-- HTML/JS/CSS (media/*.html, media/*.js)
-- Documentation (docs/*.md, CLAUDE.md)
+- HTML/JS/CSS (media/_.html, media/_.js)
+- Documentation (docs/\*.md, CLAUDE.md)
 - MCP servers (source code only)
 
 ❌ **Not Tracked** (in .gitignore):
-- Virtual environments (venv_*)
+
+- Virtual environments (venv\_\*)
 - AI models (models/)
 - Generated output (ai_generated/)
 - Application binaries (apps/)
-- Cloned projects (projects/*/)
-- Sensitive files (.env, *.key)
-- Logs (*.log)
+- Cloned projects (projects/\*/)
+- Sensitive files (.env, \*.key)
+- Logs (\*.log)
 
 ## Repository Info
 
@@ -125,6 +128,7 @@ git branch -D experiment-new-ui
 ## Aliases (optional)
 
 Add to `~/.bashrc`:
+
 ```bash
 alias ds-status='cd /srv/containers/edq && git status'
 alias ds-snap='cd /srv/containers/edq && bash scripts/git_snapshot.sh'
@@ -135,6 +139,7 @@ alias ds-diff='cd /srv/containers/edq && git diff'
 Then: `source ~/.bashrc`
 
 Now you can use:
+
 - `ds-status` - Check for changes
 - `ds-snap` - Quick snapshot
 - `ds-log` - View recent commits

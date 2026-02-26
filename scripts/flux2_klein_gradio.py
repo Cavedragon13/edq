@@ -361,25 +361,14 @@ with gr.Blocks(
 
     with gr.Row():
         with gr.Column(scale=1):
-            # Model selection
-            model_selector = gr.Dropdown(
-                choices=[
-                    f"{MODELS['4b']['name']} - {MODELS['4b']['vram']}",
-                    f"{MODELS['9b']['name']} - {MODELS['9b']['vram']}",
-                    f"{MODELS['flux1-dev']['name']} - {MODELS['flux1-dev']['vram']}",
-                ],
-                value=f"{MODELS['4b']['name']} - {MODELS['4b']['vram']}",
-                label="Model",
-                info="4B recommended for 16GB VRAM. FLUX.1-dev = HD quality but slower (~60s/image)"
-            )
-            model_warning = gr.Markdown(visible=False, value="")
-
             # Prompt
             prompt_input = gr.Textbox(
                 label="Prompt",
                 placeholder="A majestic dragon soaring through storm clouds, scales shimmering with violet lightning...",
                 lines=3
             )
+
+            generate_btn = gr.Button("Generate", variant="primary", size="lg")
 
             # Aspect ratio and dimensions
             with gr.Row():
@@ -450,7 +439,18 @@ with gr.Blocks(
                     info="-1 for random"
                 )
 
-            generate_btn = gr.Button("Generate", variant="primary", size="lg")
+            # Model selection (rarely changed)
+            model_selector = gr.Dropdown(
+                choices=[
+                    f"{MODELS['4b']['name']} - {MODELS['4b']['vram']}",
+                    f"{MODELS['9b']['name']} - {MODELS['9b']['vram']}",
+                    f"{MODELS['flux1-dev']['name']} - {MODELS['flux1-dev']['vram']}",
+                ],
+                value=f"{MODELS['4b']['name']} - {MODELS['4b']['vram']}",
+                label="Model",
+                info="4B recommended for 16GB VRAM. FLUX.1-dev = HD quality but slower (~60s/image)"
+            )
+            model_warning = gr.Markdown(visible=False, value="")
 
         with gr.Column(scale=1):
             output_image = gr.Image(label="Generated Image", type="pil")
@@ -537,6 +537,7 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=8001,
         share=False,
+        favicon_path="/srv/containers/edq/media/favicons/dragonflux.svg",
         theme=gr.themes.Soft(primary_hue="violet", secondary_hue="gray"),
         css=custom_css,
         head=f'<link rel="icon" href="data:image/svg+xml,{DRAGON_FAVICON.replace("#", "%23").replace(" ", "").replace(chr(10), "")}">'

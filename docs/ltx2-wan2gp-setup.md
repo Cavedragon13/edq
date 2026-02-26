@@ -20,6 +20,7 @@
 **Purpose:** Pre-download all WanGP2 models to avoid UI confusion.
 
 **Usage:**
+
 ```bash
 # Download recommended models (16GB VRAM optimized)
 /srv/containers/edq/venv_wan2gp/bin/python scripts/wan2gp_download_models.py
@@ -32,6 +33,7 @@
 ```
 
 **Recommended Models:**
+
 - ✅ **LTX-2 19B** - Already downloaded (21GB FP8 + LoRAs)
 - **Wan 2.2 Ovi** - 6GB + 6GB audio (fastest, speaking characters)
 - **Flux 2 Klein 4B** - Image generation
@@ -43,11 +45,13 @@
 **New Service:** LTX-2 Video (Port 8016)
 
 **Files Created:**
+
 - `/srv/containers/edq/scripts/ltx2_gradio.py` - Simplified Gradio interface
 - `/srv/containers/edq/scripts/start_ltx2.sh` - Launcher
 - Added to `config/dragonsuite.json` - Dashboard integration
 
 **Features:**
+
 - Clean, focused UI for LTX-2 only
 - No model switching confusion
 - Text-to-video with audio soundtrack
@@ -57,6 +61,7 @@
 - Dark mode by default
 
 **Launch:**
+
 ```bash
 # Via dashboard (port 8100)
 # Navigate to Video category → "LTX-2 Video" → Start
@@ -66,6 +71,7 @@ bash scripts/start_ltx2.sh
 ```
 
 **Access:**
+
 - Local: `http://localhost:8016`
 - LAN: `http://192.168.7.226:8016`
 
@@ -74,6 +80,7 @@ bash scripts/start_ltx2.sh
 ## Model Inventory (Current)
 
 **Already Downloaded:**
+
 ```
 /srv/containers/edq/projects/Wan2GP/ckpts/
 ├── ltx-2-19b-dev-fp8_diffusion_model.safetensors (21GB)
@@ -95,6 +102,7 @@ bash scripts/start_ltx2.sh
 The WanGP2 project includes configurations for 158 different models across multiple categories:
 
 **Video Generation:**
+
 - LTX-2 (19B, distilled versions, GGUF quantized)
 - Wan 2.1/2.2 (text2video, image2video, variations)
 - HunyuanVideo (1.5, distilled, various resolutions)
@@ -103,16 +111,19 @@ The WanGP2 project includes configurations for 158 different models across multi
 - VACE (14B, cocktail, lightning variants)
 
 **Image Generation:**
+
 - Flux 2 (Dev, Klein 4B/9B, Chroma, Kontext, Schnell, SRPO)
 - Z-Image (Base, Control, TwinFlow Turbo)
 - Qwen-Image (20B, Edit, Layered, variants)
 
 **Audio/TTS:**
+
 - Qwen3-TTS (Base, CustomVoice, VoiceDesign)
 - HeartMuLa (music generation)
 - Chatterbox, MMAudio
 
 **Specialized:**
+
 - Animation, avatar, portrait modes
 - Video editing, upsampling
 - Control networks (pose, depth, canny)
@@ -122,11 +133,13 @@ The WanGP2 project includes configurations for 158 different models across multi
 ### LTX-2 Video Generation
 
 **Prompt Structure:**
+
 ```
 [Scene description]. [Character 1 action], says "<S>dialogue<E>". [Character 2 action], says "<S>dialogue<E>". [Camera movement]. Audio: [background sounds, music, effects].
 ```
 
 **Example:**
+
 ```
 A warm sunny backyard. The camera starts in a tight cinematic close-up of a woman
 and a man in their 30s, facing each other with serious expressions. The woman,
@@ -141,12 +154,14 @@ Audio: Birds chirping, gentle wind, rustling leaves, faint laughter.
 ```
 
 **Settings:**
+
 - **Video Length:** 33-241 frames (33≈1s, 121≈5s, 241≈10s at 24fps)
 - **Inference Steps:** 40 recommended (20-60 range)
 - **Guidance Scale:** 4.0 (how closely to follow prompt)
 - **Seed:** -1 for random, or specific number for reproducibility
 
 **VRAM Usage:**
+
 - Fits in 16GB with CPU offloading
 - Close other GPU services first
 - Uses `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`
@@ -154,12 +169,14 @@ Audio: Birds chirping, gentle wind, rustling leaves, faint laughter.
 ### WanGP2 Full Interface
 
 **Use WanGP2 (port 8002) when you want:**
+
 - Model switching between different architectures
 - Advanced features (LoRAs, control nets, sliding window)
 - Access to all 158+ model configurations
 - Experimental features and new model testing
 
 **Use LTX-2 (port 8016) when you want:**
+
 - Simple, focused video generation
 - No confusion about model selection
 - Dedicated interface for LTX-2 only
@@ -174,17 +191,20 @@ Audio: Birds chirping, gentle wind, rustling leaves, faint laughter.
 **Cause:** No model selected yet, UI waiting for selection
 
 **Fix:**
+
 1. Select a model from dropdown
 2. Or use dedicated LTX-2 interface (port 8016)
 
 ### Model Not Found
 
 **Check if downloaded:**
+
 ```bash
 ls -lh /srv/containers/edq/projects/Wan2GP/ckpts/
 ```
 
 **Download manually:**
+
 ```bash
 cd /srv/containers/edq/projects/Wan2GP/ckpts
 wget https://huggingface.co/DeepBeepMeep/MODEL_NAME/resolve/main/file.safetensors
@@ -195,6 +215,7 @@ wget https://huggingface.co/DeepBeepMeep/MODEL_NAME/resolve/main/file.safetensor
 ### CUDA Out of Memory
 
 **Solutions:**
+
 - Close other GPU services (check port 8001-8019)
 - Reduce video length (fewer frames)
 - Lower resolution if option available
@@ -203,6 +224,7 @@ wget https://huggingface.co/DeepBeepMeep/MODEL_NAME/resolve/main/file.safetensor
 ### Generation Takes Too Long
 
 **Expected times (16GB RTX 5070 Ti):**
+
 - **5 second video:** ~2-5 minutes (40 steps)
 - **10 second video:** ~5-10 minutes (40 steps)
 - **20 second video:** ~10-20 minutes (40 steps)
@@ -212,6 +234,7 @@ wget https://huggingface.co/DeepBeepMeep/MODEL_NAME/resolve/main/file.safetensor
 ## Next Steps
 
 1. **Download Additional Models:**
+
    ```bash
    # Get Wan 2.2 Ovi (fastest, 6GB)
    /srv/containers/edq/venv_wan2gp/bin/python scripts/wan2gp_download_models.py ovi_1_1
