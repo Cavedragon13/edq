@@ -843,6 +843,141 @@
             border-color: #6366f1;
             color: #fff;
         }
+
+        /* ── Weather Banner ──────────────────────────────────────── */
+        .weather-banner {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 10px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .weather-banner {
+            background: rgba(20, 20, 30, 0.9);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .weather-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .weather-icon img {
+            width: 38px;
+            height: 38px;
+        }
+
+        .weather-temp {
+            font-size: 1.9em;
+            font-weight: 700;
+            line-height: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-variant-numeric: tabular-nums;
+        }
+
+        body.dark-mode .weather-temp {
+            background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .weather-cond {
+            font-size: 0.82em;
+            font-weight: 600;
+            color: #374151;
+            margin-top: 2px;
+        }
+
+        body.dark-mode .weather-cond {
+            color: #e0e0e0;
+        }
+
+        .weather-vdivider {
+            width: 1px;
+            height: 36px;
+            background: #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        body.dark-mode .weather-vdivider {
+            background: rgba(99, 102, 241, 0.25);
+        }
+
+        .weather-stats {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .weather-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .weather-stat-label {
+            font-size: 0.62em;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 500;
+        }
+
+        body.dark-mode .weather-stat-label {
+            color: #9ca3af;
+        }
+
+        .weather-stat-value {
+            font-size: 0.82em;
+            font-weight: 600;
+            color: #1f2937;
+            font-variant-numeric: tabular-nums;
+        }
+
+        body.dark-mode .weather-stat-value {
+            color: #e0e0e0;
+        }
+
+        .weather-meta {
+            margin-left: auto;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .weather-station-name {
+            font-size: 0.72em;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        body.dark-mode .weather-station-name {
+            color: #9ca3af;
+        }
+
+        .weather-updated {
+            font-size: 0.65em;
+            color: #9ca3af;
+        }
+
+        .weather-placeholder {
+            font-size: 0.82em;
+            color: #9ca3af;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -877,6 +1012,49 @@
                     <span>&#8635;</span> Refresh
                 </button>
                 <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">&#127769;</button>
+            </div>
+        </div>
+
+        <!-- Weather Banner -->
+        <div class="weather-banner" id="weatherBanner">
+            <div class="weather-placeholder" id="weatherPlaceholder">⛅ Loading weather…</div>
+            <div class="weather-main" id="weatherMain" style="display:none;">
+                <div class="weather-icon"><img id="weatherIcon" src="" alt=""></div>
+                <div>
+                    <div class="weather-temp" id="weatherTemp">--°F</div>
+                    <div class="weather-cond" id="weatherCond">--</div>
+                </div>
+            </div>
+            <div class="weather-vdivider" id="weatherDivider" style="display:none;"></div>
+            <div class="weather-stats" id="weatherStats" style="display:none;">
+                <div class="weather-stat">
+                    <span class="weather-stat-label">Wind</span>
+                    <span class="weather-stat-value" id="wWind">--</span>
+                </div>
+                <div class="weather-stat">
+                    <span class="weather-stat-label">Humidity</span>
+                    <span class="weather-stat-value" id="wHumidity">--</span>
+                </div>
+                <div class="weather-stat">
+                    <span class="weather-stat-label">Dew Point</span>
+                    <span class="weather-stat-value" id="wDewpoint">--</span>
+                </div>
+                <div class="weather-stat">
+                    <span class="weather-stat-label">Visibility</span>
+                    <span class="weather-stat-value" id="wVisibility">--</span>
+                </div>
+                <div class="weather-stat">
+                    <span class="weather-stat-label">Barometer</span>
+                    <span class="weather-stat-value" id="wBarometer">--</span>
+                </div>
+                <div class="weather-stat" id="wChillStat" style="display:none;">
+                    <span class="weather-stat-label">Wind Chill</span>
+                    <span class="weather-stat-value" id="wChill">--</span>
+                </div>
+            </div>
+            <div class="weather-meta" id="weatherMeta" style="display:none;">
+                <div class="weather-station-name">KPSM · Portsmouth NH</div>
+                <div class="weather-updated" id="wUpdated">--</div>
             </div>
         </div>
 
@@ -1519,6 +1697,60 @@
         // Initial load
         buildFilterBar();
         fetchStatus();
+
+        // ── Weather Banner ───────────────────────────────────────
+        function cToF(c) { return (c !== null && c !== undefined) ? Math.round(c * 9/5 + 32) : null; }
+        function msToMph(ms) { return (ms !== null && ms !== undefined) ? Math.round(ms * 2.23694) : null; }
+        function paToInHg(pa) { return (pa !== null && pa !== undefined) ? (pa * 0.0002953).toFixed(2) : null; }
+        function mToMi(m) { return (m !== null && m !== undefined) ? (m / 1609.34).toFixed(1) : null; }
+        function degToCompass(d) {
+            if (d === null || d === undefined) return '';
+            return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d / 22.5) % 16];
+        }
+
+        async function updateWeather() {
+            try {
+                const resp = await fetch('https://api.weather.gov/stations/KPSM/observations/latest',
+                    { headers: { 'User-Agent': 'Dragonsuite/2.0 (personal dashboard; Portsmouth NH)' } });
+                if (!resp.ok) throw new Error(`NWS HTTP ${resp.status}`);
+                const { properties: p } = await resp.json();
+
+                const tempF = cToF(p.temperature?.value);
+                const mph   = msToMph(p.windSpeed?.value);
+                const dir   = degToCompass(p.windDirection?.value);
+                const chillF = cToF(p.windChill?.value);
+
+                document.getElementById('weatherIcon').src = p.icon || '';
+                document.getElementById('weatherTemp').textContent = tempF !== null ? `${tempF}°F` : '--°F';
+                document.getElementById('weatherCond').textContent = p.textDescription || '--';
+                document.getElementById('wWind').textContent = mph !== null ? `${dir} ${mph} mph` : '--';
+                document.getElementById('wHumidity').textContent = p.relativeHumidity?.value !== null ? `${Math.round(p.relativeHumidity.value)}%` : '--';
+                document.getElementById('wDewpoint').textContent = cToF(p.dewpoint?.value) !== null ? `${cToF(p.dewpoint.value)}°F` : '--';
+                document.getElementById('wVisibility').textContent = mToMi(p.visibility?.value) !== null ? `${mToMi(p.visibility.value)} mi` : '--';
+                document.getElementById('wBarometer').textContent = paToInHg(p.barometricPressure?.value) !== null ? `${paToInHg(p.barometricPressure.value)} inHg` : '--';
+
+                if (chillF !== null) {
+                    document.getElementById('wChill').textContent = `${chillF}°F`;
+                    document.getElementById('wChillStat').style.display = 'flex';
+                } else {
+                    document.getElementById('wChillStat').style.display = 'none';
+                }
+
+                document.getElementById('wUpdated').textContent = `Updated ${new Date(p.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+
+                document.getElementById('weatherPlaceholder').style.display = 'none';
+                document.getElementById('weatherMain').style.display = 'flex';
+                document.getElementById('weatherDivider').style.display = '';
+                document.getElementById('weatherStats').style.display = 'flex';
+                document.getElementById('weatherMeta').style.display = '';
+            } catch (err) {
+                document.getElementById('weatherPlaceholder').textContent = '⚠️ Weather unavailable';
+                console.warn('Weather fetch error:', err);
+            }
+        }
+
+        updateWeather();
+        setInterval(updateWeather, 15 * 60 * 1000); // refresh every 15 min
 
         console.log('Dragonsuite v2 loaded');
     </script>
