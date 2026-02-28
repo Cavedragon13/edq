@@ -298,8 +298,6 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Clip from right: handle controls this */
-    clip-path: inset(0 50% 0 0);
   }
 
   #compare-handle {
@@ -383,6 +381,26 @@
       </select>
     </div>
 
+    <div class="ctrl">
+      <div class="ctrl-row">
+        <span class="label" style="margin-bottom:0">Sensitivity</span>
+        <span class="ctrl-val" id="val-thresh">128</span>
+      </div>
+      <input type="range" id="sl-thresh" min="0" max="255" value="128"
+             oninput="document.getElementById('val-thresh').textContent=this.value">
+      <span style="font-size:10px;color:var(--text-less);">Lower = keep more subject · Higher = remove more</span>
+    </div>
+
+    <div class="ctrl">
+      <div class="ctrl-row">
+        <span class="label" style="margin-bottom:0">Mask Edge Expand</span>
+        <span class="ctrl-val" id="val-expand">0</span>
+      </div>
+      <input type="range" id="sl-expand" min="-20" max="20" value="0"
+             oninput="document.getElementById('val-expand').textContent=this.value">
+      <span style="font-size:10px;color:var(--text-less);">Negative = shrink · Positive = grow</span>
+    </div>
+
     <details>
       <summary>Advanced Options</summary>
       <div class="adv-body">
@@ -420,6 +438,16 @@
           </span>
           <span class="toggle-label">Post-process Mask</span>
         </label>
+
+        <div class="ctrl">
+          <div class="ctrl-row">
+            <span style="color:var(--text-dim);font-size:11px;">Edge Softness (feather)</span>
+            <span class="ctrl-val" id="val-feather">0</span>
+          </div>
+          <input type="range" id="sl-feather" min="0" max="20" value="0"
+                 oninput="document.getElementById('val-feather').textContent=this.value">
+          <span style="font-size:10px;color:var(--text-less);">Blur mask edges for softer transitions</span>
+        </div>
 
       </div>
     </details>
@@ -551,7 +579,10 @@ async function doRemove() {
   fd.append('alpha_matting', document.getElementById('tog-alpha').checked);
   fd.append('fg_threshold',  document.getElementById('sl-fg').value);
   fd.append('bg_threshold',  document.getElementById('sl-bg').value);
-  fd.append('post_process',  document.getElementById('tog-post').checked);
+  fd.append('post_process',    document.getElementById('tog-post').checked);
+  fd.append('alpha_threshold', document.getElementById('sl-thresh').value);
+  fd.append('mask_expand',     document.getElementById('sl-expand').value);
+  fd.append('feather',         document.getElementById('sl-feather').value);
 
   try {
     const resp = await fetch('/api/remove', { method: 'POST', body: fd });
@@ -587,7 +618,7 @@ function showCompare() {
 // ── Comparison slider ──────────────────────────────────────────────
 function setHandle(pct) {
   document.getElementById('compare-handle').style.left = pct + '%';
-  document.getElementById('img-result').style.clipPath  = `inset(0 ${100 - pct}% 0 0)`;
+  document.getElementById('result-layer').style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
 }
 
 function startDrag(e) {
@@ -635,10 +666,10 @@ function setView(mode) {
     handle.style.display      = 'block';
     setHandle(50);
   } else if (mode === 'result') {
-    origImg.style.opacity     = '0';
-    resultLayer.style.display = 'block';
-    resultImg.style.clipPath  = 'none';
-    handle.style.display      = 'none';
+    origImg.style.opacity      = '0';
+    resultLayer.style.display  = 'block';
+    resultLayer.style.clipPath = 'none';
+    handle.style.display       = 'none';
   } else {  // original
     origImg.style.opacity     = '1';
     resultLayer.style.display = 'none';

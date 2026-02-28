@@ -17,7 +17,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import FileResponse, Response
-from PIL import Image
+from PIL import Image, ImageFilter
 from rembg import new_session, remove
 
 OUTPUT_DIR = Path.home() / "ai_generated" / "rembg"
@@ -55,7 +55,10 @@ async def api_remove(
     alpha_matting:   bool       = Form(False),
     fg_threshold:    int        = Form(240),
     bg_threshold:    int        = Form(10),
-    post_process:    bool       = Form(False),
+    post_process:     bool       = Form(False),
+    alpha_threshold:  int        = Form(128),
+    mask_expand:      int        = Form(0),
+    feather:          int        = Form(0),
 ):
     raw = await file.read()
     img = Image.open(io.BytesIO(raw)).convert("RGBA")
@@ -71,6 +74,36 @@ async def api_remove(
         alpha_matting_background_threshold=bg_threshold,
         post_process_mask=post_process,
     )
+
+    # 1. Feather: blur the alpha mask for soft edges (before threshold)
+    if feather > 0:
+        r, g, b, alpha = result.split()
+        alpha = alpha.filter(ImageFilter.GaussianBlur(radius=feather))
+        result = Image.merge("RGBA", (r, g, b, alpha))
+
+    # 2. Alpha threshold: remap alpha curve without binarizing
+    # Shift the midpoint: low threshold keeps more (boosts alpha), high removes more (cuts alpha)
+    # Uses a levels remap: new_alpha = clamp((alpha - threshold) / (255 - threshold) * 255, 0, 255)
+    if alpha_threshold != 128:
+        r, g, b, alpha = result.split()
+        t = alpha_threshold
+        if t < 128:
+            # Keep more: boost low-alpha pixels up
+            alpha = alpha.point(lambda x: min(255, int(x * 255 / max(t, 1))))
+        else:
+            # Remove more: slide the ramp so only high-confidence pixels survive
+            alpha = alpha.point(lambda x: max(0, min(255, int((x - t) * 255 / max(255 - t, 1)))))
+        result = Image.merge("RGBA", (r, g, b, alpha))
+
+    # 3. Mask edge expand/shrink (negative = erode, positive = dilate)
+    if mask_expand != 0:
+        r, g, b, alpha = result.split()
+        kernel_size = 2 * abs(mask_expand) + 1
+        if mask_expand > 0:
+            alpha = alpha.filter(ImageFilter.MaxFilter(kernel_size))
+        else:
+            alpha = alpha.filter(ImageFilter.MinFilter(kernel_size))
+        result = Image.merge("RGBA", (r, g, b, alpha))
 
     # Save to disk
     ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
