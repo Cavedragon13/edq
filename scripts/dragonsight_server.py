@@ -302,10 +302,16 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(response)
 
 
-class ReuseTCPServer(socketserver.TCPServer):
-    """TCP server with SO_REUSEADDR enabled."""
+class ReuseTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    """TCP server with SO_REUSEADDR and per-request threads.
+
+    ThreadingMixIn is required so the 4 parallel Ollama requests from
+    Promise.all are handled concurrently instead of serially — without it,
+    requests 2-4 block behind request 1's full LLM inference time.
+    """
     allow_reuse_address = True
-    
+    daemon_threads = True  # threads exit cleanly when server shuts down
+
     def server_bind(self):
         """Set SO_REUSEADDR on socket before binding."""
         self.socket.setsockopt(socketserver.socket.SOL_SOCKET, socketserver.socket.SO_REUSEADDR, 1)

@@ -3,6 +3,7 @@
 **Principle:** The Python model/inference code is fine in every case. What's being replaced is only the Gradio wrapper — it gets swapped for a FastAPI backend + native HTML/JS frontend.
 
 **Pattern for every migration:**
+
 1. Extract inference functions (unchanged) into new `*_server.py`
 2. Expose via `POST /api/process` (multipart for files, JSON for config)
 3. Serve results as file downloads or JSON with base64/path
@@ -14,13 +15,13 @@
 
 ## Priority Order
 
-| # | Service | Port | Lines | Complexity | Main Gain |
-|---|---------|------|-------|------------|-----------|
-| 1 | Rembg | 8012 | 173 | Simple | Transparency checkerboard, before/after toggle |
-| 2 | Real-ESRGAN | 8010 | 353 | Low | Before/after comparison slider |
-| 3 | Dolphin Vision | 8025 | 275 | Medium | Proper chat bubbles + streaming feel |
-| 4 | Audio Processing Suite | 8026 | 339 | Medium | Waveform display, side-by-side original/processed |
-| 5 | Qwen3-Audiobook | 8014 | 482 | Hard | Chapter nav, per-chapter players, progress tracking |
+| #   | Service                | Port | Lines | Complexity | Main Gain                                           |
+| --- | ---------------------- | ---- | ----- | ---------- | --------------------------------------------------- |
+| 1   | Rembg                  | 8012 | 173   | Simple     | Transparency checkerboard, before/after toggle      |
+| 2   | Real-ESRGAN            | 8010 | 353   | Low        | Before/after comparison slider                      |
+| 3   | Dolphin Vision         | 8025 | 275   | Medium     | Proper chat bubbles + streaming feel                |
+| 4   | Audio Processing Suite | 8026 | 339   | Medium     | Waveform display, side-by-side original/processed   |
+| 5   | Qwen3-Audiobook        | 8014 | 482   | Hard       | Chapter nav, per-chapter players, progress tracking |
 
 ---
 
@@ -29,6 +30,7 @@
 **The issue:** Gradio's image output doesn't handle transparency well. You can't see whether the mask cut cleanly at the edges — the output looks like a white-background image until you save it.
 
 **What the native UI adds:**
+
 - Output previewed on a checkerboard background (transparency is visible immediately)
 - Before/after toggle (click to flip between original and removed)
 - One-click PNG download (with alpha, not flattened)
@@ -47,6 +49,7 @@
 **The issue:** No comparison between original and upscaled — you're guessing whether it actually improved. Gradio's image display also doesn't show dimensions clearly.
 
 **What the native UI adds:**
+
 - CSS drag-handle comparison slider (left = original, right = upscaled)
 - Dimension readout before/after (e.g., 512×512 → 2048×2048)
 - Model selector stays, face enhancement toggle stays
@@ -65,6 +68,7 @@
 **The issue:** Gradio's Chatbot component renders multi-turn conversation awkwardly when images are in the thread. The "uncensored" nature means you sometimes get long responses — Gradio truncates or wraps them badly.
 
 **What the native UI adds:**
+
 - Proper chat bubble layout (image thumbnails inline in your message)
 - Token streaming (characters appear as they generate, not all at once)
 - Copy button on each response
@@ -84,6 +88,7 @@
 **The issue:** Three tools (karaoke stems, vocal dereverb, ASR), but Gradio's tabs mean you can't see what's happening. No waveform — you upload and wait and hope. The stems output in particular needs waveform confirmation you separated correctly before you commit to downloading.
 
 **What the native UI adds:**
+
 - Waveform display for uploaded file (Web Audio API, no server needed)
 - After processing: side-by-side waveforms (original + each stem)
 - Inline playback for all outputs (vocal, instrumental, dereverbed)
@@ -101,6 +106,7 @@
 **The issue:** Converts a whole document to audio but presents it as one long task with a spinner. You can't preview chapter 3 without waiting for chapters 1-2. No way to re-generate just a chapter. No sense of where you are in the document.
 
 **What the native UI adds:**
+
 - Document upload → parse into chapters/sections (visible in sidebar)
 - Generate chapter-by-chapter with individual progress
 - Each completed chapter gets its own audio player (play, seek, download)
@@ -119,12 +125,14 @@
 ## Shared Notes
 
 **What doesn't change in any case:**
+
 - The venv (all dependencies stay the same)
 - Model file paths
 - Output directory (`~/ai_generated/...`)
 - The inference code itself
 
 **What always changes:**
+
 - `gr.Blocks` → FastAPI app
 - Gradio components → HTML form elements + fetch() calls
 - Gradio file I/O → multipart POST + file response
@@ -135,4 +143,4 @@
 
 ---
 
-*Plan written 2026-02-19. Tackle in order — each is independent.*
+_Plan written 2026-02-19. Tackle in order — each is independent._

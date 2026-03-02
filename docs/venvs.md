@@ -31,7 +31,9 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_dolphin_vision     | `/srv/containers/edq/venv_dolphin_vision`         | ~8GB   | `start_dolphin_vision.sh`     | Dolphin Vision 7B uncensored VLM (BunnyQwen2 architecture) |
 | venv_wan_1b             | `/srv/containers/edq/venv_wan_1b`                 | ~8GB   | `start_wan_1b.sh`             | Wan2.1-T2V-1.3B text-to-video (diffusers, port 8016)       |
 | venv_ltxvideo           | `/srv/containers/edq/venv_ltxvideo`               | ~10GB  | `start_ltxvideo.sh`           | LTX-Video-0.9.7-distilled T2V+I2V (diffusers, port 8028)   |
-| venv_dragonsong         | `/srv/containers/edq/venv_dragonsong`             | ~50MB  | `start_dragonsong.sh`         | Dragonsong - Google Lyria RealTime music (port 8029)        |
+| venv_dragonsong         | `/srv/containers/edq/venv_dragonsong`             | ~50MB  | `start_dragonsong.sh`         | Dragonsong - Google Lyria RealTime music (port 8029)       |
+| venv_lavasr             | `/srv/containers/edq/venv_lavasr`                 | ~2GB   | `start_lavasr.sh`             | LavaSR speech enhance + BWE upsample to 48kHz (port 8034)  |
+| venv_the_movies         | `/srv/containers/edq/venv_the_movies`             | ~50MB  | `start_the_movies.sh`         | The Movies AI film studio sim (port 8035)                  |
 
 ## MCP Server Venvs
 
@@ -94,3 +96,4 @@ When removing a project:
 | 2026-02-15 | Enhanced DragonFlux Klein - added FLUX.1-dev HD Mode as third model option                   |
 | 2026-02-18 | Added `venv_wan_1b` for Wan2.1-T2V-1.3B standalone video generation (port 8016)              |
 | 2026-02-18 | Added `venv_ltxvideo` for LTX-Video-0.9.7-distilled T2V+I2V standalone (port 8028)           |
+| 2026-03-01 | Added `venv_lavasr` for LavaSR speech enhancement + BWE upsampling to 48kHz (port 8034)      |

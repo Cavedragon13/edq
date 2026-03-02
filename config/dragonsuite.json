@@ -187,7 +187,7 @@
     {
       "id": "wan-1b",
       "name": "Wan2.1 T2V 1.3B",
-      "description": "Fast standalone text-to-video · 8GB VRAM · diffusers",
+      "description": "Fast standalone text-to-video \u00b7 8GB VRAM \u00b7 diffusers",
       "category": "video",
       "port": 8016,
       "path": null,
@@ -204,7 +204,7 @@
     {
       "id": "ltxvideo",
       "name": "LTX-Video 0.9.7",
-      "description": "Fast T2V + I2V · 7-step distilled · 3-pass upscale",
+      "description": "Fast T2V + I2V \u00b7 7-step distilled \u00b7 3-pass upscale",
       "category": "video",
       "port": 8028,
       "path": null,
@@ -333,7 +333,7 @@
     {
       "id": "dragonsong",
       "name": "Dragonsong",
-      "description": "Lyria RealTime Music — live prompting, blend, layer muting",
+      "description": "Lyria RealTime Music \u2014 live prompting, blend, layer muting",
       "category": "audio",
       "port": 8029,
       "path": "/",
@@ -590,9 +590,26 @@
       "stop_command": "pkill -f \"http.server 8027\" || true"
     },
     {
+      "id": "lavasr",
+      "name": "LavaSR",
+      "description": "Speech enhancement & audio upsampling to 48kHz \u2014 noise removal + BWE",
+      "category": "audio",
+      "port": 8034,
+      "path": null,
+      "icon": "&#127908;",
+      "launch_command": "bash scripts/start_lavasr.sh",
+      "project_path": null,
+      "features": [
+        "Denoise",
+        "Bandwidth Extension",
+        "48kHz output"
+      ],
+      "stop_command": "pkill -f lavasr_server.py || true"
+    },
+    {
       "id": "concert-shirt",
       "name": "Concert Shirt",
-      "description": "Upload tickets → AI extracts concerts → custom print-on-demand shirt",
+      "description": "Upload tickets \u2192 AI extracts concerts \u2192 custom print-on-demand shirt",
       "category": "automation",
       "port": 8033,
       "path": "/",
@@ -609,7 +626,7 @@
     {
       "id": "ollama",
       "name": "Ollama",
-      "description": "Local LLM inference — deepseek-r1, qwen3, llama3.2, qwen3-vl",
+      "description": "Local LLM inference \u2014 deepseek-r1, qwen3, llama3.2, qwen3-vl",
       "category": "llm",
       "port": 11434,
       "path": "/",
@@ -626,7 +643,7 @@
     {
       "id": "lm-studio",
       "name": "LM Studio",
-      "description": "OpenAI-compatible local inference — start from LM Studio app",
+      "description": "OpenAI-compatible local inference \u2014 start from LM Studio app",
       "category": "llm",
       "port": 1234,
       "path": "/",
@@ -642,7 +659,7 @@
     {
       "id": "dragonclawd",
       "name": "Dragonclawd",
-      "description": "Personal AI agent — Telegram bot for service control & AI pipelines",
+      "description": "Personal AI agent \u2014 Telegram bot for service control & AI pipelines",
       "category": "automation",
       "port": null,
       "path": null,
@@ -656,6 +673,24 @@
         "AI pipelines"
       ],
       "stop_command": "pkill -f dragonclawd_server.py || true"
+    },
+    {
+      "id": "the-movies",
+      "name": "The Movies",
+      "description": "AI film studio sim — cast, budget, and watch Veo-generated short films",
+      "category": "game",
+      "port": 8035,
+      "path": "/",
+      "icon": "&#127916;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_the_movies.sh",
+      "project_path": null,
+      "features": [
+        "Nano Banana 2",
+        "Veo 3.1",
+        "Lyria 3",
+        "Gemini 2.5"
+      ],
+      "stop_command": "pkill -f the_movies_server.py || true"
     }
   ],
   "categories": {

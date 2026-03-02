@@ -14,11 +14,12 @@ import base64
 import os
 from pathlib import Path
 from datetime import datetime
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 PORT = 8015
 DIST_DIR = Path("/srv/containers/edq/projects/dragonart-studio/dist")
 OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/dragonart-studio"))
+SESSIONS_DIR = OUTPUT_DIR / "sessions"
 
 
 class DragonArtHandler(http.server.BaseHTTPRequestHandler):
@@ -38,9 +39,30 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
 
     def do_GET(self):
-        """Serve static files from dist/"""
+        """Serve static files from dist/, or session ZIPs from sessions/"""
         # Parse path, remove query string
         path = urlparse(self.path).path
+
+        # Serve saved session ZIPs
+        if path.startswith('/sessions/'):
+            filename = path[len('/sessions/'):]
+            file_path = SESSIONS_DIR / filename
+            if not file_path.exists() or not file_path.is_file():
+                self.send_error(404, f"Session not found: {filename}")
+                return
+            try:
+                with open(file_path, 'rb') as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/zip')
+                self.send_header('Content-Length', len(content))
+                self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+            except Exception as e:
+                self._send_error(500, f"Error reading session: {str(e)}")
+            return
 
         if path == '/':
             path = '/index.html'
@@ -74,6 +96,8 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
             self._save_image()
         elif self.path == '/api/save-video':
             self._save_video()
+        elif self.path == '/api/save-session':
+            self._save_session()
         else:
             self._send_error(404, f"Unknown endpoint: {self.path}")
 
@@ -145,6 +169,42 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
             self._send_error(400, f"Invalid base64 data: {str(e)}")
         except Exception as e:
             self._send_error(500, f"Save failed: {str(e)}")
+
+    def _save_session(self):
+        """Save session ZIP to disk and return server URL for reliable download."""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length == 0:
+                self._send_error(400, "No data provided")
+                return
+
+            zip_bytes = self.rfile.read(content_length)
+
+            session_name = unquote(self.headers.get('X-Session-Name', 'session'))
+            SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            safe_name = "".join(c for c in session_name[:40] if c.isalnum() or c in ' -_').strip()
+            safe_name = safe_name.replace(' ', '_') or 'session'
+            filename = f"{safe_name}_{timestamp}.zip"
+
+            output_path = SESSIONS_DIR / filename
+            with open(output_path, 'wb') as f:
+                f.write(zip_bytes)
+
+            size_mb = len(zip_bytes) / 1024 / 1024
+            print(f"   Saved session: {filename} ({size_mb:.1f} MB)")
+
+            response = json.dumps({'success': True, 'filename': filename}).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(response)
+
+        except Exception as e:
+            self._send_error(500, f"Save session failed: {str(e)}")
 
     def _save_video(self):
         """Save video to disk."""
@@ -234,9 +294,10 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
         return types.get(ext, 'application/octet-stream')
 
 
-class ReuseTCPServer(socketserver.TCPServer):
-    """TCP server with address reuse enabled."""
+class ReuseTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    """TCP server with address reuse and per-request threading."""
     allow_reuse_address = True
+    daemon_threads = True
 
     def server_bind(self):
         self.socket.setsockopt(socketserver.socket.SOL_SOCKET,

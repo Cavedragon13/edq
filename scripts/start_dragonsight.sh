@@ -17,7 +17,7 @@ if ! curl -s --max-time 5 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
     echo "   Check with: snap services ollama"
     exit 1
 fi
-echo "✓ Ollama ready (qwen3-vl:8b for vision)"
+echo "✓ Ollama ready (qwen3.5:27b multimodal, qwen3-vl:8b fallback)"
 
 # Start Dragonsight 4 HTTP server (if not already running)
 if pgrep -f "dragonsight_server.py" > /dev/null; then
@@ -40,5 +40,5 @@ echo ""
 echo "✅ Dragonsight 4 ready"
 echo "   Local:  http://localhost:8080"
 echo "   LAN:    http://192.168.7.226:8080"
-echo "   Backend: Ollama (qwen3-vl:8b)"
+echo "   Backend: Ollama (qwen3.5:27b default, qwen3-vl:8b fallback)"
 echo "   Output: $OUTPUT_DIR"

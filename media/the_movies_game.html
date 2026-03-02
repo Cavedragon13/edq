@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE MOVIES</title>
+<style>
+:root {
+  --bg:          #080810;
+  --panel:       #10101e;
+  --card:        #18182c;
+  --card-hover:  #20203a;
+  --border:      #2a2a44;
+  --gold:        #d4a843;
+  --gold-dim:    #7a5f22;
+  --purple:      #7c3aed;
+  --purple-dim:  #3d1c75;
+  --text:        #e8e8f0;
+  --text-dim:    #8888aa;
+  --green:       #34d399;
+  --red:         #f87171;
+  --yellow:      #fbbf24;
+  --blue:        #60a5fa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Header ── */
+header {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+}
+.tier-badge {
+  background: var(--purple-dim);
+  color: #c4b5fd;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+.reputation-meters {
+  display: flex;
+  gap: 16px;
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+.rep-meter { display: flex; align-items: center; gap: 6px; }
+.rep-bar {
+  width: 60px;
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rep-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.rep-art .rep-fill  { background: var(--purple); }
+.rep-com .rep-fill  { background: var(--gold); }
+.header-stats {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* ── Steps indicator ── */
+.steps {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 16px 24px 0;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.step {
+  flex: 1;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  padding: 6px 4px;
+  border-bottom: 2px solid var(--border);
+  text-transform: uppercase;
+  transition: all 0.3s;
+  position: relative;
+}
+.step.active   { color: var(--gold); border-color: var(--gold); }
+.step.done     { color: var(--green); border-color: var(--green); }
+
+/* ── Layout ── */
+main { max-width: 720px; margin: 0 auto; padding: 28px 20px 60px; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── Cards / Sections ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+.section-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+.section-sub {
+  color: var(--text-dim);
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary {
+  background: var(--purple);
+  color: #fff;
+}
+.btn-primary:not(:disabled):hover { background: #6d28d9; }
+.btn-gold {
+  background: var(--gold);
+  color: #000;
+}
+.btn-gold:not(:disabled):hover { background: #c49933; }
+.btn-sm { padding: 7px 14px; font-size: 0.8rem; }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+/* ── Genre picker ── */
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.genre-btn {
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.genre-btn:hover   { border-color: var(--purple-dim); color: var(--text); }
+.genre-btn.selected {
+  border-color: var(--purple);
+  background: var(--purple-dim);
+  color: #c4b5fd;
+}
+
+/* ── Input ── */
+input[type=text] {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input[type=text]:focus { border-color: var(--purple); }
+
+/* ── Logline ── */
+.logline {
+  background: var(--panel);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+.scenes-list { margin-top: 12px; }
+.scene-item {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  align-items: flex-start;
+}
+.scene-item:last-child { border-bottom: none; }
+.scene-label {
+  background: var(--purple-dim);
+  color: #c4b5fd;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+.scene-desc { color: var(--text-dim); line-height: 1.5; }
+
+/* ── Casting ── */
+.role-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.role-portrait {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 2rem;
+  overflow: hidden;
+  position: relative;
+}
+.role-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.role-portrait .spinner { animation: spin 1s linear infinite; font-size: 1.5rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.role-info .role-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.role-info .actor-name {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.tier-options { display: flex; gap: 6px; flex-wrap: wrap; }
+.tier-opt {
+  flex: 1;
+  min-width: 80px;
+  padding: 8px 6px;
+  border-radius: 7px;
+  border: 2px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+.tier-opt:hover { border-color: var(--purple-dim); }
+.tier-opt.selected { border-color: var(--gold); background: var(--gold-dim); }
+.tier-letter {
+  font-size: 1.1rem;
+  font-weight: 800;
+  display: block;
+  color: var(--text);
+}
+.tier-opt.selected .tier-letter { color: var(--gold); }
+.tier-cost { font-size: 0.65rem; color: var(--text-dim); }
+.tier-effect { font-size: 0.6rem; color: var(--text-dim); margin-top: 1px; }
+.actor-stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+.stat { display: flex; align-items: center; gap: 4px; }
+.star { color: var(--gold); }
+
+/* ── Budget ── */
+.slider-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 50px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.slider-label { font-size: 0.8rem; font-weight: 600; }
+input[type=range] {
+  width: 100%;
+  accent-color: var(--purple);
+  cursor: pointer;
+}
+.slider-val { text-align: right; font-size: 0.85rem; font-weight: 700; color: var(--gold); }
+.budget-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+.budget-warn { color: var(--red); font-weight: 700; }
+.risk-indicator {
+  font-size: 0.72rem;
+  color: var(--yellow);
+  margin-top: 4px;
+}
+
+/* ── Modifier reveal ── */
+.modifier-card {
+  text-align: center;
+  padding: 32px;
+}
+.modifier-icon { font-size: 3rem; margin-bottom: 10px; }
+.modifier-name { font-size: 1.5rem; font-weight: 800; color: var(--gold); margin-bottom: 6px; }
+.modifier-effect { color: var(--text-dim); font-size: 0.9rem; }
+
+/* ── Production progress ── */
+.prod-status {
+  text-align: center;
+  padding: 40px 20px;
+}
+.clapboard { font-size: 4rem; margin-bottom: 16px; animation: shake 2s ease-in-out infinite; }
+@keyframes shake {
+  0%,100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+.prod-headline { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; }
+.prod-detail { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 24px; }
+.progress-bar {
+  background: var(--border);
+  border-radius: 6px;
+  height: 8px;
+  max-width: 300px;
+  margin: 0 auto 12px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--gold));
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+.progress-label { font-size: 0.75rem; color: var(--text-dim); }
+
+/* ── Screening ── */
+.video-wrapper {
+  position: relative;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+  margin-bottom: 12px;
+}
+.video-wrapper video { width: 100%; height: 100%; object-fit: cover; }
+.film-title-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.scene-counter {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+/* ── Results ── */
+.result-hero {
+  text-align: center;
+  padding: 32px 20px;
+}
+.outcome-badge {
+  display: inline-block;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  padding: 10px 28px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.box-office-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.box-office-label { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; }
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+.result-stat {
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.result-stat-value { font-size: 1.4rem; font-weight: 800; color: var(--gold); }
+.result-stat-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); margin-top: 2px; letter-spacing: 0.08em; }
+
+/* ── Sparrow award ── */
+.sparrow-award {
+  background: linear-gradient(135deg, #1a1200, #2a1e00);
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  margin-top: 16px;
+  display: none;
+}
+.sparrow-award.show { display: block; animation: glow 2s ease-in-out infinite alternate; }
+@keyframes glow { from { box-shadow: 0 0 10px var(--gold-dim); } to { box-shadow: 0 0 30px var(--gold); } }
+
+/* ── Error toast ── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #3f0f0f;
+  border: 1px solid var(--red);
+  color: var(--red);
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  max-width: 360px;
+  z-index: 1000;
+  display: none;
+}
+.toast.show { display: block; animation: slidein 0.3s ease; }
+@keyframes slidein { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Utility ── */
+.flex { display: flex; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.text-center { text-align: center; }
+.spinner-inline { display: inline-block; animation: spin 0.8s linear infinite; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎬 THE MOVIES</div>
+  <div class="tier-badge" id="tier-badge">Student Film</div>
+  <div class="reputation-meters">
+    <div class="rep-meter rep-art">
+      <span>🎨</span>
+      <div class="rep-bar"><div class="rep-fill" id="rep-art-fill" style="width:0%"></div></div>
+      <span id="rep-art-val">0</span>
+    </div>
+    <div class="rep-meter rep-com">
+      <span>💰</span>
+      <div class="rep-bar"><div class="rep-fill" id="rep-com-fill" style="width:0%"></div></div>
+      <span id="rep-com-val">0</span>
+    </div>
+  </div>
+  <div class="header-stats" id="header-stats">Films: 0 &nbsp;|&nbsp; B.O.: $0</div>
+</header>
+
+<div class="steps">
+  <div class="step" id="step-concept">Concept</div>
+  <div class="step" id="step-casting">Casting</div>
+  <div class="step" id="step-budget">Budget</div>
+  <div class="step" id="step-production">Produce</div>
+  <div class="step" id="step-screening">Screen</div>
+  <div class="step" id="step-results">Results</div>
+</div>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 1: CONCEPT
+═══════════════════════════════════════════════════════ -->
+<section class="screen active" id="screen-concept">
+  <div class="section-title">New Film</div>
+  <div class="section-sub">What's the story?</div>
+
+  <div class="card">
+    <div class="card-title">Film Title</div>
+    <input type="text" id="film-title" placeholder="Enter your film title…" maxlength="60">
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="generateTitle()">🎲 Random Title</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Genre</div>
+    <div class="genre-grid" id="genre-grid">
+      <button class="genre-btn" onclick="selectGenre(this,'Drama')">🎭 Drama</button>
+      <button class="genre-btn" onclick="selectGenre(this,'Action')">💥 Action</button>
+      <button class="genre-btn" onclick="selectGenre(this,'Comedy')">😂 Comedy</button>
+      <button class="genre-btn" onclick="selectGenre(this,'Holiday')">🎄 Holiday</button>
+      <button class="genre-btn" onclick="selectGenre(this,'Prestige')">🏆 Prestige</button>
+      <button class="genre-btn" onclick="selectGenre(this,'Experimental')">🌀 Experimental</button>
+    </div>
+  </div>
+
+  <div class="card" id="logline-card" style="display:none">
+    <div class="card-title">Logline</div>
+    <div class="logline" id="logline-text"></div>
+    <div class="scenes-list" id="scenes-list"></div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="regenerateConcept()">🔄 Regenerate</button>
+    </div>
+  </div>
+
+  <div class="flex gap-8" style="justify-content:space-between; margin-top:8px;">
+    <button class="btn btn-primary" id="btn-generate-concept" onclick="generateConcept()" disabled>
+      ✨ Generate Concept
+    </button>
+    <button class="btn btn-gold" id="btn-to-casting" onclick="goToCasting()" disabled>
+      Cast Roles →
+    </button>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 2: CASTING
+═══════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-casting">
+  <div class="section-title">Casting</div>
+  <div class="section-sub">Assemble your cast. Select tier, then watch your cast take shape.</div>
+
+  <div id="casting-roles"></div>
+
+  <div class="flex gap-8" style="justify-content:space-between; margin-top:8px;">
+    <button class="btn btn-ghost" onclick="goToScreen('concept')">← Back</button>
+    <button class="btn btn-gold" id="btn-to-budget" onclick="goToBudget()" disabled>
+      Allocate Budget →
+    </button>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 3: BUDGET
+═══════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-budget">
+  <div class="section-title">Budget</div>
+  <div class="section-sub" id="budget-sub"></div>
+
+  <div class="card">
+    <div class="card-title">Allocate Your Budget</div>
+
+    <div class="slider-row">
+      <div class="slider-label">🎭 Cast</div>
+      <input type="range" id="sl-cast" min="0" max="100" value="25" oninput="updateBudget()">
+      <div class="slider-val" id="sv-cast">25%</div>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label">🎨 Sets</div>
+      <input type="range" id="sl-sets" min="0" max="100" value="25" oninput="updateBudget()">
+      <div class="slider-val" id="sv-sets">25%</div>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label">🎵 Music</div>
+      <input type="range" id="sl-music" min="0" max="100" value="25" oninput="updateBudget()">
+      <div class="slider-val" id="sv-music">25%</div>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label">📢 Promotion</div>
+      <input type="range" id="sl-promo" min="0" max="100" value="25" oninput="updateBudget()">
+      <div class="slider-val" id="sv-promo">25%</div>
+    </div>
+
+    <div class="budget-total" id="budget-total-row">
+      <span>Total allocated</span>
+      <span id="budget-total-pct">100%</span>
+    </div>
+    <div id="budget-risks"></div>
+  </div>
+
+  <div class="flex gap-8" style="justify-content:space-between; margin-top:8px;">
+    <button class="btn btn-ghost" onclick="goToScreen('casting')">← Back</button>
+    <button class="btn btn-gold" onclick="startModifierReveal()">
+      🎬 Roll Production →
+    </button>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 4a: MODIFIER REVEAL
+═══════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-modifier">
+  <div class="section-title text-center">Production Report</div>
+  <div class="section-sub text-center">Word from the lot…</div>
+  <div class="card modifier-card" id="modifier-reveal-card">
+    <div id="modifier-reveal-content">
+      <div style="font-size:3rem; animation:spin 0.5s linear infinite">🎲</div>
+      <div style="color:var(--text-dim);margin-top:12px;">Rolling the dice…</div>
+    </div>
+  </div>
+  <div class="text-center mt-16" id="modifier-next" style="display:none">
+    <button class="btn btn-gold" onclick="startProduction()">
+      🎬 Begin Production
+    </button>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 4b: PRODUCTION (loading)
+═══════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-production">
+  <div class="prod-status">
+    <div class="clapboard">🎬</div>
+    <div class="prod-headline" id="prod-headline">Cameras rolling…</div>
+    <div class="prod-detail" id="prod-detail">Setting up Scene 1</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="prod-progress" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="prod-progress-label">0 / ? scenes filmed</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 5: SCREENING
+═══════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-screening">
+  <div class="section-title">Premiere Night</div>
+  <div class="section-sub" id="screening-title-line"></div>
+
+  <div class="video-wrapper">
+    <video id="main-video" playsinline></video>
+    <div class="film-title-overlay" id="film-overlay"></div>
+  </div>
+
+  <div class="scene-counter" id="scene-counter">Scene 1 of 1</div>
+
+  <!-- Hidden audio for Lyria score -->
+  <audio id="score-audio" loop></audio>
+
+  <div class="text-align:center; margin-top:16px;">
+    <button class="btn btn-gold" style="width:100%" onclick="goToResults()">
+      📊 See Box Office Results →
+    </button>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCREEN 6: RESULTS
+═══════════════════════════════════════════════════════ -->
+<section class="screen" id="screen-results">
+  <div class="section-title">Box Office</div>
+
+  <div class="card result-hero">
+    <div class="outcome-badge" id="outcome-badge"></div>
+    <div class="box-office-number" id="bo-number"></div>
+    <div class="box-office-label">Opening Weekend</div>
+    <div class="result-stats">
+      <div class="result-stat">
+        <div class="result-stat-value" id="rs-quality">—</div>
+        <div class="result-stat-label">Film Quality</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-value" id="rs-roi">—</div>
+        <div class="result-stat-label">ROI</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-value" id="rs-season">—</div>
+        <div class="result-stat-label">Season</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Reputation Gained</div>
+    <div id="rep-gains" style="font-size:0.9rem;line-height:1.8;color:var(--text-dim)"></div>
+  </div>
+
+  <div class="sparrow-award" id="sparrow-award">
+    <div style="font-size:2rem;margin-bottom:8px;">🏆</div>
+    <div style="font-weight:800;font-size:1.2rem;color:var(--gold);margin-bottom:4px">Sparrow Award Winner!</div>
+    <div id="sparrow-category" style="color:var(--text-dim);font-size:0.9rem"></div>
+  </div>
+
+  <div class="flex gap-12 mt-24" style="justify-content:center;">
+    <button class="btn btn-gold" onclick="makeAnotherFilm()">🎬 Make Another Film</button>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="error-toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const TIERS = {
+  student:  { name: 'Student Film',     scenes: 1, budget: 500000,    slots: ['lead'] },
+  indie:    { name: 'Indie Production', scenes: 3, budget: 2000000,   slots: ['lead', 'lead', 'support'] },
+  director: { name: 'Director',         scenes: 4, budget: 5000000,   slots: ['lead', 'lead', 'support', 'support'] },
+  producer: { name: 'Producer',         scenes: 5, budget: 10000000,  slots: ['lead', 'lead', 'support', 'support', 'villain'] },
+  auteur:   { name: 'Auteur',           scenes: 6, budget: 20000000,  slots: ['lead', 'lead', 'support', 'support', 'villain', 'support'] },
+};
+
+const TIER_COSTS = { A: 0.40, B: 0.25, C: 0.15 }; // fraction of total budget
+
+const TIER_STATS = {
+  A: { skill: () => 80 + Math.floor(Math.random()*16), stars: 2, label: 'A-List',       effect: 'Raises quality floor' },
+  B: { skill: () => 60 + Math.floor(Math.random()*21), stars: 1, label: 'Working Actor', effect: 'Balanced' },
+  C: { skill: () => 40 + Math.floor(Math.random()*26), stars: 0, label: 'Newcomer',      effect: 'High variance' },
+};
+
+const MODIFIERS = [
+  { name: 'Smooth Production',    emoji: '✅', effect: '+5 quality',            qualityDelta:  5, desc: 'Everything went like clockwork.' },
+  { name: 'Inspired Chaos',       emoji: '🌪️', effect: '+20 or −5 quality',     qualityDelta: () => Math.random() > 0.5 ? 20 : -5, desc: 'The set was a beautiful disaster.' },
+  { name: 'Troubled Shoot',       emoji: '😤', effect: '−15 quality',           qualityDelta: -15, desc: 'Drama behind the camera, not just in front.' },
+  { name: 'Breakout Performance', emoji: '⭐', effect: '+15 quality',           qualityDelta: 15, desc: 'Someone just became a star.' },
+  { name: 'Weak Script',          emoji: '📝', effect: '−10 quality',           qualityDelta: -10, desc: 'Even the best cast can\'t save bad pages.' },
+  { name: 'Audience Buzz',        emoji: '📣', effect: '1.5× box office',       qualityDelta:  3, desc: 'Word of mouth is spreading before release.' },
+];
+
+const SEASONAL_FIT = {
+  Drama:        { Q1: 0.8,  Q2: 0.7,  Q3: 0.9,  Q4: 1.2  },
+  Action:       { Q1: 0.7,  Q2: 1.3,  Q3: 0.9,  Q4: 0.9  },
+  Comedy:       { Q1: 0.9,  Q2: 1.2,  Q3: 1.1,  Q4: 1.0  },
+  Holiday:      { Q1: 0.5,  Q2: 0.7,  Q3: 1.3,  Q4: 1.5  },
+  Prestige:     { Q1: 0.8,  Q2: 0.7,  Q3: 0.9,  Q4: 1.3  },
+  Experimental: { Q1: 1.0,  Q2: 1.0,  Q3: 1.0,  Q4: 1.0  },
+};
+
+const FIRST_NAMES = ['Maya','Devon','Isabelle','Marco','Zara','Kai','Luna','Rex',
+  'Sasha','Jordan','Vera','Dante','Aria','Cole','Nadia','Flynn','Rose','Ash',
+  'Sierra','Orion','Celeste','Marcus','Elena','Blake'];
+const LAST_NAMES = ['Chen','Blackwood','Moreau','Winters','Voss','Sterling',
+  'Cross','Holloway','Drake','Rivers','Knight','Fox','Stone','Wells','Crane',
+  'Ashton','March','Daye','Vance','Thornton','Layne','Rowe'];
+
+const TITLE_ADJECTIVES = ['Crimson','Eternal','Shattered','Hollow','Burning',
+  'Distant','Golden','Silent','Midnight','Savage','Tender','Final'];
+const TITLE_NOUNS = ['Echo','Horizon','Reckoning','Promise','Shadow','Tide',
+  'Legacy','Cipher','Ghost','Signal','Heart','Requiem'];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════════════════════════
+
+const state = {
+  // Progression (persisted)
+  films_made: 0,
+  box_office_total: 0,
+  sparrow_wins: 0,
+  rep_art: 0,
+  rep_com: 0,
+
+  // Current film
+  title: '',
+  genre: '',
+  tier_key: 'student',
+  tier: null,
+  logline: '',
+  scenes: [],      // [{label, description}]
+  cast: [],        // [{role_type, tier, actor_name, skill, stars, portrait_data}]
+  budget: { cast: 25, sets: 25, music: 25, promotion: 25 },
+  modifier: null,
+  job_id: null,
+  clip_urls: [],
+  score_url: null,
+  current_clip: 0,
+  film_quality: 0,
+  box_office: 0,
+};
+
+function loadProgress() {
+  const saved = localStorage.getItem('the_movies_progress');
+  if (saved) {
+    const p = JSON.parse(saved);
+    state.films_made     = p.films_made || 0;
+    state.box_office_total = p.box_office_total || 0;
+    state.sparrow_wins   = p.sparrow_wins || 0;
+    state.rep_art        = p.rep_art || 0;
+    state.rep_com        = p.rep_com || 0;
+  }
+}
+
+function saveProgress() {
+  localStorage.setItem('the_movies_progress', JSON.stringify({
+    films_made:     state.films_made,
+    box_office_total: state.box_office_total,
+    sparrow_wins:   state.sparrow_wins,
+    rep_art:        state.rep_art,
+    rep_com:        state.rep_com,
+  }));
+}
+
+function getTierKey() {
+  const f = state.films_made, b = state.box_office_total, s = state.sparrow_wins;
+  if (f >= 10 || s >= 2)         return 'auteur';
+  if (f >= 7 || b >= 100000000)  return 'producer';
+  if (f >= 4 || b >= 50000000)   return 'director';
+  if (f >= 2)                    return 'indie';
+  return 'student';
+}
+
+function updateHeader() {
+  const tk = getTierKey();
+  document.getElementById('tier-badge').textContent = TIERS[tk].name;
+
+  const artPct = Math.min(100, state.rep_art);
+  const comPct = Math.min(100, state.rep_com);
+  document.getElementById('rep-art-fill').style.width = artPct + '%';
+  document.getElementById('rep-com-fill').style.width = comPct + '%';
+  document.getElementById('rep-art-val').textContent  = state.rep_art;
+  document.getElementById('rep-com-val').textContent  = state.rep_com;
+  document.getElementById('header-stats').textContent =
+    `Films: ${state.films_made}  |  B.O.: ${fmtMoney(state.box_office_total)}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCREEN NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SCREENS = ['concept','casting','budget','modifier','production','screening','results'];
+const STEP_SCREENS = ['concept','casting','budget','production','screening','results'];
+
+function goToScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+
+  // Update step indicators (skip modifier, it's internal to production)
+  const stepIdx = STEP_SCREENS.indexOf(name);
+  STEP_SCREENS.forEach((s, i) => {
+    const el = document.getElementById('step-' + s);
+    if (!el) return;
+    el.classList.remove('active','done');
+    if (i < stepIdx) el.classList.add('done');
+    else if (i === stepIdx) el.classList.add('active');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONCEPT SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+function randomName(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generateTitle() {
+  document.getElementById('film-title').value =
+    `${randomName(TITLE_ADJECTIVES)} ${randomName(TITLE_NOUNS)}`;
+  checkConceptReady();
+}
+
+function selectGenre(el, genre) {
+  document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  state.genre = genre;
+  checkConceptReady();
+}
+
+function checkConceptReady() {
+  const hasTitle = document.getElementById('film-title').value.trim().length > 0;
+  const hasGenre = !!state.genre;
+  document.getElementById('btn-generate-concept').disabled = !(hasTitle && hasGenre);
+}
+
+document.getElementById('film-title').addEventListener('input', checkConceptReady);
+
+async function generateConcept() {
+  const title = document.getElementById('film-title').value.trim();
+  if (!title || !state.genre) return;
+
+  state.title = title;
+  state.tier_key = getTierKey();
+  state.tier = TIERS[state.tier_key];
+
+  const btn = document.getElementById('btn-generate-concept');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-inline">⏳</span> Writing…';
+
+  try {
+    const resp = await api('/api/concept', {
+      title, genre: state.genre, num_scenes: state.tier.scenes
+    });
+
+    state.logline = resp.logline;
+    state.scenes  = resp.scenes;
+
+    document.getElementById('logline-text').textContent = resp.logline;
+
+    const sceneList = document.getElementById('scenes-list');
+    sceneList.innerHTML = resp.scenes.map(sc => `
+      <div class="scene-item">
+        <span class="scene-label">${sc.label}</span>
+        <span class="scene-desc">${sc.description}</span>
+      </div>
+    `).join('');
+
+    document.getElementById('logline-card').style.display = 'block';
+    document.getElementById('btn-to-casting').disabled = false;
+
+  } catch(e) {
+    showError(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✨ Generate Concept';
+  }
+}
+
+function regenerateConcept() {
+  document.getElementById('btn-to-casting').disabled = true;
+  document.getElementById('logline-card').style.display = 'none';
+  generateConcept();
+}
+
+function goToCasting() {
+  buildCastingScreen();
+  goToScreen('casting');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CASTING SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+function randActorName(used) {
+  let name;
+  do {
+    name = `${randomName(FIRST_NAMES)} ${randomName(LAST_NAMES)}`;
+  } while(used.has(name));
+  used.add(name);
+  return name;
+}
+
+function buildCastingScreen() {
+  const slots = state.tier.slots;
+  const budget = state.tier.budget;
+  const usedNames = new Set();
+
+  // Build 3 actors per slot (one per tier)
+  state.cast = slots.map((role_type, idx) => {
+    const actors = ['A','B','C'].map(t => ({
+      tier: t,
+      actor_name: randActorName(usedNames),
+      skill: TIER_STATS[t].skill(),
+      stars: TIER_STATS[t].stars,
+      cost: Math.round(budget * TIER_COSTS[t]),
+      portrait_data: null,
+      loading: false,
+    }));
+    return { role_type, idx, actors, selected: null };
+  });
+
+  const container = document.getElementById('casting-roles');
+  container.innerHTML = state.cast.map((slot, i) => {
+    const roleLabel = slot.role_type === 'lead' ? 'Lead Actor' :
+                      slot.role_type === 'support' ? 'Supporting Role' : 'Villain';
+    return `
+    <div class="role-card" id="role-card-${i}">
+      <div class="role-portrait" id="portrait-${i}">🎭</div>
+      <div class="role-info">
+        <div class="role-label">${roleLabel} ${slot.role_type === 'lead' && i > 0 ? '#' + (i+1) : ''}</div>
+        <div class="actor-name" id="actor-name-${i}">Select an actor</div>
+        <div class="tier-options">
+          ${slot.actors.map((a, ti) => `
+            <button class="tier-opt" id="tier-opt-${i}-${ti}" onclick="selectActor(${i},${ti})">
+              <span class="tier-letter">${a.tier}</span>
+              <div class="tier-cost">${fmtMoney(a.cost)}</div>
+              <div class="tier-effect">${TIER_STATS[a.tier].effect}</div>
+            </button>
+          `).join('')}
+        </div>
+        <div class="actor-stats" id="actor-stats-${i}" style="display:none">
+          <span class="stat">🎬 Skill: <b id="stat-skill-${i}">—</b></span>
+          <span class="stat" id="stat-stars-${i}"></span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateCastingNext();
+}
+
+async function selectActor(slotIdx, actorIdx) {
+  const slot = state.cast[slotIdx];
+  const actor = slot.actors[actorIdx];
+
+  // Visual: mark selected
+  ['A','B','C'].forEach((_, ti) => {
+    document.getElementById(`tier-opt-${slotIdx}-${ti}`)?.classList.remove('selected');
+  });
+  document.getElementById(`tier-opt-${slotIdx}-${actorIdx}`).classList.add('selected');
+
+  slot.selected = actorIdx;
+  document.getElementById(`actor-name-${slotIdx}`).textContent = actor.actor_name;
+
+  const statsEl = document.getElementById(`actor-stats-${slotIdx}`);
+  statsEl.style.display = 'flex';
+  document.getElementById(`stat-skill-${slotIdx}`).textContent = actor.skill;
+  document.getElementById(`stat-stars-${slotIdx}`).innerHTML =
+    '⭐'.repeat(actor.stars) || '<span style="color:var(--text-dim)">—</span>';
+
+  // Generate portrait (don't block UI)
+  if (!actor.portrait_data) {
+    const portraitEl = document.getElementById(`portrait-${slotIdx}`);
+    portraitEl.innerHTML = '<span class="spinner">⏳</span>';
+    try {
+      const res = await api('/api/portrait', {
+        role_type: slot.role_type,
+        tier: actor.tier,
+        genre: state.genre,
+        actor_name: actor.actor_name,
+      });
+      actor.portrait_data = res.portrait_data;
+      // Only show if this actor is still selected
+      if (slot.selected === actorIdx) {
+        portraitEl.innerHTML = `<img src="${res.portrait_data}" alt="${actor.actor_name}">`;
+      }
+    } catch(e) {
+      portraitEl.innerHTML = '🎭';
+    }
+  } else {
+    document.getElementById(`portrait-${slotIdx}`).innerHTML =
+      `<img src="${actor.portrait_data}" alt="${actor.actor_name}">`;
+  }
+
+  updateCastingNext();
+}
+
+function updateCastingNext() {
+  const allSelected = state.cast.every(s => s.selected !== null);
+  document.getElementById('btn-to-budget').disabled = !allSelected;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUDGET SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+function goToBudget() {
+  document.getElementById('budget-sub').textContent =
+    `Total Budget: ${fmtMoney(state.tier.budget)}`;
+  updateBudget();
+  goToScreen('budget');
+}
+
+function updateBudget() {
+  const keys = ['cast','sets','music','promotion'];
+  const ids   = ['sl-cast','sl-sets','sl-music','sl-promo'];
+  const vals  = ['sv-cast','sv-sets','sv-music','sv-promo'];
+
+  keys.forEach((k, i) => {
+    const v = parseInt(document.getElementById(ids[i]).value);
+    state.budget[k] = v;
+    document.getElementById(vals[i]).textContent = v + '%';
+  });
+
+  const total = keys.reduce((s,k) => s + state.budget[k], 0);
+  const totalEl = document.getElementById('budget-total-pct');
+  const rowEl   = document.getElementById('budget-total-row');
+  totalEl.textContent = total + '%';
+  if (total > 100) {
+    totalEl.classList.add('budget-warn');
+    rowEl.style.borderLeft = '3px solid var(--red)';
+  } else {
+    totalEl.classList.remove('budget-warn');
+    rowEl.style.borderLeft = '';
+  }
+
+  // Risk indicators
+  const risks = [];
+  if (state.budget.sets < 20)   risks.push('⚠️ Underfunded sets — expect production issues');
+  if (state.budget.music < 15)  risks.push('⚠️ Underfunded music — soundtrack may suffer');
+  if (state.budget.promotion < 10) risks.push('⚠️ Low promotion — limited opening weekend reach');
+
+  document.getElementById('budget-risks').innerHTML =
+    risks.map(r => `<div class="risk-indicator">${r}</div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODIFIER REVEAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+function startModifierReveal() {
+  goToScreen('modifier');
+  const card = document.getElementById('modifier-reveal-content');
+  card.innerHTML = '<div style="font-size:3rem;animation:spin 0.5s linear infinite">🎲</div><div style="color:var(--text-dim);margin-top:12px">Word from the lot…</div>';
+  document.getElementById('modifier-next').style.display = 'none';
+
+  setTimeout(() => {
+    const m = MODIFIERS[Math.floor(Math.random() * MODIFIERS.length)];
+    state.modifier = m;
+    const delta = typeof m.qualityDelta === 'function' ? m.qualityDelta() : m.qualityDelta;
+    state.modifier._delta = delta;
+
+    card.innerHTML = `
+      <div class="modifier-icon">${m.emoji}</div>
+      <div class="modifier-name">${m.name}</div>
+      <div class="modifier-effect" style="margin-bottom:12px">${m.effect}</div>
+      <div style="color:var(--text-dim);font-style:italic;font-size:0.85rem">"${m.desc}"</div>
+    `;
+    document.getElementById('modifier-next').style.display = 'block';
+  }, 1800);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PRODUCTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+const PROD_MESSAGES = [
+  'Setting up lighting…', 'Rolling cameras…', 'Directing the scene…',
+  'Talent hitting their marks…', 'Last shot of the day…', 'That's a wrap!'
+];
+
+async function startProduction() {
+  goToScreen('production');
+
+  // Build produce request
+  const selectedCast = state.cast.map(slot => {
+    const a = slot.actors[slot.selected];
+    return { role_type: slot.role_type, tier: a.tier, actor_name: a.actor_name };
+  });
+
+  try {
+    const res = await api('/api/produce', {
+      title: state.title,
+      genre: state.genre,
+      scenes: state.scenes,
+      cast: selectedCast,
+      budget: state.budget,
+      modifier: state.modifier.name,
+      num_scenes: state.tier.scenes,
+    });
+    state.job_id = res.job_id;
+    pollProduction();
+  } catch(e) {
+    showError('Failed to start production: ' + e.message);
+    goToScreen('budget');
+  }
+}
+
+let pollTimer = null;
+
+async function pollProduction() {
+  if (!state.job_id) return;
+  try {
+    const job = await apiFetch('/api/job/' + state.job_id);
+    const total = job.total || state.tier.scenes;
+    const prog  = job.progress || 0;
+    const pct   = total > 0 ? (prog / total) * 100 : 0;
+
+    document.getElementById('prod-progress').style.width = pct + '%';
+    document.getElementById('prod-progress-label').textContent =
+      `${prog} / ${total} scenes filmed`;
+
+    const status = job.status;
+    if (status === 'filming') {
+      const sc = job.current_scene || 1;
+      document.getElementById('prod-headline').textContent = `Filming Scene ${sc}…`;
+      document.getElementById('prod-detail').textContent =
+        PROD_MESSAGES[Math.min(sc - 1, PROD_MESSAGES.length - 1)];
+    } else if (status === 'recording_score') {
+      document.getElementById('prod-headline').textContent = 'Scoring the film…';
+      document.getElementById('prod-detail').textContent = 'Lyria is composing your soundtrack';
+    } else if (status === 'complete') {
+      state.clip_urls  = job.clip_urls.filter(Boolean);
+      state.score_url  = job.score_url;
+      document.getElementById('prod-progress').style.width = '100%';
+      document.getElementById('prod-progress-label').textContent = 'Production complete!';
+      document.getElementById('prod-headline').textContent = 'That\'s a wrap! 🎉';
+      setTimeout(goToScreening, 1200);
+      return;
+    } else if (status === 'error') {
+      showError('Production failed: ' + (job.error || 'Unknown error'));
+      return;
+    }
+
+    pollTimer = setTimeout(pollProduction, 5000);
+  } catch(e) {
+    showError('Production status error: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCREENING
+// ═══════════════════════════════════════════════════════════════════════════
+
+function goToScreening() {
+  goToScreen('screening');
+  document.getElementById('screening-title-line').textContent =
+    `"${state.title}" — World Premiere`;
+  document.getElementById('film-overlay').textContent = state.title;
+
+  // Start Lyria score
+  const scoreAudio = document.getElementById('score-audio');
+  if (state.score_url) {
+    scoreAudio.src = state.score_url;
+    scoreAudio.volume = 0.4;
+    scoreAudio.play().catch(() => {});
+  }
+
+  // Play clips in sequence
+  state.current_clip = 0;
+  playNextClip();
+}
+
+function playNextClip() {
+  const video = document.getElementById('main-video');
+  const clips  = state.clip_urls;
+
+  if (state.current_clip >= clips.length) return;
+
+  const counter = document.getElementById('scene-counter');
+  counter.textContent = `Scene ${state.current_clip + 1} of ${clips.length}`;
+
+  video.src = clips[state.current_clip];
+  video.play().catch(() => {});
+  video.onended = () => {
+    state.current_clip++;
+    if (state.current_clip < clips.length) {
+      playNextClip();
+    } else {
+      // All clips done; keep score playing
+      video.src = clips[clips.length - 1]; // hold on last frame
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getCurrentSeason() {
+  const m = new Date().getMonth() + 1;
+  if (m <= 3)  return 'Q1';
+  if (m <= 6)  return 'Q2';
+  if (m <= 9)  return 'Q3';
+  return 'Q4';
+}
+
+function calculateFilmQuality() {
+  const selectedCast = state.cast.map(s => s.actors[s.selected]);
+  const avgSkill = selectedCast.reduce((sum, a) => sum + a.skill, 0) / selectedCast.length;
+  const setsBonus = (state.budget.sets / 100) * 15;
+  const delta = state.modifier._delta || 0;
+  return Math.min(100, Math.max(5, Math.round(avgSkill * 0.6 + setsBonus + delta)));
+}
+
+function calculateStarPower() {
+  return state.cast.reduce((sum, s) => sum + s.actors[s.selected].stars, 0);
+}
+
+function goToResults() {
+  // Stop score
+  document.getElementById('score-audio').pause();
+
+  const quality    = calculateFilmQuality();
+  const stars      = calculateStarPower();
+  const season     = getCurrentSeason();
+  const fit        = SEASONAL_FIT[state.genre]?.[season] ?? 1.0;
+  const promoMult  = 0.5 + (state.budget.promotion / 100) * 1.5;
+  const starMult   = 0.7 + stars * 0.12;
+  const mktFactor  = 0.7 + Math.random() * 0.6;
+  const buzzBonus  = state.modifier.name === 'Audience Buzz' ? 1.5 : 1.0;
+  const baseBO     = state.tier.budget * (quality / 50);
+  const boxOffice  = Math.round(baseBO * promoMult * fit * starMult * mktFactor * buzzBonus);
+
+  state.film_quality = quality;
+  state.box_office   = boxOffice;
+
+  // Outcome
+  const roi = boxOffice / state.tier.budget;
+  let outcome;
+  if (roi < 0.5)      outcome = { name: 'FLOP',        color: '#f87171', emoji: '💸' };
+  else if (roi < 1.5) outcome = { name: 'BREAK EVEN',  color: '#fbbf24', emoji: '📊' };
+  else if (roi < 3.0) outcome = { name: 'HIT',          color: '#34d399', emoji: '🎯' };
+  else                outcome = { name: 'BLOCKBUSTER',   color: '#818cf8', emoji: '🚀' };
+
+  // Reputation gains
+  const artGain = Math.round((quality - 50) / 10);
+  const comGain = Math.round((roi - 1.0) * 5);
+
+  state.rep_art        = Math.max(0, Math.min(100, state.rep_art + artGain));
+  state.rep_com        = Math.max(0, Math.min(100, state.rep_com + comGain));
+  state.box_office_total += boxOffice;
+  state.films_made++;
+
+  // Sparrow award check
+  const sparrowEl   = document.getElementById('sparrow-award');
+  const sparrowCat  = document.getElementById('sparrow-category');
+  let wonSparrow = false;
+  if (roi >= 3.0) {
+    wonSparrow = true;
+    state.sparrow_wins++;
+    sparrowEl.classList.add('show');
+    sparrowCat.textContent = '🏆 Best Picture — ' + state.title;
+  } else if (quality >= 85) {
+    state.sparrow_wins++;
+    sparrowEl.classList.add('show');
+    sparrowCat.textContent = '🎭 Best Performance — for a breakout turn';
+  } else {
+    sparrowEl.classList.remove('show');
+  }
+
+  saveProgress();
+  updateHeader();
+
+  // Render results
+  const badgeEl = document.getElementById('outcome-badge');
+  badgeEl.textContent = `${outcome.emoji} ${outcome.name}`;
+  badgeEl.style.background = outcome.color + '22';
+  badgeEl.style.color = outcome.color;
+  badgeEl.style.border = `2px solid ${outcome.color}`;
+
+  document.getElementById('bo-number').textContent = fmtMoney(boxOffice);
+  document.getElementById('rs-quality').textContent = quality + '/100';
+  document.getElementById('rs-roi').textContent     = roi.toFixed(1) + '×';
+  document.getElementById('rs-season').textContent  = season;
+
+  const repGainsEl = document.getElementById('rep-gains');
+  const lines = [];
+  if (artGain > 0)  lines.push(`<span style="color:var(--green)">+${artGain}</span> Artistic Reputation — quality recognized`);
+  if (artGain < 0)  lines.push(`<span style="color:var(--red)">${artGain}</span> Artistic Reputation`);
+  if (comGain > 0)  lines.push(`<span style="color:var(--green)">+${comGain}</span> Commercial Reputation — strong returns`);
+  if (comGain < 0)  lines.push(`<span style="color:var(--red)">${comGain}</span> Commercial Reputation`);
+  if (lines.length === 0) lines.push('No significant reputation movement.');
+  repGainsEl.innerHTML = lines.join('<br>');
+
+  goToScreen('results');
+}
+
+function makeAnotherFilm() {
+  // Reset film state (keep progression)
+  state.title = '';
+  state.genre = '';
+  state.logline = '';
+  state.scenes = [];
+  state.cast = [];
+  state.budget = { cast: 25, sets: 25, music: 25, promotion: 25 };
+  state.modifier = null;
+  state.job_id = null;
+  state.clip_urls = [];
+  state.score_url = null;
+  state.current_clip = 0;
+
+  // Reset concept UI
+  document.getElementById('film-title').value = '';
+  document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('logline-card').style.display = 'none';
+  document.getElementById('btn-to-casting').disabled = true;
+  document.getElementById('btn-generate-concept').disabled = true;
+
+  // Reset sliders
+  ['sl-cast','sl-sets','sl-music','sl-promo'].forEach(id => {
+    document.getElementById(id).value = 25;
+  });
+
+  goToScreen('concept');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITY
+// ═══════════════════════════════════════════════════════════════════════════
+
+function fmtMoney(n) {
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n/1e3).toFixed(0) + 'K';
+  return '$' + n;
+}
+
+async function api(path, body) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
+}
+
+async function apiFetch(path) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(res.statusText);
+  return res.json();
+}
+
+function showError(msg) {
+  const toast = document.getElementById('error-toast');
+  toast.textContent = '❌ ' + msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 5000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+loadProgress();
+updateHeader();
+goToScreen('concept');
+</script>
+</body>
+</html>

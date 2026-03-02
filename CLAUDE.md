@@ -59,11 +59,13 @@ This is a personal AI development environment focused on video generation, visio
 | 8026  | Audio Processing Suite | On-demand (GPU)    | Karaoke/dereverb/ASR from SoulX-Singer models         |
 | 8027  | AudioMass Editor       | On-demand          | Web audio editor (Audacity-like, client-side)         |
 | 8028  | LTX-Video 0.9.7        | On-demand (GPU)    | Standalone T2V+I2V, 7-step distilled, 3-pass upscale  |
-| 8029  | Dragonsong             | On-demand          | Lyria RealTime music - live prompt steering, record    |
-| 8030  | Horse Racing v2        | On-demand          | Win/Place/Show betting, parlay tickets, AI opponents   |
-| 8031  | Interactive Games      | On-demand          | Survival Series, Lunar Reckoning, text adventures      |
-| 8032  | M.U.L.E.               | On-demand          | Economic strategy game, tribute to Dani Bunten Berry   |
-| 8033  | Concert Shirt          | On-demand          | Ticket OCR → concert list → print-on-demand shirt      |
+| 8029  | Dragonsong             | On-demand          | Lyria RealTime music - live prompt steering, record   |
+| 8030  | Horse Racing v2        | On-demand          | Win/Place/Show betting, parlay tickets, AI opponents  |
+| 8031  | Interactive Games      | On-demand          | Survival Series, Lunar Reckoning, text adventures     |
+| 8032  | M.U.L.E.               | On-demand          | Economic strategy game, tribute to Dani Bunten Berry  |
+| 8033  | Concert Shirt          | On-demand          | Ticket OCR → concert list → print-on-demand shirt     |
+| 8034  | LavaSR                 | On-demand (GPU)    | Speech enhance + BWE upsample to 48kHz                |
+| 8035  | The Movies             | On-demand          | AI film studio — Nano Banana 2 + Veo 3.1 + Lyria 3    |
 | 8888  | Jupyter (reserved)     | Future             | -                                                     |
 | 11434 | Ollama API             | Always-on (snap)   | -                                                     |
 
