@@ -419,6 +419,7 @@ input[type=range] {
   font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: 0.05em;
+  pointer-events: none;
 }
 .scene-counter {
   font-size: 0.75rem;
@@ -686,7 +687,7 @@ input[type=range] {
   <div class="section-sub" id="screening-title-line"></div>
 
   <div class="video-wrapper">
-    <video id="main-video" playsinline></video>
+    <video id="main-video" playsinline controls></video>
     <div class="film-title-overlay" id="film-overlay"></div>
   </div>
 
@@ -695,8 +696,8 @@ input[type=range] {
   <!-- Hidden audio for Lyria score -->
   <audio id="score-audio" loop></audio>
 
-  <div class="text-align:center; margin-top:16px;">
-    <button class="btn btn-gold" style="width:100%" onclick="goToResults()">
+  <div style="margin-top:16px; display:flex; gap:12px;">
+    <button class="btn btn-gold" style="flex:1" onclick="goToResults()">
       📊 See Box Office Results →
     </button>
   </div>
@@ -739,7 +740,8 @@ input[type=range] {
     <div id="sparrow-category" style="color:var(--text-dim);font-size:0.9rem"></div>
   </div>
 
-  <div class="flex gap-12 mt-24" style="justify-content:center;">
+  <div class="flex gap-12 mt-24" style="justify-content:center; gap:12px;">
+    <button class="btn" style="background:var(--purple-dim);color:#c4b5fd;" onclick="replayScreening()">🎞 Watch Again</button>
     <button class="btn btn-gold" onclick="makeAnotherFilm()">🎬 Make Another Film</button>
   </div>
 </section>
@@ -882,6 +884,14 @@ const SCREENS = ['concept','casting','budget','modifier','production','screening
 const STEP_SCREENS = ['concept','casting','budget','production','screening','results'];
 
 function goToScreen(name) {
+  // Stop screening playback when navigating away
+  if (name !== 'screening') {
+    const scoreAudio = document.getElementById('score-audio');
+    if (scoreAudio) { scoreAudio.pause(); scoreAudio.currentTime = 0; }
+    const video = document.getElementById('main-video');
+    if (video) { video.pause(); }
+  }
+
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
 
@@ -1164,7 +1174,7 @@ function startModifierReveal() {
 
 const PROD_MESSAGES = [
   'Setting up lighting…', 'Rolling cameras…', 'Directing the scene…',
-  'Talent hitting their marks…', 'Last shot of the day…', 'That's a wrap!'
+  'Talent hitting their marks…', 'Last shot of the day…', "That's a wrap!"
 ];
 
 async function startProduction() {
@@ -1246,17 +1256,29 @@ function goToScreening() {
     `"${state.title}" — World Premiere`;
   document.getElementById('film-overlay').textContent = state.title;
 
-  // Start Lyria score
+  // Reset video element cleanly before reuse
+  const video = document.getElementById('main-video');
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+
+  // Reset and start Lyria score
   const scoreAudio = document.getElementById('score-audio');
+  scoreAudio.pause();
+  scoreAudio.currentTime = 0;
   if (state.score_url) {
     scoreAudio.src = state.score_url;
     scoreAudio.volume = 0.4;
     scoreAudio.play().catch(() => {});
   }
 
-  // Play clips in sequence
+  // Play clips in sequence from the top
   state.current_clip = 0;
   playNextClip();
+}
+
+function replayScreening() {
+  goToScreening();
 }
 
 function playNextClip() {
@@ -1269,15 +1291,14 @@ function playNextClip() {
   counter.textContent = `Scene ${state.current_clip + 1} of ${clips.length}`;
 
   video.src = clips[state.current_clip];
-  video.play().catch(() => {});
+  video.load();
+  video.play().catch(e => console.warn('clip play failed:', e));
   video.onended = () => {
     state.current_clip++;
     if (state.current_clip < clips.length) {
       playNextClip();
-    } else {
-      // All clips done; keep score playing
-      video.src = clips[clips.length - 1]; // hold on last frame
     }
+    // Last clip ended — browser holds last frame naturally; score keeps playing
   };
 }
 

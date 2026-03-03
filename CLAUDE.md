@@ -301,6 +301,43 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 
 See [Development Best Practices](docs/organization-principles.md#development-best-practices) for detailed examples.
 
+### Syntax-Check Before Declaring Done (SOP — 2026-03-02)
+
+**ALWAYS run a syntax check on every code file before saying it's ready.** Visual review misses things like unescaped apostrophes in JS strings and backslash escapes inside Python f-string expressions.
+
+```bash
+# Python
+python3 -m py_compile scripts/my_script.py
+
+# HTML — check all embedded <script> blocks
+python3 -c "
+import re, sys
+src = open('media/my_app.html').read()
+blocks = re.findall(r'<script[^>]*>(.*?)</script>', src, re.DOTALL)
+for i, b in enumerate(blocks):
+    try:
+        compile(b, f'block_{i}', 'exec')
+    except SyntaxError as e:
+        print(f'Block {i}: {e}')
+        sys.exit(1)
+print('OK')
+" && node -e "
+const fs = require('fs');
+const src = fs.readFileSync('media/my_app.html', 'utf8');
+const blocks = [...src.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+blocks.forEach((b,i)=>{try{new Function(b)}catch(e){console.error('Block '+i+':',e.message);process.exit(1)}});
+console.log('JS OK');
+"
+
+# Standalone JS
+node --check file.js
+```
+
+Common traps caught by this check:
+
+- `'That's a wrap!'` — unescaped apostrophe in single-quoted JS string → breaks entire `<script>` block
+- `f"path/{datetime.now().strftime(\"%Y%m%d\")}"` — backslash escape in f-string expression → invalid Python 3.12+
+
 ## Web Development Standards
 
 ### Dark Mode Requirements

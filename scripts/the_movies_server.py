@@ -5,14 +5,13 @@ FastAPI server handling all Gemini API calls.
 
 Port: 8035
 APIs:
-  Gemini 2.5 Flash (gemini-2.5-flash-latest)   — logline + scene breakdown
+  Gemini 2.5 Flash (gemini-2.5-flash)           — logline + scene breakdown
   Nano Banana 2   (gemini-3.1-flash-image-preview) — character portraits
-  Veo 3.1         (veo-3.1-generate-preview)    — scene video clips
+  Veo 3.1 fast    (veo-3.1-fast-generate-preview) — scene video clips (4/6/8s; generate_audio is Vertex-only)
   Lyria 3         (models/lyria-realtime-exp)   — film score (via v1alpha)
 
-Model naming note: gemini-2.5-flash supports the -latest alias which auto-tracks
-the current stable release (with 2-week change notice). The other models are in
-preview/experimental and don't have -latest variants; we use their specific IDs.
+Model naming note: gemini-2.5-flash has no -latest suffix; gemini-flash-latest is
+the family-wide alias. Preview/experimental models use their full versioned IDs.
 
 Auth: GOOGLE_API_KEY from /srv/containers/edq/.env
 """
@@ -51,20 +50,20 @@ lyria_client = genai.Client(
 )
 
 # ── Model constants ───────────────────────────────────────────────────────────
-# gemini-2.5-flash-latest: uses -latest alias, auto-tracks stable release
-# (Google provides 2-week email notice before the alias moves to a new version)
+# gemini-2.5-flash: no -latest alias for 2.5 series (gemini-flash-latest is
+# the family-wide alias, not version-specific). Use plain ID for 2.5 Flash.
 #
-# The other models are preview/experimental and do not have a -latest alias;
-# they use their full versioned IDs until GA graduation.
-MODEL_TEXT  = "gemini-2.5-flash-latest"           # Logline, scene descriptions
-MODEL_IMAGE = "gemini-3.1-flash-image-preview"    # Nano Banana 2 — character portraits
-MODEL_VIDEO = "veo-3.1-generate-preview"           # Veo 3.1 — scene video clips
-MODEL_MUSIC = "models/lyria-realtime-exp"          # Lyria 3 — film score
+# The image/video/music models are preview/experimental and use their full
+# versioned IDs until GA graduation.
+MODEL_TEXT  = "gemini-2.5-flash"                   # Logline, scene descriptions
+MODEL_IMAGE = "gemini-3.1-flash-image-preview"     # Nano Banana 2 — character portraits
+MODEL_VIDEO = "veo-3.1-fast-generate-preview"      # Veo 3.1 fast (4/6/8s clips; generate_audio is Vertex-only)
+MODEL_MUSIC = "models/lyria-realtime-exp"           # Lyria 3 — film score
 
 PORT = 8035
 MEDIA_DIR = Path("/srv/containers/edq/media")
-OUTPUT_DIR = Path("/tmp/the_movies")
-OUTPUT_DIR.mkdir(exist_ok=True)
+OUTPUT_DIR = Path("/home/edq/ai_generated/the_movies")
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="The Movies")
 jobs: dict = {}
@@ -135,9 +134,17 @@ MODIFIER_MOOD = {
 async def serve_ui():
     return FileResponse(MEDIA_DIR / "the_movies_game.html")
 
-@app.get("/generated/{filename}")
-async def serve_generated(filename: str):
-    path = OUTPUT_DIR / filename
+def title_slug(title: str) -> str:
+    """First two words of title, lowercased, joined with underscore."""
+    words = title.strip().split()[:2]
+    return '_'.join(w.lower() for w in words if w) or "film"
+
+@app.get("/generated/{filepath:path}")
+async def serve_generated(filepath: str):
+    path = (OUTPUT_DIR / filepath).resolve()
+    # Safety: must stay within OUTPUT_DIR
+    if not str(path).startswith(str(OUTPUT_DIR.resolve())):
+        raise HTTPException(403, "Access denied")
     if not path.exists():
         raise HTTPException(404, "File not found")
     return FileResponse(path)
@@ -203,21 +210,30 @@ async def generate_portrait(req: PortraitRequest):
         f"high contrast, sharp focus. No text, no watermarks, photorealistic."
     )
 
-    response = client.models.generate_images(
+    # gemini-3.1-flash-image-preview uses generateContent with IMAGE modality,
+    # not the Imagen generate_images API.
+    response = client.models.generate_content(
         model=MODEL_IMAGE,
-        prompt=prompt,
-        config=types.GenerateImagesConfig(
-            number_of_images=1,
-            aspect_ratio="1:1",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
         )
     )
 
-    if not response.generated_images:
+    candidates = response.candidates or []
+    if not candidates or not candidates[0].content.parts:
         raise HTTPException(500, "No portrait generated")
 
-    image_bytes = response.generated_images[0].image.image_bytes
-    b64 = base64.b64encode(image_bytes).decode()
-    return {"portrait_data": f"data:image/png;base64,{b64}"}
+    image_part = next(
+        (p for p in candidates[0].content.parts if getattr(p, 'inline_data', None)),
+        None
+    )
+    if not image_part:
+        raise HTTPException(500, "No image part in portrait response")
+
+    mime = image_part.inline_data.mime_type or "image/png"
+    b64 = base64.b64encode(image_part.inline_data.data).decode()
+    return {"portrait_data": f"data:{mime};base64,{b64}"}
 
 
 @app.post("/api/produce")
@@ -245,7 +261,7 @@ async def get_job(job_id: str):
 
 # ── Production pipeline ───────────────────────────────────────────────────────
 
-async def generate_score(job_id: str, genre: str, modifier: str, film_duration: float):
+async def generate_score(job_id: str, genre: str, modifier: str, film_duration: float, job_dir: Path):
     """Record Lyria RealTime audio for film_duration seconds, save as WAV."""
     try:
         base_prompt = GENRE_MUSIC.get(genre, "cinematic film score")
@@ -275,8 +291,7 @@ async def generate_score(job_id: str, genre: str, modifier: str, film_duration: 
             jobs[job_id]["score_url"] = None
             return
 
-        score_filename = f"score_{job_id}.wav"
-        score_path = OUTPUT_DIR / score_filename
+        score_path = job_dir / "score.wav"
 
         with wave.open(str(score_path), 'wb') as wav_file:
             wav_file.setnchannels(2)
@@ -285,18 +300,33 @@ async def generate_score(job_id: str, genre: str, modifier: str, film_duration: 
             for chunk in audio_chunks:
                 wav_file.writeframes(chunk)
 
-        jobs[job_id]["score_url"] = f"/generated/{score_filename}"
+        jobs[job_id]["score_url"] = f"/generated/{job_dir.name}/score.wav"
 
     except Exception as e:
         jobs[job_id]["score_url"] = None
         print(f"[score] Error: {e}")
 
 
+GENRE_AUDIO = {
+    "Drama":        "soft orchestral swell, ambient room tone, subtle emotional underscore",
+    "Action":       "tires screeching, gunshots, rapid footsteps, debris crashing",
+    "Comedy":       "light upbeat background music, laughter, playful sound effects",
+    "Holiday":      "warm festive ambient music, gentle wind, fireplace crackling",
+    "Prestige":     "quiet contemplative atmosphere, distant city hum, sparse piano notes",
+    "Experimental": "unsettling ambient drone, distorted electronic sounds, eerie silence",
+}
+
 def sync_generate_clip(description: str, genre: str, scene_label: str, output_path: str):
-    """Synchronous Veo clip generation (runs in thread executor)."""
+    """Synchronous Veo clip generation (runs in thread executor).
+
+    Veo 3.x generates audio automatically — include SFX, ambient, and dialogue
+    cues directly in the prompt. No generate_audio parameter needed or supported.
+    """
+    audio_cue = GENRE_AUDIO.get(genre, "cinematic ambient sound design")
     prompt = (
         f"{genre} film, {scene_label} scene: {description} "
-        f"Cinematic cinematography, film grain, professional lighting."
+        f"Cinematic cinematography, film grain, professional lighting. "
+        f"Audio: {audio_cue}."
     )
 
     operation = client.models.generate_videos(
@@ -306,7 +336,6 @@ def sync_generate_clip(description: str, genre: str, scene_label: str, output_pa
             duration_seconds=8,
             aspect_ratio="16:9",
             number_of_videos=1,
-            generate_audio=True,   # Veo 3.1 native scene audio
         )
     )
 
@@ -314,10 +343,22 @@ def sync_generate_clip(description: str, genre: str, scene_label: str, output_pa
         time.sleep(10)
         operation = client.operations.get(operation)
 
-    if not operation.response.generated_videos:
+    # SDK uses operation.result (not .response) per google-genai tests
+    if not operation.result.generated_videos:
         raise ValueError("No video returned by Veo")
 
-    operation.response.generated_videos[0].video.save(output_path)
+    video = operation.result.generated_videos[0].video
+    if video.video_bytes:
+        # Inline bytes path
+        video.save(output_path)
+    elif video.uri:
+        # URI path — Gemini API file URIs require the API key to download
+        import urllib.request
+        sep = '&' if '?' in video.uri else '?'
+        auth_uri = f"{video.uri}{sep}key={GOOGLE_API_KEY}"
+        urllib.request.urlretrieve(auth_uri, output_path)
+    else:
+        raise ValueError("Veo returned video with neither bytes nor URI")
 
 
 async def run_production(job_id: str, req: ProduceRequest):
@@ -325,12 +366,17 @@ async def run_production(job_id: str, req: ProduceRequest):
     try:
         jobs[job_id]["status"] = "starting"
 
+        # Per-movie output directory: first_two_words_<job8>/
+        slug = title_slug(req.title)
+        job_dir = OUTPUT_DIR / f"{slug}_{job_id[:8]}"
+        job_dir.mkdir(parents=True, exist_ok=True)
+
         film_duration = req.num_scenes * 8.0  # 8 sec per Veo clip
 
         # Start Lyria score recording concurrently with Veo generation.
         # Lyria records for film_duration seconds; Veo clips are generated in sequence.
         score_task = asyncio.create_task(
-            generate_score(job_id, req.genre, req.modifier, film_duration)
+            generate_score(job_id, req.genre, req.modifier, film_duration, job_dir)
         )
 
         clip_urls: list = []
@@ -340,8 +386,7 @@ async def run_production(job_id: str, req: ProduceRequest):
             jobs[job_id]["status"] = "filming"
             jobs[job_id]["current_scene"] = i + 1
 
-            clip_filename = f"clip_{job_id}_{i}.mp4"
-            clip_path = str(OUTPUT_DIR / clip_filename)
+            clip_path = str(job_dir / f"clip_{i}.mp4")
 
             try:
                 await loop.run_in_executor(
@@ -352,7 +397,7 @@ async def run_production(job_id: str, req: ProduceRequest):
                     scene.label,
                     clip_path,
                 )
-                clip_urls.append(f"/generated/{clip_filename}")
+                clip_urls.append(f"/generated/{job_dir.name}/clip_{i}.mp4")
             except Exception as e:
                 print(f"[clip {i}] Error: {e}")
                 clip_urls.append(None)

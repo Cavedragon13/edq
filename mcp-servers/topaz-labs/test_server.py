@@ -119,7 +119,8 @@ def main():
         print(f"\nLog file location:")
         from pathlib import Path
         from datetime import datetime
-        print(f"  {Path(__file__).parent / 'logs' / f'topaz_mcp_{datetime.now().strftime(\"%Y%m%d\")}.log'}")
+        datestamp = datetime.now().strftime('%Y%m%d')
+        print(f"  {Path(__file__).parent / 'logs' / f'topaz_mcp_{datestamp}.log'}")
     else:
         print("\n⚠️  Some tests failed. Fix issues above and re-run.")
         sys.exit(1)

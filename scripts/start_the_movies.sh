@@ -12,7 +12,7 @@ SERVER="/srv/containers/edq/scripts/the_movies_server.py"
 echo "🎬 The Movies (Working Title)"
 echo "=============================="
 echo "AI-powered film studio simulation"
-echo "APIs: Gemini 2.5 Flash · Nano Banana 2 · Veo 3.1 · Lyria 3"
+echo "APIs: Gemini 2.5 Flash · Nano Banana 2 · Veo 3.1 fast · Lyria 3"
 echo ""
 
 # Create venv if needed
