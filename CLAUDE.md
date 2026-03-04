@@ -119,6 +119,7 @@ This is a personal AI development environment focused on video generation, visio
 - **Hunyuan3D-2** (8007) - Image to 3D mesh generation
 - **MCP Inspector** (8020) - Security auditing for MCP servers
 - **Dragonart Studio** (8015) - 70+ AI image transformation modes (React app)
+- **Topaz Labs AI** (MCP-only, no port) - Cloud image enhancement, 21 verified models. Ask Claude to enhance; uses `topaz_enhance_image` / `topaz_enhance_generative` tools. GitHub: [Cavedragon13/topaz-labs-mcp](https://github.com/Cavedragon13/topaz-labs-mcp)
 - **Pinokio** - Cross-platform launcher framework
 
 ## Common Development Tasks

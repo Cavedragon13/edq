@@ -137,20 +137,21 @@
     {
       "id": "topaz-labs",
       "name": "Topaz Labs AI",
-      "description": "Professional Enhancement - Upscale, Sharpen, Denoise, Restore",
+      "description": "Cloud AI Enhancement — use via Claude MCP (ask Claude to enhance an image)",
       "category": "image",
-      "port": 8019,
+      "port": null,
       "path": null,
       "icon": "&#11088;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_topaz_labs.sh",
+      "launch_command": null,
       "project_path": null,
       "features": [
-        "Enhance 1-4x",
-        "Sharpen",
-        "Denoise",
-        "Restore"
+        "21 verified models",
+        "Upscale / Sharpen / Denoise",
+        "Colorize / Restore",
+        "Generative (Bloom, Reimagine, Wonder 2)",
+        "Use via Claude: topaz_enhance_image tool"
       ],
-      "stop_command": "pkill -f \"topaz_labs_gradio.py\" || true"
+      "stop_command": null
     },
     {
       "id": "dragonart-studio",
