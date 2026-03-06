@@ -48,7 +48,7 @@
       "description": "Advanced reasoning and chain-of-thought capabilities"
     },
     "supabase": {
-      "command": "npx",
+      "command": "/srv/containers/edq/scripts/npx-node20.sh",
       "args": ["-y", "@supabase/mcp-server-supabase", "--access-token", "${SUPABASE_ACCESS_TOKEN}"],
       "description": "Database operations with Supabase"
     },
