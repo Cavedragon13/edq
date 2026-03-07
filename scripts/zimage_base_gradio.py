@@ -734,6 +734,7 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=8011,
         share=False,
+        show_error=True,
         favicon_path="/srv/containers/edq/media/favicons/zimage.svg",
         css=custom_css
     )
