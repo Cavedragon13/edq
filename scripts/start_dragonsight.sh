@@ -10,14 +10,19 @@ echo ""
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
-# Verify Ollama is responding (runs via snap, auto-starts on boot)
-if ! curl -s --max-time 5 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
-    echo "❌ ERROR: Ollama not responding on port 11434"
-    echo "   Ollama should be running via snap (auto-starts on boot)"
-    echo "   Check with: snap services ollama"
-    exit 1
+# Verify Ollama is responding; auto-start if not
+if ! curl -s --max-time 3 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
+    echo "⚙️  Ollama not responding, attempting to start..."
+    systemctl start ollama 2>/dev/null || true
+    sleep 4
+    if curl -s --max-time 3 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
+        echo "✓ Ollama started successfully (qwen3-vl:8b default VLM)"
+    else
+        echo "⚠️  Ollama not available — use Gemini or LM Studio backends in the UI"
+    fi
+else
+    echo "✓ Ollama ready (qwen3-vl:8b default VLM)"
 fi
-echo "✓ Ollama ready (qwen3.5:27b multimodal, qwen3-vl:8b fallback)"
 
 # Start Dragonsight 4 HTTP server (if not already running)
 if pgrep -f "dragonsight_server.py" > /dev/null; then
@@ -40,5 +45,5 @@ echo ""
 echo "✅ Dragonsight 4 ready"
 echo "   Local:  http://localhost:8080"
 echo "   LAN:    http://192.168.7.226:8080"
-echo "   Backend: Ollama (qwen3.5:27b default, qwen3-vl:8b fallback)"
+echo "   Backend: Ollama (qwen3-vl:8b default VLM), Gemini, LM Studio"
 echo "   Output: $OUTPUT_DIR"

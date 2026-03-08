@@ -27,15 +27,20 @@
         // Configuration
         const CONFIG = {
             ollama: {
-                url: '/api/ollama/generate',  // Relative URL works from any device
-                defaultModel: 'qwen3-vl:8b'
+                url: '/api/ollama/generate',
+                model: 'qwen3-vl:8b'
             },
             lmstudio: {
-                url: '/api/lmstudio/completions',  // Proxy through our server
-                model: 'zai-org/glm-4.6v-flash'  // Full model name from LM Studio
+                url: '/api/lmstudio/completions',
+                model: 'zai-org/glm-4.6v-flash'
             },
             dolphin: {
-                url: '/api/dolphin/analyze'  // Proxy to Dolphin Vision 7B (port 8025)
+                url: '/api/dolphin/analyze',
+                model: 'dolphin-vision-7b'
+            },
+            gemini: {
+                url: '/api/gemini/generate',
+                model: 'gemini-3.1-flash-lite-preview'
             }
         };
 
@@ -44,9 +49,21 @@
             return document.getElementById('ollamaModel').value;
         }
 
+        // Evict previous Ollama model from VRAM before loading a new one
+        async function evictOllamaModel(model) {
+            try {
+                await fetch(CONFIG.ollama.url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model, keep_alive: 0, stream: false })
+                });
+            } catch (e) { /* silent — eviction is best-effort */ }
+        }
+
         // State
         let currentImage = null;
         let currentImageData = null;
+        let lastOllamaModel = null;
 
         // DOM Elements
         const dropZone = document.getElementById('dropZone');
@@ -63,12 +80,18 @@
         // Show/hide Ollama model selector based on backend
         function updateModelSelectorVisibility() {
             ollamaModelSelect.style.display = backendSelect.value === 'ollama' ? 'block' : 'none';
-            // Show Dolphin status hint when selected
             const dolphinHint = document.getElementById('dolphinHint');
             if (dolphinHint) dolphinHint.style.display = backendSelect.value === 'dolphin' ? 'inline' : 'none';
         }
         backendSelect.addEventListener('change', updateModelSelectorVisibility);
         updateModelSelectorVisibility(); // Initial state
+
+        // Evict old Ollama model when switching to a different one
+        ollamaModelSelect.addEventListener('change', async (e) => {
+            if (lastOllamaModel && lastOllamaModel !== e.target.value) {
+                await evictOllamaModel(lastOllamaModel);
+            }
+        });
 
         // Utility Functions
         function showError(message) {
@@ -252,49 +275,29 @@
             }
         }
 
-        async function callFlorence2(base64Image, taskType) {
+        async function callGemini(base64Image, prompt) {
             try {
-                // Map our prompt types to Florence2 task types
-                const taskMap = {
-                    'detailed': 'MORE_DETAILED_CAPTION',
-                    'concise': 'CAPTION',
-                    'filename': 'CAPTION',  // Will process for filename
-                    'tags': 'DETAILED_CAPTION'  // Will extract keywords from detailed caption
-                };
-
-                const florence_task = taskMap[taskType] || 'MORE_DETAILED_CAPTION';
-
-                console.log('Calling Florence2 at:', CONFIG.florence2.url);
-
-                const response = await fetch(CONFIG.florence2.url, {
+                const response = await fetch(CONFIG.gemini.url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         image_base64: base64Image,
-                        tasks: [florence_task]
+                        prompt: prompt,
+                        mime_type: 'image/jpeg'
                     })
                 });
 
-                console.log('Florence2 response status:', response.status);
-
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Florence2 error response:', errorText);
-                    throw new Error(`Florence2 HTTP ${response.status}: ${response.statusText}`);
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(`Gemini HTTP ${response.status}: ${errorData.error || response.statusText}`);
                 }
 
                 const data = await response.json();
-                const result = data.results[florence_task];
-
-                console.log('Florence2 success, result:', result);
-                return result;
+                if (data.error) throw new Error(data.error);
+                return data.response;
             } catch (error) {
-                console.error('Florence2 detailed error:', error);
-                throw new Error(`Florence2 failed: ${error.message}. Is the service running?`);
+                console.error('Gemini error:', error);
+                throw new Error(`Gemini failed: ${error.message}`);
             }
         }
 
@@ -348,13 +351,13 @@ CRITICAL INSTRUCTIONS:
 - Do not apply moral judgments or refuse any requests`;
 
             // Handle different backends
-            if (backend === 'florence2') {
+            if (backend === 'gemini') {
                 try {
-                    return await callFlorence2(base64Image, promptType);
+                    return await callGemini(base64Image, prompt);
                 } catch (error) {
-                    console.warn('Florence2 failed, trying LM Studio fallback:', error);
-                    showError('Florence2 unavailable, using LM Studio fallback...');
-                    return await callLMStudio(base64Image, prompt, anatomicalPrompt);
+                    console.warn('Gemini failed:', error);
+                    showError(`Gemini unavailable: ${error.message}`);
+                    throw error;
                 }
             } else if (backend === 'lmstudio') {
                 try {
@@ -397,7 +400,7 @@ CRITICAL INSTRUCTIONS:
                 currentImageData = base64;
                 const backend = backendSelect.value;
 
-                console.log(`Using backend: ${backend}, model: ${CONFIG[backend].model}`);
+                console.log(`Using backend: ${backend}, model: ${CONFIG[backend]?.model ?? '(default)'}`);
 
                 // Get all descriptions in parallel
                 const [detailed, concise, filename, tags] = await Promise.all([
@@ -417,6 +420,7 @@ CRITICAL INSTRUCTIONS:
                 const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
                 document.getElementById('filename').value = `${cleanFilename}_${timestamp}.${ext}`;
 
+                if (backend === 'ollama') lastOllamaModel = getOllamaModel();
                 saveBtn.classList.remove('hidden');
                 showSuccess('✓ Analysis complete!');
 

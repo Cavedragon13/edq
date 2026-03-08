@@ -1,6 +1,23 @@
 {
   "services": [
     {
+      "id": "mercury2",
+      "name": "Mercury2 Diffusion Chat",
+      "description": "Inception Labs diffusion LLM — watch tokens crystallize from noise",
+      "category": "llm",
+      "port": 8036,
+      "path": "/",
+      "icon": "&#9879;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_mercury2.sh",
+      "project_path": null,
+      "features": [
+        "Diffusion LLM",
+        "Live Streaming",
+        "Token Crystallization"
+      ],
+      "stop_command": "pkill -f \"mercury2_server.py\" || true"
+    },
+    {
       "id": "dragonsight4",
       "name": "Dragonsight 4",
       "description": "Vision AI + Smart Naming + Metadata",

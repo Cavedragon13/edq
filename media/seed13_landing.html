@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seed 13 — Art from my brain to your eyes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;900&family=Cormorant:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #03030a;
+      --deep: #07071a;
+      --violet: #c084fc;
+      --electric: #a78bfa;
+      --cyan: #22d3ee;
+      --amber: #fbbf24;
+      --rose: #fb7185;
+      --text: #e2d9f3;
+      --muted: #8b7aa8;
+      --card-bg: rgba(255,255,255,0.03);
+      --card-border: rgba(255,255,255,0.07);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'Cormorant', Georgia, serif;
+      font-weight: 300;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ── Custom cursor ── */
+    .cursor {
+      position: fixed;
+      width: 8px; height: 8px;
+      background: var(--violet);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, background 0.2s, opacity 0.2s;
+      mix-blend-mode: screen;
+    }
+    .cursor.large {
+      width: 40px; height: 40px;
+      background: transparent;
+      border: 1px solid var(--violet);
+      opacity: 0.6;
+    }
+
+    /* ── Nebula background ── */
+    .nebula {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.18;
+      animation: drift linear infinite;
+    }
+    .orb-1 {
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, #7c3aed, transparent 70%);
+      top: -200px; left: -100px;
+      animation-duration: 40s;
+    }
+    .orb-2 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #0891b2, transparent 70%);
+      top: 30%; right: -150px;
+      animation-duration: 55s;
+      animation-direction: reverse;
+    }
+    .orb-3 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #dc2626, transparent 70%);
+      bottom: 20%; left: 10%;
+      animation-duration: 48s;
+    }
+    .orb-4 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, #065f46, transparent 70%);
+      bottom: -200px; right: 20%;
+      animation-duration: 62s;
+      animation-direction: reverse;
+    }
+    .orb-5 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, #b45309, transparent 70%);
+      top: 60%; left: 40%;
+      animation-duration: 35s;
+    }
+    @keyframes drift {
+      0%   { transform: translate(0, 0) rotate(0deg); }
+      25%  { transform: translate(60px, -40px) rotate(90deg); }
+      50%  { transform: translate(30px, 70px) rotate(180deg); }
+      75%  { transform: translate(-50px, 20px) rotate(270deg); }
+      100% { transform: translate(0, 0) rotate(360deg); }
+    }
+
+    /* Noise grain overlay */
+    .nebula::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 24px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(3,3,10,0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .nav-logo {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1rem;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      color: var(--text);
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .nav-logo span {
+      color: var(--violet);
+    }
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 48px 80px;
+    }
+
+    .hero-eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeUp 1s ease 0.2s forwards;
+    }
+
+    .hero-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(4rem, 14vw, 11rem);
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeUp 1.2s ease 0.4s forwards;
+    }
+
+    .hero-title .seed {
+      display: block;
+      background: linear-gradient(135deg, #e2d9f3 0%, #c084fc 40%, #a78bfa 60%, #e2d9f3 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: titleShimmer 6s ease-in-out infinite 1.6s;
+    }
+    .hero-title .thirteen {
+      display: block;
+      font-size: 0.38em;
+      letter-spacing: 0.6em;
+      font-weight: 400;
+      color: var(--muted);
+      -webkit-text-fill-color: var(--muted);
+      margin-top: 8px;
+    }
+    @keyframes titleShimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50%       { background-position: 100% 50%; }
+    }
+
+    .hero-tagline {
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      font-style: italic;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      background: linear-gradient(90deg,
+        #ff6b6b, #ff9f43, #ffd32a, #0be881,
+        #00d2d3, #54a0ff, #a29bfe, #fd79a8, #ff6b6b
+      );
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: roygbiv 10s linear infinite;
+      opacity: 0;
+      animation: roygbiv 10s linear infinite, fadeUp 1s ease 0.7s forwards;
+    }
+    @keyframes roygbiv {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    .hero-scroll {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeIn 1s ease 1.5s forwards;
+    }
+    .scroll-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.55rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .scroll-line {
+      width: 1px;
+      height: 48px;
+      background: linear-gradient(to bottom, var(--muted), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(1); }
+      50%       { opacity: 0.8; transform: scaleY(1.1); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ── Section titles ── */
+    .section-header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 100px 48px 60px;
+    }
+    .section-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--violet);
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      font-weight: 400;
+      color: var(--text);
+    }
+
+    /* ── Collections ── */
+    .collections {
+      position: relative;
+      z-index: 1;
+      padding: 0 48px 120px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px;
+    }
+
+    .collection-card {
+      position: relative;
+      overflow: hidden;
+      cursor: none;
+      text-decoration: none;
+      display: block;
+      background: var(--deep);
+    }
+    .collection-card:hover .card-art { transform: scale(1.04); }
+    .collection-card:hover .card-overlay { opacity: 1; }
+    .collection-card:hover .card-info { transform: translateY(0); opacity: 1; }
+    .collection-card:hover .card-arrow { transform: translateX(4px); }
+
+    .card-art {
+      width: 100%;
+      height: 420px;
+      transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      display: block;
+    }
+
+    /* ABSTRACT BOOMBOX — geometric sound waves */
+    .art-boombox {
+      background: #040409;
+      position: relative;
+      overflow: hidden;
+    }
+    .art-boombox::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, transparent 40%, rgba(124,58,237,0.15) 60%),
+        repeating-linear-gradient(
+          90deg,
+          transparent 0px,
+          transparent 18px,
+          rgba(167,139,250,0.12) 18px,
+          rgba(167,139,250,0.12) 20px
+        ),
+        repeating-linear-gradient(
+          0deg,
+          transparent 0px,
+          transparent 28px,
+          rgba(167,139,250,0.05) 28px,
+          rgba(167,139,250,0.05) 30px
+        );
+    }
+    .boombox-bars {
+      position: absolute;
+      bottom: 0;
+      left: 0; right: 0;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      padding: 0 20px;
+    }
+    .bar {
+      flex: 1;
+      border-radius: 2px 2px 0 0;
+      animation: pulse-bar var(--dur) ease-in-out infinite alternate;
+      transform-origin: bottom;
+    }
+    @keyframes pulse-bar {
+      from { transform: scaleY(0.15); opacity: 0.5; }
+      to   { transform: scaleY(1); opacity: 1; }
+    }
+
+    /* ROYGBIV — prismatic light */
+    .art-roygbiv {
+      background: #02020c;
+      position: relative;
+      overflow: hidden;
+    }
+    .art-roygbiv::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: conic-gradient(
+        from 200deg at 110% 50%,
+        #ff000088, #ff770088, #ffff0088,
+        #00ff0088, #0000ff88, #8b00ff88,
+        #ff000088
+      );
+      animation: prism-spin 20s linear infinite;
+      opacity: 0.7;
+    }
+    .art-roygbiv::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, #02020c 0%, transparent 40%);
+    }
+    @keyframes prism-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* PARLIAMENT OF OWLS — nocturnal forest */
+    .art-owls {
+      background: #020208;
+      position: relative;
+      overflow: hidden;
+    }
+    .art-owls::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 30%, rgba(251,191,36,0.12) 0%, transparent 60%),
+        radial-gradient(circle at 50% 20%, rgba(251,191,36,0.2) 0%, rgba(251,191,36,0.05) 20%, transparent 35%);
+    }
+    .owl-trees {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 70%;
+      background:
+        radial-gradient(ellipse 8% 80% at 10% 100%, #0a0a12 0%, transparent 100%),
+        radial-gradient(ellipse 6% 90% at 20% 100%, #0a0a12 0%, transparent 100%),
+        radial-gradient(ellipse 10% 70% at 33% 100%, #07070f 0%, transparent 100%),
+        radial-gradient(ellipse 7% 85% at 50% 100%, #0a0a12 0%, transparent 100%),
+        radial-gradient(ellipse 9% 75% at 67% 100%, #07070f 0%, transparent 100%),
+        radial-gradient(ellipse 8% 80% at 80% 100%, #0a0a12 0%, transparent 100%),
+        radial-gradient(ellipse 7% 65% at 90% 100%, #07070f 0%, transparent 100%);
+    }
+    .owl-moon {
+      position: absolute;
+      top: 18%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fffbeb 0%, #fef3c7 50%, rgba(251,191,36,0.3) 100%);
+      box-shadow: 0 0 40px 20px rgba(251,191,36,0.1), 0 0 80px 40px rgba(251,191,36,0.05);
+      animation: moonGlow 4s ease-in-out infinite alternate;
+    }
+    @keyframes moonGlow {
+      from { box-shadow: 0 0 40px 20px rgba(251,191,36,0.1), 0 0 80px 40px rgba(251,191,36,0.05); }
+      to   { box-shadow: 0 0 60px 30px rgba(251,191,36,0.18), 0 0 100px 60px rgba(251,191,36,0.08); }
+    }
+
+    /* FARM GIRLS — golden hour pastoral */
+    .art-farm {
+      background: #0c0508;
+      position: relative;
+      overflow: hidden;
+    }
+    .art-farm::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom,
+          rgba(251,191,36,0.25) 0%,
+          rgba(251,113,133,0.2) 30%,
+          rgba(124,58,237,0.15) 60%,
+          #0c0508 100%
+        );
+    }
+    .farm-horizon {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 45%;
+      background:
+        radial-gradient(ellipse 120% 30% at 50% 100%, #0c0508 0%, transparent 100%);
+    }
+    .farm-sun {
+      position: absolute;
+      top: 25%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(251,191,36,0.9) 0%, rgba(251,113,133,0.4) 60%, transparent 100%);
+      animation: sunPulse 5s ease-in-out infinite alternate;
+    }
+    @keyframes sunPulse {
+      from { transform: translateX(-50%) scale(0.95); opacity: 0.8; }
+      to   { transform: translateX(-50%) scale(1.05); opacity: 1; }
+    }
+    .farm-field {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 35%;
+      background:
+        repeating-linear-gradient(
+          87deg,
+          transparent 0px,
+          transparent 12px,
+          rgba(120,80,20,0.15) 12px,
+          rgba(120,80,20,0.15) 14px
+        ),
+        linear-gradient(to top, rgba(100,70,20,0.3) 0%, transparent 100%);
+    }
+
+    .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(3,3,10,0.95) 0%, rgba(3,3,10,0.3) 50%, transparent 100%);
+      opacity: 0.7;
+      transition: opacity 0.5s ease;
+    }
+
+    .card-info {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 40px 36px;
+      transform: translateY(8px);
+      opacity: 0.85;
+      transition: transform 0.5s ease, opacity 0.5s ease;
+    }
+    .card-number {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.4em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+    .card-desc {
+      font-size: 0.95rem;
+      font-style: italic;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 320px;
+    }
+    .card-arrow {
+      display: inline-block;
+      margin-top: 16px;
+      font-size: 1.2rem;
+      color: var(--violet);
+      transition: transform 0.3s ease;
+    }
+
+    /* ── About ── */
+    .about {
+      position: relative;
+      z-index: 1;
+      padding: 80px 48px 100px;
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .about-quote {
+      font-size: clamp(1.3rem, 3vw, 2rem);
+      font-style: italic;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 40px;
+      position: relative;
+    }
+    .about-quote::before {
+      content: '\201C';
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 6rem;
+      color: var(--violet);
+      opacity: 0.2;
+      position: absolute;
+      top: -40px; left: -20px;
+      line-height: 1;
+    }
+    .about-divider {
+      width: 1px;
+      height: 60px;
+      background: linear-gradient(to bottom, var(--violet), transparent);
+      margin: 0 auto 40px;
+    }
+    .about-text {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    /* ── Contact / CTA ── */
+    .cta {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 60px 48px 120px;
+    }
+    .cta-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+    .cta-title {
+      font-family: 'Cormorant', serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-style: italic;
+      font-weight: 300;
+      color: var(--text);
+      margin-bottom: 40px;
+    }
+    .btn-primary {
+      display: inline-block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--black);
+      background: linear-gradient(135deg, var(--violet), var(--electric));
+      padding: 16px 40px;
+      text-decoration: none;
+      border-radius: 1px;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .btn-primary:hover { opacity: 0.85; transform: translateY(-2px); }
+    .btn-ghost {
+      display: inline-block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 16px 40px;
+      text-decoration: none;
+      border-radius: 1px;
+      margin-left: 16px;
+      transition: color 0.3s, border-color 0.3s, transform 0.3s;
+    }
+    .btn-ghost:hover {
+      color: var(--text);
+      border-color: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    /* ── Footer ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 40px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-logo {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .footer-logo span { color: var(--violet); }
+    .footer-copy {
+      font-size: 0.8rem;
+      color: var(--muted);
+      opacity: 0.6;
+    }
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+    .footer-links a {
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── Horizontal rule accent ── */
+    .rule {
+      position: relative;
+      z-index: 1;
+      border: none;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(192,132,252,0.2), transparent);
+      margin: 0;
+    }
+
+    /* ── Scroll reveal ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      nav { padding: 20px 24px; }
+      .nav-links { gap: 20px; }
+      .hero { padding: 100px 24px 80px; }
+      .collections { padding: 0 24px 80px; }
+      .grid { grid-template-columns: 1fr; }
+      .about { padding: 60px 24px 80px; }
+      .cta { padding: 40px 24px 80px; }
+      footer { padding: 32px 24px; }
+      .btn-ghost { margin-left: 0; margin-top: 12px; }
+    }
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .card-art { height: 300px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Custom cursor -->
+  <div class="cursor" id="cursor"></div>
+
+  <!-- Nebula background -->
+  <div class="nebula" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+    <div class="orb orb-5"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav>
+    <a href="#" class="nav-logo">Seed <span>13</span></a>
+    <ul class="nav-links">
+      <li><a href="#collections">Collections</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="https://seed13.smugmug.com" target="_blank" rel="noopener">Gallery</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <p class="hero-eyebrow">Photography &amp; Digital Art</p>
+    <h1 class="hero-title">
+      <span class="seed">Seed</span>
+      <span class="thirteen">13</span>
+    </h1>
+    <p class="hero-tagline">Art from my brain to your eyes</p>
+    <div class="hero-scroll">
+      <span class="scroll-label">Explore</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- Collections header -->
+  <div class="section-header reveal" id="collections">
+    <p class="section-label">Works</p>
+    <h2 class="section-title">Collections</h2>
+  </div>
+
+  <!-- Collections grid -->
+  <div class="collections">
+    <div class="grid">
+
+      <!-- Abstract Boombox -->
+      <a class="collection-card" href="https://seed13.smugmug.com" target="_blank" rel="noopener">
+        <div class="card-art art-boombox">
+          <div class="boombox-bars" id="bars"></div>
+        </div>
+        <div class="card-overlay"></div>
+        <div class="card-info">
+          <p class="card-number">01</p>
+          <h3 class="card-title">Abstract Boombox</h3>
+          <p class="card-desc">Rhythm made visible. Sound translated to form, color, and geometric frequency.</p>
+          <span class="card-arrow">&#x2192;</span>
+        </div>
+      </a>
+
+      <!-- ROYGBIV -->
+      <a class="collection-card" href="https://seed13.smugmug.com" target="_blank" rel="noopener">
+        <div class="card-art art-roygbiv"></div>
+        <div class="card-overlay"></div>
+        <div class="card-info">
+          <p class="card-number">02</p>
+          <h3 class="card-title">ROYGBIV</h3>
+          <p class="card-desc">The full spectrum as language. Every wavelength carrying its own emotional weight.</p>
+          <span class="card-arrow">&#x2192;</span>
+        </div>
+      </a>
+
+      <!-- Parliament of Owls -->
+      <a class="collection-card" href="https://seed13.smugmug.com" target="_blank" rel="noopener">
+        <div class="card-art art-owls">
+          <div class="owl-moon"></div>
+          <div class="owl-trees"></div>
+        </div>
+        <div class="card-overlay"></div>
+        <div class="card-info">
+          <p class="card-number">03</p>
+          <h3 class="card-title">Parliament of Owls</h3>
+          <p class="card-desc">The council convenes after dark. What is decided in moonlight lasts until dawn.</p>
+          <span class="card-arrow">&#x2192;</span>
+        </div>
+      </a>
+
+      <!-- Farm Girls -->
+      <a class="collection-card" href="https://seed13.smugmug.com" target="_blank" rel="noopener">
+        <div class="card-art art-farm">
+          <div class="farm-sun"></div>
+          <div class="farm-field"></div>
+          <div class="farm-horizon"></div>
+        </div>
+        <div class="card-overlay"></div>
+        <div class="card-info">
+          <p class="card-number">04</p>
+          <h3 class="card-title">Farm Girls</h3>
+          <p class="card-desc">Golden-hour portraits of the land and those who love it. Dust, light, and grace.</p>
+          <span class="card-arrow">&#x2192;</span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- About -->
+  <div class="about reveal" id="about">
+    <div class="about-divider"></div>
+    <p class="about-quote">
+      Art from my brain to your eyes
+    </p>
+    <p class="about-text">
+      Seed 13 is a vision made tangible&mdash;where photography, digital art, and pure imagination converge.
+      Each collection is a world unto itself, built from curiosity, obsession, and the persistent belief
+      that what we see can be made stranger and more beautiful than what is.
+    </p>
+  </div>
+
+  <hr class="rule">
+
+  <!-- CTA -->
+  <div class="cta reveal">
+    <p class="cta-label">Full Archive</p>
+    <h2 class="cta-title">See everything</h2>
+    <a href="https://seed13.smugmug.com" class="btn-primary" target="_blank" rel="noopener">Browse Gallery</a>
+    <a href="mailto:seed13art@example.com" class="btn-ghost">Get in Touch</a>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <a href="#" class="footer-logo">Seed <span>13</span></a>
+    <ul class="footer-links">
+      <li><a href="https://seed13.smugmug.com" target="_blank" rel="noopener">SmugMug</a></li>
+      <li><a href="#collections">Collections</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+    <p class="footer-copy">&copy; 2026 Seed 13. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Custom cursor
+    const cursor = document.getElementById('cursor');
+    let mx = 0, my = 0;
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left = mx + 'px';
+      cursor.style.top = my + 'px';
+    });
+    document.querySelectorAll('a, button').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('large'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('large'));
+    });
+
+    // Generate boombox bars
+    const barsContainer = document.getElementById('bars');
+    const COLORS = [
+      '#7c3aed','#8b5cf6','#a78bfa','#c084fc',
+      '#db2777','#ec4899','#f472b6',
+      '#0891b2','#06b6d4','#22d3ee',
+      '#7c3aed','#8b5cf6','#a78bfa','#c084fc',
+      '#db2777','#ec4899',
+    ];
+    for (let i = 0; i < 28; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      const dur = (0.6 + Math.random() * 1.4).toFixed(2) + 's';
+      const delay = (Math.random() * 1.2).toFixed(2) + 's';
+      const color = COLORS[i % COLORS.length];
+      bar.style.cssText = `
+        height: ${30 + Math.random() * 70}%;
+        --dur: ${dur};
+        animation-delay: ${delay};
+        background: linear-gradient(to top, ${color}, ${color}66);
+      `;
+      barsContainer.appendChild(bar);
+    }
+
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    reveals.forEach(el => io.observe(el));
+
+    // Stagger collection cards reveal
+    const cards = document.querySelectorAll('.collection-card');
+    const cardObserver = new IntersectionObserver(entries => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => {
+            e.target.style.opacity = '1';
+            e.target.style.transform = 'translateY(0)';
+          }, i * 100);
+          cardObserver.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.05 });
+    cards.forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(30px)';
+      card.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+      cardObserver.observe(card);
+    });
+  </script>
+</body>
+</html>

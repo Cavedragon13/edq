@@ -1,1758 +1,721 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dragonsuite v2 - Project Dashboard</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            transition: background 0.3s ease;
-        }
-
-        body.dark-mode {
-            background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #0d1b2a 100%);
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background: rgba(255,255,255,0.95);
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 20px 25px;
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .header {
-            background: rgba(20, 20, 30, 0.9);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-
-        .header-left h1 {
-            font-size: 1.6em;
-            margin-bottom: 3px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        body.dark-mode .header-left h1 {
-            background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-        }
-
-        .header-left p {
-            color: #6b7280;
-            font-size: 0.9em;
-        }
-
-        body.dark-mode .header-left p {
-            color: #9ca3af;
-        }
-
-        .header-center {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            padding: 0 20px;
-            min-width: 200px;
-        }
-
-        .gpu-stat {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.75em;
-        }
-
-        .gpu-label {
-            color: #6b7280;
-            font-weight: 500;
-            min-width: 35px;
-        }
-
-        body.dark-mode .gpu-label {
-            color: #9ca3af;
-        }
-
-        .gpu-bar {
-            flex: 1;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        body.dark-mode .gpu-bar {
-            background: #374151;
-        }
-
-        .gpu-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
-            border-radius: 4px;
-            transition: width 0.5s ease;
-        }
-
-        .gpu-bar-fill.high {
-            background: linear-gradient(90deg, #f59e0b 0%, #ef4444 100%);
-        }
-
-        .gpu-value {
-            color: #374151;
-            font-weight: 600;
-            font-size: 0.9em;
-            min-width: 50px;
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-        }
-
-        body.dark-mode .gpu-value {
-            color: #e0e0e0;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .network-info {
-            text-align: right;
-            font-size: 0.8em;
-            color: #6b7280;
-        }
-
-        body.dark-mode .network-info {
-            color: #9ca3af;
-        }
-
-        .network-info strong {
-            color: #374151;
-        }
-
-        body.dark-mode .network-info strong {
-            color: #e0e0e0;
-        }
-
-        .theme-toggle {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .theme-toggle {
-            background: linear-gradient(135deg, #4a5568 0%, #374151 100%);
-        }
-
-        .theme-toggle:hover {
-            transform: rotate(180deg) scale(1.1);
-        }
-
-        .refresh-btn {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            border: none;
-            color: white;
-            padding: 8px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .refresh-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-        }
-
-        .refresh-btn.spinning span {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .category-section {
-            margin-bottom: 25px;
-        }
-
-        .category-title {
-            color: white;
-            font-size: 1.1em;
-            margin-bottom: 12px;
-            padding-left: 5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        body.dark-mode .category-title {
-            color: #e2e8f0;
-        }
-
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 16px;
-        }
-
-        .service-card {
-            background: rgba(255,255,255,0.95);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .service-card {
-            background: rgba(25, 25, 35, 0.95);
-            border: 1px solid rgba(99, 102, 241, 0.15);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .service-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-        }
-
-        body.dark-mode .service-card:hover {
-            border-color: rgba(99, 102, 241, 0.3);
-            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
-        }
-
-        .card-header {
-            padding: 14px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        body.dark-mode .card-header {
-            border-bottom-color: rgba(99, 102, 241, 0.15);
-        }
-
-        .service-icon {
-            font-size: 1.6em;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        body.dark-mode .service-icon {
-            background: linear-gradient(135deg, #2d2d40 0%, #3d3d55 100%);
-        }
-
-        .service-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
-        .service-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .service-name {
-            font-size: 1em;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        body.dark-mode .service-name {
-            color: #f3f4f6;
-        }
-
-        .service-description {
-            font-size: 0.8em;
-            color: #6b7280;
-        }
-
-        body.dark-mode .service-description {
-            color: #9ca3af;
-        }
-
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .header-qr {
-            width: 28px;
-            height: 28px;
-            border-radius: 4px;
-            cursor: pointer;
-            opacity: 0.8;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-        }
-
-        .header-qr:hover {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .status-running {
-            background: #10b981;
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-            animation: pulse-green 2s infinite;
-        }
-
-        .status-stopped {
-            background: #6b7280;
-            box-shadow: 0 0 6px rgba(107, 114, 128, 0.3);
-        }
-
-        @keyframes pulse-green {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        .card-body {
-            padding: 12px 16px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 0.85em;
-        }
-
-        .info-label {
-            color: #6b7280;
-        }
-
-        body.dark-mode .info-label {
-            color: #9ca3af;
-        }
-
-        .info-value {
-            color: #1f2937;
-            font-weight: 500;
-        }
-
-        body.dark-mode .info-value {
-            color: #e0e0e0;
-        }
-
-        .info-value a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .info-value a:hover {
-            text-decoration: underline;
-        }
-
-        body.dark-mode .info-value a {
-            color: #a78bfa;
-        }
-
-        .git-info {
-            background: #f3f4f6;
-            padding: 8px 10px;
-            border-radius: 6px;
-            font-size: 0.8em;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        body.dark-mode .git-info {
-            background: rgba(99, 102, 241, 0.1);
-        }
-
-        .git-hash {
-            font-family: monospace;
-            background: #e5e7eb;
-            padding: 2px 5px;
-            border-radius: 4px;
-            color: #4b5563;
-            font-size: 0.9em;
-        }
-
-        body.dark-mode .git-hash {
-            background: rgba(99, 102, 241, 0.2);
-            color: #c4b5fd;
-        }
-
-        .card-actions {
-            display: flex;
-            gap: 8px;
-            padding: 12px 16px;
-            border-top: 1px solid #e5e7eb;
-            background: #f9fafb;
-        }
-
-        body.dark-mode .card-actions {
-            border-top-color: rgba(99, 102, 241, 0.15);
-            background: rgba(15, 15, 25, 0.5);
-        }
-
-        .action-btn {
-            flex: 1;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8em;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-start {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        .btn-start:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-start:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-stop {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-        }
-
-        .btn-stop:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4);
-        }
-
-        .btn-stop:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-qr {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        body.dark-mode .btn-qr {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        }
-
-        .btn-qr:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-copy {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        body.dark-mode .btn-copy {
-            background: rgba(99, 102, 241, 0.2);
-            color: #e0e0e0;
-        }
-
-        .btn-copy:hover {
-            background: #d1d5db;
-        }
-
-        body.dark-mode .btn-copy:hover {
-            background: rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-copy.copied {
-            background: #10b981;
-            color: white;
-        }
-
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: rgba(30, 30, 40, 0.95);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 0.9em;
-            opacity: 0;
-            transition: all 0.3s ease;
-            z-index: 2000;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-
-        .toast.success {
-            border-left: 4px solid #10b981;
-        }
-
-        .toast.error {
-            border-left: 4px solid #ef4444;
-        }
-
-        .toast.info {
-            border-left: 4px solid #667eea;
-        }
-
-        /* Modal styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal {
-            background: white;
-            border-radius: 16px;
-            padding: 25px;
-            max-width: 350px;
-            width: 90%;
-            text-align: center;
-            transform: scale(0.9);
-            transition: transform 0.3s ease;
-        }
-
-        body.dark-mode .modal {
-            background: #1e1e2e;
-            color: #e0e0e0;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-        }
-
-        .modal-overlay.active .modal {
-            transform: scale(1);
-        }
-
-        .modal h3 {
-            margin-bottom: 8px;
-            color: #1f2937;
-            font-size: 1.1em;
-        }
-
-        body.dark-mode .modal h3 {
-            color: #f3f4f6;
-        }
-
-        .modal p {
-            color: #6b7280;
-            margin-bottom: 15px;
-            font-size: 0.9em;
-        }
-
-        body.dark-mode .modal p {
-            color: #9ca3af;
-        }
-
-        .modal img {
-            max-width: 200px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .modal-close {
-            background: #e5e7eb;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9em;
-            transition: all 0.2s ease;
-        }
-
-        body.dark-mode .modal-close {
-            background: rgba(99, 102, 241, 0.2);
-            color: #e0e0e0;
-        }
-
-        .modal-close:hover {
-            background: #d1d5db;
-        }
-
-        body.dark-mode .modal-close:hover {
-            background: rgba(99, 102, 241, 0.3);
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 3px solid #e5e7eb;
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 12px;
-        }
-
-        body.dark-mode .loading-spinner {
-            border-color: #4a5568;
-            border-top-color: #a78bfa;
-        }
-
-        .empty-state {
-            background: rgba(255,255,255,0.95);
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            color: #6b7280;
-        }
-
-        body.dark-mode .empty-state {
-            background: rgba(25, 25, 35, 0.95);
-            color: #9ca3af;
-        }
-
-        .empty-state h3 {
-            margin-bottom: 8px;
-            color: #374151;
-        }
-
-        body.dark-mode .empty-state h3 {
-            color: #e0e0e0;
-        }
-
-        /* Hidden textarea for clipboard fallback */
-        .clipboard-textarea {
-            position: fixed;
-            left: -9999px;
-            top: 0;
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 12px;
-                text-align: center;
-            }
-
-            .header-center {
-                width: 100%;
-                padding: 0;
-            }
-
-            .header-right {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .network-info {
-                text-align: center;
-            }
-
-            .services-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .card-actions {
-                flex-wrap: wrap;
-            }
-
-            .action-btn {
-                min-width: calc(50% - 4px);
-            }
-        }
-
-        /* System stats bar */
-        .system-stats {
-            background: rgba(255,255,255,0.95);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            padding: 10px 20px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .system-stats {
-            background: rgba(20, 20, 30, 0.9);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .system-stats .gpu-stat {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .system-stats .gpu-label {
-            min-width: 32px;
-            font-size: 0.8em;
-        }
-
-        .stat-temp {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.75em;
-            min-width: 90px;
-        }
-
-        .stat-temp .gpu-label {
-            min-width: 32px;
-            font-size: 0.8em;
-        }
-
-        .temp-value {
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-            font-size: 0.95em;
-        }
-
-        .temp-value.temp-cool { color: #10b981; }
-        .temp-value.temp-warm { color: #f59e0b; }
-        .temp-value.temp-hot { color: #ef4444; }
-
-        @media (max-width: 768px) {
-            .system-stats {
-                flex-wrap: wrap;
-                gap: 10px 16px;
-            }
-            .system-stats .gpu-stat,
-            .stat-temp {
-                flex: 1 1 calc(50% - 8px);
-                min-width: 120px;
-            }
-        }
-
-        /* Category filter chips */
-        .filter-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 12px 0 6px;
-            margin-bottom: 4px;
-        }
-        .filter-chip {
-            background: #2d2d2d;
-            border: 1px solid #4a5568;
-            color: #9ca3af;
-            border-radius: 20px;
-            padding: 5px 14px;
-            font-size: 0.85em;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-            user-select: none;
-        }
-        .filter-chip:hover {
-            border-color: #6366f1;
-            color: #e0e0e0;
-        }
-        .filter-chip.active {
-            background: #6366f1;
-            border-color: #6366f1;
-            color: #fff;
-            font-weight: 500;
-        }
-        body:not(.dark-mode) .filter-chip {
-            background: #f3f4f6;
-            border-color: #d1d5db;
-            color: #6b7280;
-        }
-        body:not(.dark-mode) .filter-chip:hover {
-            border-color: #6366f1;
-            color: #374151;
-        }
-        body:not(.dark-mode) .filter-chip.active {
-            background: #6366f1;
-            border-color: #6366f1;
-            color: #fff;
-        }
-
-        /* ── Weather Banner ──────────────────────────────────────── */
-        .weather-banner {
-            background: rgba(255,255,255,0.95);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            padding: 10px 20px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode .weather-banner {
-            background: rgba(20, 20, 30, 0.9);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .weather-main {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        .weather-icon img {
-            width: 38px;
-            height: 38px;
-        }
-
-        .weather-temp {
-            font-size: 1.9em;
-            font-weight: 700;
-            line-height: 1;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-variant-numeric: tabular-nums;
-        }
-
-        body.dark-mode .weather-temp {
-            background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-        }
-
-        .weather-cond {
-            font-size: 0.82em;
-            font-weight: 600;
-            color: #374151;
-            margin-top: 2px;
-        }
-
-        body.dark-mode .weather-cond {
-            color: #e0e0e0;
-        }
-
-        .weather-vdivider {
-            width: 1px;
-            height: 36px;
-            background: #e5e7eb;
-            flex-shrink: 0;
-        }
-
-        body.dark-mode .weather-vdivider {
-            background: rgba(99, 102, 241, 0.25);
-        }
-
-        .weather-stats {
-            display: flex;
-            flex: 1;
-            gap: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .weather-stat {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .weather-stat-label {
-            font-size: 0.62em;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            font-weight: 500;
-        }
-
-        body.dark-mode .weather-stat-label {
-            color: #9ca3af;
-        }
-
-        .weather-stat-value {
-            font-size: 0.82em;
-            font-weight: 600;
-            color: #1f2937;
-            font-variant-numeric: tabular-nums;
-        }
-
-        body.dark-mode .weather-stat-value {
-            color: #e0e0e0;
-        }
-
-        .weather-meta {
-            margin-left: auto;
-            text-align: right;
-            flex-shrink: 0;
-        }
-
-        .weather-station-name {
-            font-size: 0.72em;
-            font-weight: 600;
-            color: #6b7280;
-        }
-
-        body.dark-mode .weather-station-name {
-            color: #9ca3af;
-        }
-
-        .weather-updated {
-            font-size: 0.65em;
-            color: #9ca3af;
-        }
-
-        .weather-placeholder {
-            font-size: 0.82em;
-            color: #9ca3af;
-            font-style: italic;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dragonsuite — AI Command Center</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #08080e;
+  --bg2:       #0d0d18;
+  --bgc:       #0f0f1c;
+  --bgch:      #131325;
+  --bge:       #1a1a2e;
+  --bd:        rgba(255,255,255,0.06);
+  --bdh:       rgba(255,255,255,0.13);
+  --tx:        #dde2f0;
+  --tx2:       #8b8fa8;
+  --txm:       #4b4f68;
+  --ac:        #c084fc;
+  --acd:       rgba(192,132,252,0.13);
+  --run:       #34d399;
+  --rund:      rgba(52,211,153,0.12);
+  --err:       #f87171;
+  --warn:      #fbbf24;
+  --r:         10px;
+  --rs:        6px;
+  --tr:        0.18s ease;
+}
+body.light {
+  --bg:   #f0f0f8; --bg2:  #e8e8f2; --bgc:  #ffffff;
+  --bgch: #f8f8ff; --bge:  #e4e4f0;
+  --bd:   rgba(0,0,0,0.08); --bdh: rgba(0,0,0,0.16);
+  --tx:   #1a1a2e; --tx2:  #4b4f68; --txm:  #9098b8;
+  --acd:  rgba(192,132,252,0.10); --rund: rgba(52,211,153,0.10);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family:'Outfit',sans-serif;
+  background:var(--bg); color:var(--tx);
+  min-height:100vh;
+  transition:background .3s,color .3s;
+}
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 0%, rgba(192,132,252,.05) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 100%, rgba(52,211,153,.04) 0%, transparent 60%);
+}
+
+/* Header */
+.hdr {
+  position:sticky; top:0; z-index:100;
+  height:56px; display:flex; align-items:center; gap:16px; padding:0 20px;
+  background:rgba(8,8,14,.88); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--bd);
+  transition:background .3s;
+}
+body.light .hdr { background:rgba(240,240,248,.88); }
+.logo { display:flex; align-items:center; gap:8px; text-decoration:none; flex-shrink:0; }
+.logo-icon { font-size:20px; line-height:1; }
+.logo-text {
+  font-family:'Syne',sans-serif; font-size:1rem; font-weight:800;
+  color:var(--tx); letter-spacing:.02em;
+}
+.logo-text em { color:var(--ac); font-style:normal; }
+.sep { width:1px; height:24px; background:var(--bd); flex-shrink:0; }
+.hdr-stats { display:flex; align-items:center; gap:14px; flex:1; min-width:0; }
+.schip { display:flex; align-items:center; gap:7px; flex-shrink:0; }
+.slbl {
+  font-family:'JetBrains Mono',monospace; font-size:9.5px;
+  color:var(--txm); text-transform:uppercase; letter-spacing:.08em;
+}
+.strack { width:72px; height:3px; background:var(--bd); border-radius:2px; overflow:hidden; }
+.sfill {
+  height:100%; border-radius:2px; background:var(--run);
+  transition:width .6s ease;
+}
+.sfill.w { background:var(--warn); } .sfill.d { background:var(--err); }
+.sval {
+  font-family:'JetBrains Mono',monospace; font-size:10.5px;
+  color:var(--tx2); font-weight:500; min-width:32px;
+}
+.hdr-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.hdr-ip { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--txm); }
+.ibtn {
+  width:30px; height:30px; border-radius:7px;
+  border:1px solid var(--bd); background:transparent; color:var(--tx2);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:13px; transition:all var(--tr); flex-shrink:0;
+}
+.ibtn:hover { background:var(--bge); border-color:var(--bdh); color:var(--tx); }
+.ibtn.spin svg { animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Category nav */
+.cnav {
+  position:sticky; top:56px; z-index:90;
+  display:flex; gap:0; padding:0 20px;
+  background:rgba(8,8,14,.75); backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--bd);
+  overflow-x:auto; scrollbar-width:none;
+  transition:background .3s;
+}
+body.light .cnav { background:rgba(240,240,248,.75); }
+.cnav::-webkit-scrollbar { display:none; }
+.ctab {
+  display:flex; align-items:center; gap:5px;
+  padding:0 13px; height:42px;
+  border:none; border-bottom:2px solid transparent;
+  background:transparent; color:var(--txm); cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:12.5px; font-weight:500;
+  white-space:nowrap; transition:all var(--tr);
+}
+.ctab:hover { color:var(--tx2); }
+.ctab.active { color:var(--tx); border-bottom-color:var(--ac); }
+.cnum {
+  font-size:9.5px; font-family:'JetBrains Mono',monospace;
+  padding:1px 5px; border-radius:9px;
+  background:var(--bge); color:var(--txm);
+}
+.ctab.active .cnum { background:var(--acd); color:var(--ac); }
+
+/* Main */
+.main {
+  position:relative; z-index:1;
+  padding:28px; max-width:1600px; margin:0 auto;
+}
+
+/* Stats cards */
+.sgrid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:14px; margin-bottom:20px;
+}
+.sc {
+  background:var(--bgc); border:1px solid var(--bd);
+  border-radius:var(--r); padding:13px 15px;
+}
+.sc-lbl {
+  font-size:9.5px; font-family:'JetBrains Mono',monospace;
+  text-transform:uppercase; letter-spacing:.1em;
+  color:var(--txm); margin-bottom:8px;
+}
+.sc-val {
+  font-family:'JetBrains Mono',monospace;
+  font-size:19px; font-weight:500; color:var(--tx); margin-bottom:5px;
+}
+.sc-bar { height:2px; background:var(--bd); border-radius:1px; overflow:hidden; }
+.sc-fill { height:100%; border-radius:1px; background:var(--run); transition:width .6s ease; }
+.sc-fill.w { background:var(--warn); } .sc-fill.d { background:var(--err); }
+.sc-sub { font-size:10.5px; color:var(--txm); margin-top:4px; }
+
+/* LLM row */
+.llmrow {
+  background:var(--bgc); border:1px solid var(--bd);
+  border-radius:var(--r); padding:10px 15px;
+  margin-bottom:26px;
+  display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap;
+}
+.llm-lbl {
+  font-size:9.5px; font-family:'JetBrains Mono',monospace;
+  text-transform:uppercase; letter-spacing:.1em;
+  color:var(--txm); flex-shrink:0; padding-top:2px; min-width:56px;
+}
+.llm-pills { display:flex; flex-wrap:wrap; gap:5px; flex:1; }
+.llm-pill {
+  font-family:'JetBrains Mono',monospace; font-size:10.5px;
+  padding:2px 7px; border-radius:4px;
+  background:var(--bge); color:var(--tx2); border:1px solid var(--bd);
+}
+.llm-off { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--txm); }
+
+/* Service grid */
+.svgrid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(264px,1fr));
+  gap:14px;
+}
+
+/* Service card */
+.card {
+  background:var(--bgc); border:1px solid var(--bd);
+  border-radius:var(--r); padding:18px;
+  display:flex; flex-direction:column; gap:13px;
+  position:relative; overflow:hidden;
+  transition:border-color var(--tr), background var(--tr), box-shadow var(--tr);
+  animation:cin .35s ease both;
+}
+.card::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:transparent; border-radius:10px 0 0 10px;
+  transition:background var(--tr);
+}
+.card.run::before { background:var(--run); }
+.card.run { border-color:rgba(52,211,153,.18); box-shadow:0 0 18px rgba(52,211,153,.04); }
+.card:hover { border-color:var(--bdh); background:var(--bgch); }
+.card.run:hover { box-shadow:0 0 26px rgba(52,211,153,.09); }
+@keyframes cin { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+.svgrid.settled .card { animation:none; }
+
+.card-hd { display:flex; align-items:flex-start; gap:10px; }
+.card-ico {
+  font-size:24px; line-height:1; flex-shrink:0;
+  width:40px; height:40px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--bge); border-radius:8px;
+}
+.card-meta { flex:1; min-width:0; }
+.card-name {
+  font-family:'Syne',sans-serif; font-size:14px; font-weight:700;
+  color:var(--tx); line-height:1.2; margin-bottom:4px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.cbadge {
+  display:inline-flex; align-items:center;
+  font-size:9.5px; font-weight:500;
+  padding:2px 6px; border-radius:9px;
+  text-transform:capitalize; letter-spacing:.02em;
+}
+.sdot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:4px; }
+.sdot.on { background:var(--run); box-shadow:0 0 5px var(--run); animation:blink 2s ease-in-out infinite; }
+.sdot.off { background:var(--txm); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+.card-desc { font-size:12.5px; color:var(--tx2); line-height:1.45; }
+.card-feats { display:flex; flex-wrap:wrap; gap:4px; }
+.feat {
+  font-size:9.5px; font-family:'JetBrains Mono',monospace;
+  padding:2px 6px; border-radius:4px;
+  background:var(--bge); color:var(--txm); border:1px solid var(--bd);
+}
+.card-ft { display:flex; align-items:center; gap:6px; margin-top:auto; flex-wrap:wrap; }
+.cport {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--txm); flex:1;
+}
+.cport b { color:var(--tx2); font-weight:400; }
+
+/* Buttons */
+.btn {
+  display:inline-flex; align-items:center; gap:4px;
+  font-family:'Outfit',sans-serif; font-size:11.5px; font-weight:500;
+  padding:4px 9px; border-radius:var(--rs);
+  border:1px solid transparent; cursor:pointer;
+  transition:all var(--tr); text-decoration:none;
+  white-space:nowrap; line-height:1.4;
+}
+.btn:disabled { opacity:.4; cursor:default; pointer-events:none; }
+.btn-op  { background:var(--acd);  color:var(--ac);  border-color:rgba(192,132,252,.2); }
+.btn-op:hover  { background:rgba(192,132,252,.22); border-color:rgba(192,132,252,.38); }
+.btn-go  { background:var(--rund); color:var(--run); border-color:rgba(52,211,153,.2); }
+.btn-go:hover  { background:rgba(52,211,153,.2); }
+.btn-st  { background:rgba(248,113,113,.10); color:var(--err); border-color:rgba(248,113,113,.2); }
+.btn-st:hover  { background:rgba(248,113,113,.2); }
+.btn-ic  { background:var(--bge); color:var(--txm); border-color:var(--bd); padding:4px 7px; }
+.btn-ic:hover  { color:var(--tx); border-color:var(--bdh); }
+.btn-mc  { background:rgba(251,191,36,.08); color:var(--warn); border-color:rgba(251,191,36,.18); cursor:default; pointer-events:none; }
+
+/* Modal */
+.overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.72); backdrop-filter:blur(4px);
+  z-index:200;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; visibility:hidden; transition:all .2s ease;
+}
+.overlay.open { opacity:1; visibility:visible; }
+.modal {
+  background:var(--bgc); border:1px solid var(--bd);
+  border-radius:var(--r); padding:22px;
+  max-width:400px; width:90%;
+  transform:scale(.96); transition:transform .2s ease;
+  position:relative;
+}
+.overlay.open .modal { transform:scale(1); }
+.modal-title {
+  font-family:'Syne',sans-serif; font-size:15px; font-weight:700;
+  color:var(--tx); margin-bottom:14px;
+}
+.modal-x {
+  position:absolute; top:14px; right:14px;
+  width:26px; height:26px; border-radius:5px;
+  border:1px solid var(--bd); background:transparent;
+  color:var(--txm); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; transition:all var(--tr);
+}
+.modal-x:hover { background:var(--bge); color:var(--tx); }
+#qr-img { display:block; max-width:190px; margin:0 auto; border-radius:var(--rs); }
+#qr-url {
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--tx2); text-align:center; margin-top:10px; word-break:break-all;
+}
+.gtbl { font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--tx2); }
+.grow { display:flex; gap:10px; padding:6px 0; border-bottom:1px solid var(--bd); }
+.grow:last-child { border-bottom:none; }
+.gkey { color:var(--txm); min-width:70px; flex-shrink:0; }
+
+/* Toast */
+.toasts { position:fixed; bottom:18px; right:18px; z-index:300; display:flex; flex-direction:column; gap:7px; }
+.toast {
+  background:var(--bge); border:1px solid var(--bd);
+  border-radius:var(--rs); padding:9px 13px;
+  font-size:12.5px; color:var(--tx); max-width:280px;
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+  animation:tin .18s ease;
+}
+.toast.ok  { border-left:3px solid var(--run); }
+.toast.err { border-left:3px solid var(--err); }
+.toast.inf { border-left:3px solid var(--ac); }
+@keyframes tin { from{transform:translateX(16px);opacity:0} to{transform:none;opacity:1} }
+
+/* Stagger */
+.card:nth-child(1){animation-delay:.03s} .card:nth-child(2){animation-delay:.06s}
+.card:nth-child(3){animation-delay:.09s} .card:nth-child(4){animation-delay:.12s}
+.card:nth-child(5){animation-delay:.15s} .card:nth-child(6){animation-delay:.18s}
+.card:nth-child(7){animation-delay:.21s} .card:nth-child(8){animation-delay:.24s}
+.card:nth-child(9){animation-delay:.27s} .card:nth-child(10){animation-delay:.30s}
+.card:nth-child(n+11){animation-delay:.33s}
+
+@media(max-width:720px){
+  .hdr-stats{display:none}
+  .main{padding:12px}
+  .svgrid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-left">
-                <h1>Dragonsuite v2</h1>
-                <p>AI Project Dashboard</p>
-            </div>
-            <div class="header-center">
-                <div class="gpu-stat">
-                    <span class="gpu-label">VRAM</span>
-                    <div class="gpu-bar">
-                        <div class="gpu-bar-fill" id="vramBar" style="width: 0%;"></div>
-                    </div>
-                    <span class="gpu-value" id="vramValue">0%</span>
-                </div>
-                <div class="gpu-stat">
-                    <span class="gpu-label">GPU</span>
-                    <div class="gpu-bar">
-                        <div class="gpu-bar-fill" id="gpuBar" style="width: 0%;"></div>
-                    </div>
-                    <span class="gpu-value" id="gpuValue">0%</span>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="network-info">
-                    <div><strong>Local:</strong> <span id="localUrl">-</span></div>
-                    <div><strong>Network:</strong> <span id="networkUrl">-</span></div>
-                </div>
-                <button class="refresh-btn" id="refreshBtn" title="Refresh status">
-                    <span>&#8635;</span> Refresh
-                </button>
-                <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">&#127769;</button>
-            </div>
-        </div>
 
-        <!-- Weather Banner -->
-        <div class="weather-banner" id="weatherBanner">
-            <div class="weather-placeholder" id="weatherPlaceholder">⛅ Loading weather…</div>
-            <div class="weather-main" id="weatherMain" style="display:none;">
-                <div class="weather-icon"><img id="weatherIcon" src="" alt=""></div>
-                <div>
-                    <div class="weather-temp" id="weatherTemp">--°F</div>
-                    <div class="weather-cond" id="weatherCond">--</div>
-                </div>
-            </div>
-            <div class="weather-vdivider" id="weatherDivider" style="display:none;"></div>
-            <div class="weather-stats" id="weatherStats" style="display:none;">
-                <div class="weather-stat">
-                    <span class="weather-stat-label">Wind</span>
-                    <span class="weather-stat-value" id="wWind">--</span>
-                </div>
-                <div class="weather-stat">
-                    <span class="weather-stat-label">Humidity</span>
-                    <span class="weather-stat-value" id="wHumidity">--</span>
-                </div>
-                <div class="weather-stat">
-                    <span class="weather-stat-label">Dew Point</span>
-                    <span class="weather-stat-value" id="wDewpoint">--</span>
-                </div>
-                <div class="weather-stat">
-                    <span class="weather-stat-label">Visibility</span>
-                    <span class="weather-stat-value" id="wVisibility">--</span>
-                </div>
-                <div class="weather-stat">
-                    <span class="weather-stat-label">Barometer</span>
-                    <span class="weather-stat-value" id="wBarometer">--</span>
-                </div>
-                <div class="weather-stat" id="wChillStat" style="display:none;">
-                    <span class="weather-stat-label">Wind Chill</span>
-                    <span class="weather-stat-value" id="wChill">--</span>
-                </div>
-            </div>
-            <div class="weather-meta" id="weatherMeta" style="display:none;">
-                <div class="weather-station-name">KPSM · Portsmouth NH</div>
-                <div class="weather-updated" id="wUpdated">--</div>
-            </div>
-        </div>
-
-        <div class="system-stats" id="systemStats">
-            <div class="gpu-stat">
-                <span class="gpu-label">CPU</span>
-                <div class="gpu-bar">
-                    <div class="gpu-bar-fill" id="cpuBar" style="width: 0%;"></div>
-                </div>
-                <span class="gpu-value" id="cpuValue">-</span>
-            </div>
-            <div class="gpu-stat">
-                <span class="gpu-label">RAM</span>
-                <div class="gpu-bar">
-                    <div class="gpu-bar-fill" id="ramBar" style="width: 0%;"></div>
-                </div>
-                <span class="gpu-value" id="ramValue">-</span>
-            </div>
-            <div class="gpu-stat">
-                <span class="gpu-label" title="/ (root)">Boot</span>
-                <div class="gpu-bar">
-                    <div class="gpu-bar-fill" id="rootDiskBar" style="width: 0%;"></div>
-                </div>
-                <span class="gpu-value" id="rootDiskValue">-</span>
-            </div>
-            <div class="gpu-stat" id="projDiskStat" style="display:none;">
-                <span class="gpu-label" title="/srv/containers">SSD</span>
-                <div class="gpu-bar">
-                    <div class="gpu-bar-fill" id="projDiskBar" style="width: 0%;"></div>
-                </div>
-                <span class="gpu-value" id="projDiskValue">-</span>
-            </div>
-            <div class="stat-temp">
-                <span class="gpu-label">Temp</span>
-                <span class="temp-value" id="gpuTemp">-</span>
-            </div>
-        </div>
-
-        <div class="filter-bar" id="filterBar"></div>
-
-        <div id="servicesContainer">
-            <div class="empty-state">
-                <div class="loading-spinner"></div>
-                <h3>Loading services...</h3>
-            </div>
-        </div>
+<header class="hdr">
+  <a class="logo" href="#">
+    <span class="logo-icon">&#x1F409;</span>
+    <span class="logo-text">Dragon<em>suite</em></span>
+  </a>
+  <div class="sep"></div>
+  <div class="hdr-stats">
+    <div class="schip">
+      <span class="slbl">VRAM</span>
+      <div class="strack"><div class="sfill" id="h-vram-bar" style="width:0%"></div></div>
+      <span class="sval" id="h-vram-val">&#8212;</span>
     </div>
-
-    <!-- Toast notification -->
-    <div class="toast" id="toast"></div>
-
-    <!-- Hidden textarea for clipboard fallback -->
-    <textarea class="clipboard-textarea" id="clipboardFallback"></textarea>
-
-    <!-- QR Code Modal -->
-    <div class="modal-overlay" id="qrModal">
-        <div class="modal">
-            <h3 id="qrModalTitle">Service QR Code</h3>
-            <p id="qrModalUrl">-</p>
-            <img id="qrModalImage" src="" alt="QR Code">
-            <br>
-            <button class="modal-close" id="qrModalClose">Close</button>
-        </div>
+    <div class="schip">
+      <span class="slbl">GPU</span>
+      <div class="strack"><div class="sfill" id="h-gpu-bar" style="width:0%"></div></div>
+      <span class="sval" id="h-gpu-val">&#8212;</span>
     </div>
-
-    <script>
-        // Theme Management
-        const themeToggle = document.getElementById('themeToggle');
-        const body = document.body;
-
-        // Load saved theme, default to dark
-        const savedTheme = localStorage.getItem('dragonsuite-theme');
-        if (savedTheme === 'light') {
-            themeToggle.innerHTML = '&#127769;'; // Moon
-        } else {
-            body.classList.add('dark-mode');
-            themeToggle.innerHTML = '&#9728;'; // Sun
-            if (!savedTheme) {
-                localStorage.setItem('dragonsuite-theme', 'dark');
-            }
-        }
-
-        themeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            const isDark = body.classList.contains('dark-mode');
-            themeToggle.innerHTML = isDark ? '&#9728;' : '&#127769;';
-            localStorage.setItem('dragonsuite-theme', isDark ? 'dark' : 'light');
-        });
-
-        // Category icons and order (image/vision first, then video/3d, audio, segmentation)
-        const categoryOrder = ['image', 'video', '3d', 'audio', 'segmentation', 'llm', 'game', 'dev'];
-        const categoryIcons = {
-            'image': '&#128444;',
-            'video': '&#127916;',
-            '3d': '&#129513;',
-            'audio': '&#127911;',
-            'segmentation': '&#127919;',
-            'llm': '&#129302;',
-            'game': '&#127918;',
-            'dev': '&#9878;',
-            'default': '&#128187;'
-        };
-        const categoryNames = {
-            'image': 'Image / Vision',
-            'video': 'Video',
-            '3d': '3D',
-            'audio': 'Audio / TTS / Music',
-            'segmentation': 'Segmentation / Matting',
-            'llm': 'Language Models',
-            'game': 'Games',
-            'dev': 'Dev / Test UIs'
-        };
-
-        // Filter chips
-        let activeFilter = localStorage.getItem('dragonsuite-filter') || 'all';
-
-        function buildFilterBar() {
-            const bar = document.getElementById('filterBar');
-            const chips = [
-                { id: 'all', icon: '&#10022;', name: 'All' },
-                ...categoryOrder.map(cat => ({
-                    id: cat,
-                    icon: categoryIcons[cat] || categoryIcons.default,
-                    name: (categoryNames[cat] || cat).split(' /')[0]
-                }))
-            ];
-            bar.innerHTML = chips.map(chip => `
-                <button class="filter-chip${activeFilter === chip.id ? ' active' : ''}"
-                        onclick="setFilter('${chip.id}')">${chip.icon} ${chip.name}</button>
-            `).join('');
-        }
-
-        function setFilter(filter) {
-            activeFilter = filter;
-            localStorage.setItem('dragonsuite-filter', filter);
-            buildFilterBar();
-            applyFilter();
-        }
-
-        function applyFilter() {
-            document.querySelectorAll('.category-section').forEach(section => {
-                if (activeFilter === 'all') {
-                    section.style.display = '';
-                } else {
-                    section.style.display = (section.dataset.category === activeFilter) ? '' : 'none';
-                }
-            });
-        }
-
-        // State
-        let services = [];
-        let localIp = '127.0.0.1';
-
-        // DOM Elements
-        const servicesContainer = document.getElementById('servicesContainer');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const localUrlEl = document.getElementById('localUrl');
-        const networkUrlEl = document.getElementById('networkUrl');
-        const toast = document.getElementById('toast');
-        const clipboardFallback = document.getElementById('clipboardFallback');
-
-        // Modal elements
-        const qrModal = document.getElementById('qrModal');
-        const qrModalTitle = document.getElementById('qrModalTitle');
-        const qrModalUrl = document.getElementById('qrModalUrl');
-        const qrModalImage = document.getElementById('qrModalImage');
-        const qrModalClose = document.getElementById('qrModalClose');
-
-        // Show toast notification
-        function showToast(message, type = 'info') {
-            toast.textContent = message;
-            toast.className = `toast ${type} show`;
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        // Copy to clipboard with fallback for non-HTTPS
-        async function copyToClipboard(text) {
-            // Try modern API first
-            if (navigator.clipboard && window.isSecureContext) {
-                try {
-                    await navigator.clipboard.writeText(text);
-                    return true;
-                } catch (e) {
-                    // Fall through to fallback
-                }
-            }
-
-            // Fallback for non-HTTPS contexts
-            try {
-                clipboardFallback.value = text;
-                clipboardFallback.style.left = '0';
-                clipboardFallback.select();
-                clipboardFallback.setSelectionRange(0, 99999);
-                const success = document.execCommand('copy');
-                clipboardFallback.style.left = '-9999px';
-                return success;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        // Fetch status
-        async function fetchStatus() {
-            refreshBtn.classList.add('spinning');
-
-            try {
-                const response = await fetch('/api/status');
-                if (!response.ok) throw new Error('Failed to fetch status');
-
-                const data = await response.json();
-                localIp = data.local_ip;
-                services = data.services;
-
-                localUrlEl.textContent = `http://localhost:8100`;
-                networkUrlEl.textContent = `http://${localIp}:8100`;
-
-                renderServices();
-                fetchLLMModels();
-            } catch (error) {
-                console.error('Error fetching status:', error);
-                servicesContainer.innerHTML = `
-                    <div class="empty-state">
-                        <h3>Error loading services</h3>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-            } finally {
-                refreshBtn.classList.remove('spinning');
-            }
-        }
-
-        // Fetch installed LLM models and populate llm-models divs
-        async function fetchLLMModels() {
-            try {
-                const response = await fetch('/api/llm-models');
-                if (!response.ok) return;
-                const data = await response.json();
-
-                // Ollama models
-                const ollamaEl = document.getElementById('llm-models-ollama');
-                if (ollamaEl) {
-                    if (data.ollama && data.ollama.length > 0) {
-                        ollamaEl.innerHTML = data.ollama.map(m =>
-                            `<span style="display:inline-block;margin-right:0.5rem;">${m.name} <span style="opacity:0.5;">${m.size_gb}GB</span></span>`
-                        ).join('');
-                    } else if (data.ollama === null) {
-                        ollamaEl.textContent = 'offline';
-                    } else {
-                        ollamaEl.textContent = 'no models installed';
-                    }
-                }
-
-                // LM Studio models
-                const lmsEl = document.getElementById('llm-models-lm-studio');
-                if (lmsEl) {
-                    if (data.lmstudio && data.lmstudio.length > 0) {
-                        lmsEl.innerHTML = data.lmstudio.map(id =>
-                            `<span style="display:inline-block;margin-right:0.5rem;">${id}</span>`
-                        ).join('');
-                    } else if (data.lmstudio === null) {
-                        lmsEl.textContent = 'offline';
-                    } else {
-                        lmsEl.textContent = 'no models loaded';
-                    }
-                }
-            } catch {
-                // silently ignore — LLM tab just won't show models
-            }
-        }
-
-        // Fetch git info for a service
-        async function fetchGitInfo(serviceId) {
-            try {
-                const response = await fetch(`/api/git/${serviceId}`);
-                if (!response.ok) return null;
-                const data = await response.json();
-                return data.git;
-            } catch {
-                return null;
-            }
-        }
-
-        // Start a service
-        async function startService(serviceId, btn) {
-            btn.disabled = true;
-            btn.innerHTML = '&#8987; Starting...';
-
-            try {
-                const response = await fetch(`/api/start/${serviceId}`, { method: 'POST' });
-                const data = await response.json();
-
-                if (response.ok) {
-                    showToast(data.message, data.status === 'already_running' ? 'info' : 'success');
-                    // Refresh status after a short delay to allow service to start
-                    setTimeout(fetchStatus, 2000);
-                } else {
-                    showToast(data.detail || 'Failed to start service', 'error');
-                }
-            } catch (error) {
-                showToast('Failed to start service: ' + error.message, 'error');
-            }
-
-            btn.disabled = false;
-            btn.innerHTML = '&#9654; Start';
-        }
-
-        // Stop a service
-        async function stopService(serviceId, btn) {
-            btn.disabled = true;
-            btn.innerHTML = '&#8987; Stopping...';
-
-            try {
-                const response = await fetch(`/api/stop/${serviceId}`, { method: 'POST' });
-                const data = await response.json();
-
-                if (response.ok) {
-                    showToast(data.message, 'success');
-                    setTimeout(fetchStatus, 1000);
-                } else {
-                    showToast(data.detail || 'Failed to stop service', 'error');
-                }
-            } catch (error) {
-                showToast('Failed to stop service: ' + error.message, 'error');
-            }
-
-            btn.disabled = false;
-            btn.innerHTML = '&#9632; Stop';
-        }
-
-        // Render services by category (video first)
-        function renderServices() {
-            if (services.length === 0) {
-                servicesContainer.innerHTML = `
-                    <div class="empty-state">
-                        <h3>No services configured</h3>
-                        <p>Add services to /srv/containers/edq/config/dragonsuite.json</p>
-                    </div>
-                `;
-                return;
-            }
-
-            // Group by category
-            const categories = {};
-            services.forEach(service => {
-                const cat = service.category || 'other';
-                if (!categories[cat]) categories[cat] = [];
-                categories[cat].push(service);
-            });
-
-            // Sort categories by predefined order
-            const sortedCategories = Object.keys(categories).sort((a, b) => {
-                const aIndex = categoryOrder.indexOf(a);
-                const bIndex = categoryOrder.indexOf(b);
-                if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
-                if (aIndex === -1) return 1;
-                if (bIndex === -1) return -1;
-                return aIndex - bIndex;
-            });
-
-            // Render
-            let html = '';
-            for (const category of sortedCategories) {
-                const categoryServices = categories[category];
-                const icon = categoryIcons[category] || categoryIcons.default;
-                const name = categoryNames[category] || category.charAt(0).toUpperCase() + category.slice(1);
-                html += `
-                    <div class="category-section" data-category="${category}">
-                        <div class="category-title">
-                            <span>${icon}</span>
-                            <span>${name}</span>
-                        </div>
-                        <div class="services-grid">
-                            ${categoryServices.map(s => renderServiceCard(s)).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            servicesContainer.innerHTML = html;
-
-            // Update filter chips and apply current filter
-            buildFilterBar();
-            applyFilter();
-
-            // Fetch git info for services with project paths
-            services.forEach(service => {
-                if (service.project_path) {
-                    fetchGitInfo(service.id).then(gitInfo => {
-                        if (gitInfo && gitInfo.hash) {
-                            const gitEl = document.getElementById(`git-${service.id}`);
-                            if (gitEl) {
-                                gitEl.innerHTML = `
-                                    <span>&#128205;</span>
-                                    <span class="git-hash">${gitInfo.hash}</span>
-                                    <span>${gitInfo.branch}</span>
-                                    <span style="color: #9ca3af; margin-left: auto; font-size: 0.9em;">${gitInfo.last_commit}</span>
-                                `;
-                                gitEl.style.display = 'flex';
-                            }
-                        }
-                    });
-                }
-            });
-        }
-
-        // Render a single service card
-        function renderServiceCard(service) {
-            const statusClass = service.running ? 'status-running' : 'status-stopped';
-            const statusText = service.running ? 'Running' : 'Stopped';
-
-            // Support custom thumbnails with emoji fallback
-            let iconHTML;
-            if (service.thumbnail) {
-                // Custom thumbnail image
-                const fallbackIcon = service.icon || '&#128187;';
-                iconHTML = `<img src="${service.thumbnail}" alt="${service.name}" onerror="this.parentElement.innerHTML='${fallbackIcon}'">`;
-            } else {
-                // Standard emoji icon
-                iconHTML = service.icon || '&#128187;';
-            }
-            const icon = iconHTML;
-
-            const urlDisplay = service.url
-                ? `<a href="${service.url}" target="_blank">${service.url}</a>`
-                : '<span style="color: #9ca3af;">N/A</span>';
-
-            const pagesDisplay = service.pages_url
-                ? `<div class="info-row">
-                        <span class="info-label">Live</span>
-                        <span class="info-value"><a href="${service.pages_url}" target="_blank" style="color: #22c55e;">&#127760; GH Pages</a></span>
-                   </div>`
-                : '';
-
-            const portDisplay = service.port || 'N/A';
-
-            // Determine which buttons to show
-            const hasLaunchCommand = !!service.launch_command;
-            const hasPort = !!service.port;
-
-            let actionButtons = '';
-
-            // Always show Start and Stop buttons (disable based on state)
-            if (hasLaunchCommand) {
-                const startDisabled = service.running ? 'disabled' : '';
-                const stopDisabled = service.running ? '' : 'disabled';
-                actionButtons += `<button class="action-btn btn-start" onclick="startService('${service.id}', this)" ${startDisabled}>&#9654; Start</button>`;
-                if (hasPort) {
-                    actionButtons += `<button class="action-btn btn-stop" onclick="stopService('${service.id}', this)" ${stopDisabled}>&#9632; Stop</button>`;
-                }
-            }
-
-            // QR code in header (small, clickable)
-            const headerQR = hasPort
-                ? `<img class="header-qr" src="/api/qrcode/${service.id}" alt="QR" onclick="showQR('${service.id}', '${service.name}')" title="Click for larger QR">`
-                : '';
-
-            return `
-                <div class="service-card" data-id="${service.id}">
-                    <div class="card-header">
-                        <div class="service-icon">${icon}</div>
-                        <div class="service-info">
-                            <div class="service-name">${service.name}</div>
-                            <div class="service-description">${service.description || ''}</div>
-                        </div>
-                        ${headerQR}
-                        <div class="status-indicator ${statusClass}" title="${statusText}"></div>
-                    </div>
-                    <div class="card-body">
-                        <div class="info-row">
-                            <span class="info-label">Port</span>
-                            <span class="info-value">${portDisplay}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">URL</span>
-                            <span class="info-value">${urlDisplay}</span>
-                        </div>
-                        ${pagesDisplay}
-                        <div class="git-info" id="git-${service.id}" style="display: none;"></div>
-                        ${service.category === 'llm'
-                            ? `<div class="llm-models" id="llm-models-${service.id}" style="margin-top:0.4rem;font-size:0.78rem;opacity:0.7;"></div>`
-                            : ''}
-                    </div>
-                    <div class="card-actions">
-                        ${actionButtons}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Show QR code modal
-        function showQR(serviceId, serviceName) {
-            const service = services.find(s => s.id === serviceId);
-            if (!service) return;
-
-            qrModalTitle.textContent = serviceName;
-            qrModalUrl.textContent = service.url;
-            qrModalImage.src = `/api/qrcode/${serviceId}`;
-            qrModal.classList.add('active');
-        }
-
-        // Close modal
-        qrModalClose.addEventListener('click', () => {
-            qrModal.classList.remove('active');
-        });
-
-        qrModal.addEventListener('click', (e) => {
-            if (e.target === qrModal) {
-                qrModal.classList.remove('active');
-            }
-        });
-
-        // Copy URL to clipboard
-        async function copyUrl(url, btn) {
-            const success = await copyToClipboard(url);
-            if (success) {
-                btn.innerHTML = '&#10003; Copied!';
-                btn.classList.add('copied');
-                showToast('URL copied to clipboard', 'success');
-                setTimeout(() => {
-                    btn.innerHTML = '&#128203; Copy URL';
-                    btn.classList.remove('copied');
-                }, 2000);
-            } else {
-                showToast('Failed to copy to clipboard', 'error');
-            }
-        }
-
-        // Refresh button
-        refreshBtn.addEventListener('click', fetchStatus);
-
-        // Auto-refresh every 30 seconds
-        setInterval(fetchStatus, 30000);
-
-        // GPU Stats
-        const vramBar = document.getElementById('vramBar');
-        const vramValue = document.getElementById('vramValue');
-        const gpuBar = document.getElementById('gpuBar');
-        const gpuValue = document.getElementById('gpuValue');
-        const gpuTempEl = document.getElementById('gpuTemp');
-
-        async function updateGPUStats() {
-            try {
-                const response = await fetch('/api/gpu-stats');
-                if (!response.ok) throw new Error('Failed to fetch GPU stats');
-
-                const data = await response.json();
-
-                if (data.error) {
-                    console.error('GPU stats error:', data.error);
-                    return;
-                }
-
-                // Update VRAM
-                const vramPercent = data.vram_percent;
-                vramBar.style.width = vramPercent + '%';
-                vramValue.textContent = vramPercent.toFixed(0) + '%';
-                vramBar.classList.toggle('high', vramPercent > 80);
-
-                // Update GPU utilization
-                const gpuPercent = data.gpu_utilization;
-                gpuBar.style.width = gpuPercent + '%';
-                gpuValue.textContent = gpuPercent + '%';
-                gpuBar.classList.toggle('high', gpuPercent > 80);
-
-                // Update GPU temperature
-                if (data.gpu_temp !== undefined) {
-                    const temp = data.gpu_temp;
-                    gpuTempEl.textContent = temp + '\u00B0C';
-                    gpuTempEl.className = 'temp-value ' +
-                        (temp >= 80 ? 'temp-hot' : temp >= 60 ? 'temp-warm' : 'temp-cool');
-                }
-
-            } catch (error) {
-                console.error('Error fetching GPU stats:', error);
-            }
-        }
-
-        // System Stats (CPU, RAM, Disk)
-        const cpuBar = document.getElementById('cpuBar');
-        const cpuValue = document.getElementById('cpuValue');
-        const ramBar = document.getElementById('ramBar');
-        const ramValue = document.getElementById('ramValue');
-        const rootDiskBar = document.getElementById('rootDiskBar');
-        const rootDiskValue = document.getElementById('rootDiskValue');
-        const projDiskStat = document.getElementById('projDiskStat');
-        const projDiskBar = document.getElementById('projDiskBar');
-        const projDiskValue = document.getElementById('projDiskValue');
-
-        function updateBar(bar, valueEl, percent, label) {
-            bar.style.width = percent + '%';
-            valueEl.textContent = label || (percent.toFixed(0) + '%');
-            bar.classList.toggle('high', percent > 80);
-        }
-
-        function diskLabel(d) {
-            return d.used_gb + '/' + d.total_gb + 'G';
-        }
-
-        async function updateSystemStats() {
-            try {
-                const response = await fetch('/api/system-stats');
-                if (!response.ok) throw new Error('Failed to fetch system stats');
-
-                const data = await response.json();
-                if (data.error) {
-                    console.error('System stats error:', data.error);
-                    return;
-                }
-
-                updateBar(cpuBar, cpuValue, data.cpu_percent);
-                updateBar(ramBar, ramValue, data.ram_percent,
-                    data.ram_used_gb + '/' + data.ram_total_gb + 'G');
-
-                // Root disk (always present)
-                if (data.disks && data.disks.root) {
-                    const r = data.disks.root;
-                    updateBar(rootDiskBar, rootDiskValue, r.percent, diskLabel(r));
-                }
-
-                // Project SSD (show if separate mount exists)
-                if (data.disks && data.disks.projects) {
-                    const p = data.disks.projects;
-                    projDiskStat.style.display = '';
-                    updateBar(projDiskBar, projDiskValue, p.percent, diskLabel(p));
-                }
-
-            } catch (error) {
-                console.error('Error fetching system stats:', error);
-            }
-        }
-
-        // Update GPU stats every 2 seconds, system stats every 5 seconds
-        updateGPUStats();
-        setInterval(updateGPUStats, 2000);
-        updateSystemStats();
-        setInterval(updateSystemStats, 5000);
-
-        // Initial load
-        buildFilterBar();
-        fetchStatus();
-
-        // ── Weather Banner ───────────────────────────────────────
-        function cToF(c) { return (c !== null && c !== undefined) ? Math.round(c * 9/5 + 32) : null; }
-        function msToMph(ms) { return (ms !== null && ms !== undefined) ? Math.round(ms * 2.23694) : null; }
-        function paToInHg(pa) { return (pa !== null && pa !== undefined) ? (pa * 0.0002953).toFixed(2) : null; }
-        function mToMi(m) { return (m !== null && m !== undefined) ? (m / 1609.34).toFixed(1) : null; }
-        function degToCompass(d) {
-            if (d === null || d === undefined) return '';
-            return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d / 22.5) % 16];
-        }
-
-        async function updateWeather() {
-            try {
-                const resp = await fetch('https://api.weather.gov/stations/KPSM/observations/latest',
-                    { headers: { 'User-Agent': 'Dragonsuite/2.0 (personal dashboard; Portsmouth NH)' } });
-                if (!resp.ok) throw new Error(`NWS HTTP ${resp.status}`);
-                const { properties: p } = await resp.json();
-
-                const tempF = cToF(p.temperature?.value);
-                const mph   = msToMph(p.windSpeed?.value);
-                const dir   = degToCompass(p.windDirection?.value);
-                const chillF = cToF(p.windChill?.value);
-
-                document.getElementById('weatherIcon').src = p.icon || '';
-                document.getElementById('weatherTemp').textContent = tempF !== null ? `${tempF}°F` : '--°F';
-                document.getElementById('weatherCond').textContent = p.textDescription || '--';
-                document.getElementById('wWind').textContent = mph !== null ? `${dir} ${mph} mph` : '--';
-                document.getElementById('wHumidity').textContent = p.relativeHumidity?.value !== null ? `${Math.round(p.relativeHumidity.value)}%` : '--';
-                document.getElementById('wDewpoint').textContent = cToF(p.dewpoint?.value) !== null ? `${cToF(p.dewpoint.value)}°F` : '--';
-                document.getElementById('wVisibility').textContent = mToMi(p.visibility?.value) !== null ? `${mToMi(p.visibility.value)} mi` : '--';
-                document.getElementById('wBarometer').textContent = paToInHg(p.barometricPressure?.value) !== null ? `${paToInHg(p.barometricPressure.value)} inHg` : '--';
-
-                if (chillF !== null) {
-                    document.getElementById('wChill').textContent = `${chillF}°F`;
-                    document.getElementById('wChillStat').style.display = 'flex';
-                } else {
-                    document.getElementById('wChillStat').style.display = 'none';
-                }
-
-                document.getElementById('wUpdated').textContent = `Updated ${new Date(p.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
-
-                document.getElementById('weatherPlaceholder').style.display = 'none';
-                document.getElementById('weatherMain').style.display = 'flex';
-                document.getElementById('weatherDivider').style.display = '';
-                document.getElementById('weatherStats').style.display = 'flex';
-                document.getElementById('weatherMeta').style.display = '';
-            } catch (err) {
-                document.getElementById('weatherPlaceholder').textContent = '⚠️ Weather unavailable';
-                console.warn('Weather fetch error:', err);
-            }
-        }
-
-        updateWeather();
-        setInterval(updateWeather, 15 * 60 * 1000); // refresh every 15 min
-
-        console.log('Dragonsuite v2 loaded');
-    </script>
+    <div class="schip">
+      <span class="slbl">CPU</span>
+      <div class="strack"><div class="sfill" id="h-cpu-bar" style="width:0%"></div></div>
+      <span class="sval" id="h-cpu-val">&#8212;</span>
+    </div>
+    <div class="schip">
+      <span class="slbl">RAM</span>
+      <div class="strack"><div class="sfill" id="h-ram-bar" style="width:0%"></div></div>
+      <span class="sval" id="h-ram-val">&#8212;</span>
+    </div>
+    <div class="schip">
+      <span class="slbl">DISK</span>
+      <div class="strack"><div class="sfill" id="h-disk-bar" style="width:0%"></div></div>
+      <span class="sval" id="h-disk-val">&#8212;</span>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-ip" id="hdr-ip">&#8212;</span>
+    <button class="ibtn" id="refresh-btn" title="Refresh">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+        <path d="M8 16H3v5"/>
+      </svg>
+    </button>
+    <button class="ibtn" id="theme-btn" title="Toggle theme">&#9728;&#65039;</button>
+  </div>
+</header>
+
+<nav class="cnav" id="cnav">
+  <button class="ctab active" data-cat="all">All <span class="cnum" id="cnt-all">0</span></button>
+</nav>
+
+<main class="main">
+  <div class="sgrid">
+    <div class="sc">
+      <div class="sc-lbl">VRAM Usage</div>
+      <div class="sc-val" id="sc-vram-val">&#8212; GB</div>
+      <div class="sc-bar"><div class="sc-fill" id="sc-vram-bar" style="width:0%"></div></div>
+      <div class="sc-sub" id="sc-vram-sub">Loading&#8230;</div>
+    </div>
+    <div class="sc">
+      <div class="sc-lbl">GPU Utilization</div>
+      <div class="sc-val" id="sc-gpu-val">&#8212;%</div>
+      <div class="sc-bar"><div class="sc-fill" id="sc-gpu-bar" style="width:0%"></div></div>
+      <div class="sc-sub" id="sc-gpu-sub">&#8212;&#176;C</div>
+    </div>
+    <div class="sc">
+      <div class="sc-lbl">CPU + RAM</div>
+      <div class="sc-val" id="sc-cpu-val">&#8212;%</div>
+      <div class="sc-bar"><div class="sc-fill" id="sc-cpu-bar" style="width:0%"></div></div>
+      <div class="sc-sub" id="sc-ram-sub">RAM &#8212;</div>
+    </div>
+    <div class="sc">
+      <div class="sc-lbl">Disk &middot; Projects SSD</div>
+      <div class="sc-val" id="sc-disk-val">&#8212; GB</div>
+      <div class="sc-bar"><div class="sc-fill" id="sc-disk-bar" style="width:0%"></div></div>
+      <div class="sc-sub" id="sc-disk-sub">Loading&#8230;</div>
+    </div>
+  </div>
+
+  <div class="llmrow">
+    <span class="llm-lbl">Ollama</span>
+    <div class="llm-pills" id="ollama-models"><span class="llm-off">Not running</span></div>
+    <div class="sep" style="height:18px;flex-shrink:0"></div>
+    <span class="llm-lbl">LM Studio</span>
+    <div class="llm-pills" id="lms-models"><span class="llm-off">Not running</span></div>
+  </div>
+
+  <div class="svgrid" id="svgrid">
+    <div style="color:var(--txm);padding:40px;text-align:center;grid-column:1/-1">Loading&#8230;</div>
+  </div>
+</main>
+
+<div class="overlay" id="qr-overlay">
+  <div class="modal">
+    <button class="modal-x" id="qr-close">&#x2715;</button>
+    <div class="modal-title" id="qr-title">QR Code</div>
+    <img id="qr-img" src="" alt="QR Code">
+    <div id="qr-url"></div>
+  </div>
+</div>
+
+<div class="overlay" id="git-overlay">
+  <div class="modal">
+    <button class="modal-x" id="git-close">&#x2715;</button>
+    <div class="modal-title" id="git-title">Git Info</div>
+    <div class="gtbl" id="git-content"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+'use strict';
+
+var services = [];
+var activeCat = 'all';
+
+var CAT = {
+  image:        {bg:'rgba(168,85,247,.13)',  cl:'#a855f7', bd:'rgba(168,85,247,.25)'},
+  video:        {bg:'rgba(96,165,250,.13)',  cl:'#60a5fa', bd:'rgba(96,165,250,.25)'},
+  audio:        {bg:'rgba(244,114,182,.13)', cl:'#f472b6', bd:'rgba(244,114,182,.25)'},
+  segmentation: {bg:'rgba(45,212,191,.13)',  cl:'#2dd4bf', bd:'rgba(45,212,191,.25)'},
+  '3d':         {bg:'rgba(251,146,60,.13)',  cl:'#fb923c', bd:'rgba(251,146,60,.25)'},
+  game:         {bg:'rgba(74,222,128,.13)',  cl:'#4ade80', bd:'rgba(74,222,128,.25)'},
+  'smart-home': {bg:'rgba(249,115,22,.13)',  cl:'#f97316', bd:'rgba(249,115,22,.25)'},
+  automation:   {bg:'rgba(148,163,184,.10)', cl:'#94a3b8', bd:'rgba(148,163,184,.20)'},
+  llm:          {bg:'rgba(244,63,94,.13)',   cl:'#f43f5e', bd:'rgba(244,63,94,.25)'}
+};
+
+function catStyle(c) {
+  var s = CAT[c] || CAT.automation;
+  return 'background:' + s.bg + ';color:' + s.cl + ';border:1px solid ' + s.bd;
+}
+
+function toast(msg, type, ms) {
+  var el = document.createElement('div');
+  el.className = 'toast ' + (type || 'inf');
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(function(){ el.remove(); }, ms || 3000);
+}
+
+function fcls(p) { return p >= 85 ? 'd' : p >= 65 ? 'w' : ''; }
+
+function setHBar(id, pct) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style.width = Math.min(100, pct) + '%';
+  el.className = 'sfill ' + fcls(pct);
+}
+
+function setSBar(id, pct) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style.width = Math.min(100, pct) + '%';
+  el.className = 'sc-fill ' + fcls(pct);
+}
+
+function txt(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+
+async function fetchGpu() {
+  try {
+    var d = await fetch('/api/gpu-stats').then(function(r){ return r.json(); });
+    if (d.error) return;
+    var pct = Math.round(d.vram_percent);
+    var used = (d.vram_used_mb / 1024).toFixed(1);
+    var total = (d.vram_total_mb / 1024).toFixed(1);
+    setHBar('h-vram-bar', pct); txt('h-vram-val', used + 'G');
+    setHBar('h-gpu-bar', d.gpu_utilization); txt('h-gpu-val', d.gpu_utilization + '%');
+    txt('sc-vram-val', used + ' GB');
+    setSBar('sc-vram-bar', pct);
+    txt('sc-vram-sub', used + ' / ' + total + ' GB (' + pct + '%)');
+    txt('sc-gpu-val', d.gpu_utilization + '%');
+    setSBar('sc-gpu-bar', d.gpu_utilization);
+    txt('sc-gpu-sub', d.gpu_temp + '\u00b0C');
+  } catch(_) {}
+}
+
+async function fetchSys() {
+  try {
+    var d = await fetch('/api/system-stats').then(function(r){ return r.json(); });
+    if (d.error) return;
+    setHBar('h-cpu-bar', d.cpu_percent); txt('h-cpu-val', Math.round(d.cpu_percent) + '%');
+    setHBar('h-ram-bar', d.ram_percent); txt('h-ram-val', d.ram_used_gb + 'G');
+    setHBar('h-disk-bar', d.disk_percent); txt('h-disk-val', d.disk_used_gb + 'G');
+    txt('sc-cpu-val', Math.round(d.cpu_percent) + '%');
+    setSBar('sc-cpu-bar', d.cpu_percent);
+    txt('sc-ram-sub', 'RAM ' + d.ram_used_gb + ' / ' + d.ram_total_gb + ' GB');
+    txt('sc-disk-val', d.disk_used_gb + ' GB');
+    setSBar('sc-disk-bar', d.disk_percent);
+    txt('sc-disk-sub', d.disk_used_gb + ' / ' + d.disk_total_gb + ' GB (' + Math.round(d.disk_percent) + '%)');
+  } catch(_) {}
+}
+
+async function fetchLlm() {
+  try {
+    var d = await fetch('/api/llm-models').then(function(r){ return r.json(); });
+    var oel = document.getElementById('ollama-models');
+    oel.innerHTML = (d.ollama && d.ollama.length)
+      ? d.ollama.map(function(m){ return '<span class="llm-pill">' + m.name + ' <span style="color:var(--txm)">' + m.size_gb + 'G</span></span>'; }).join('')
+      : '<span class="llm-off">Not running</span>';
+    var lel = document.getElementById('lms-models');
+    lel.innerHTML = (d.lmstudio && d.lmstudio.length)
+      ? d.lmstudio.map(function(m){ return '<span class="llm-pill">' + m + '</span>'; }).join('')
+      : '<span class="llm-off">Not running</span>';
+  } catch(_) {}
+}
+
+function buildNav(svcs, cats) {
+  var counts = {all: svcs.length};
+  svcs.forEach(function(s){ counts[s.category] = (counts[s.category] || 0) + 1; });
+  var used = Object.keys(cats).filter(function(c){ return counts[c]; });
+  var nav = document.getElementById('cnav');
+  nav.innerHTML =
+    '<button class="ctab' + (activeCat === 'all' ? ' active' : '') + '" data-cat="all">All <span class="cnum">' + counts.all + '</span></button>' +
+    used.map(function(c){
+      return '<button class="ctab' + (activeCat === c ? ' active' : '') + '" data-cat="' + c + '">' +
+        cats[c].name + ' <span class="cnum">' + (counts[c] || 0) + '</span></button>';
+    }).join('');
+  nav.querySelectorAll('.ctab').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      activeCat = btn.dataset.cat;
+      nav.querySelectorAll('.ctab').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderGrid();
+    });
+  });
+}
+
+function buildCard(s) {
+  var running = s.running;
+  var hasPort = s.port && s.url;
+  var hasCmd  = s.launch_command && s.launch_command !== 'null';
+  var cat     = s.category || 'automation';
+  var catLbl  = cat.replace(/-/g, ' ');
+  var port    = s.port ? ':' + s.port : 'mcp-only';
+
+  var btns = '';
+  if (!hasPort && !hasCmd) {
+    btns = '<span class="btn btn-mc">MCP Only</span>';
+  } else {
+    if (running && hasPort) btns += '<a class="btn btn-op" href="' + s.url + '" target="_blank">\u2197 Open</a>';
+    if (running)            btns += '<button class="btn btn-st" onclick="stopSvc(\'' + s.id + '\')">\u25a0 Stop</button>';
+    else if (hasCmd)        btns += '<button class="btn btn-go" onclick="startSvc(\'' + s.id + '\')">\u25b6 Start</button>';
+    if (hasPort)            btns += '<button class="btn btn-ic" title="QR Code" onclick="showQr(\'' + s.id + '\',\'' + s.url + '\')">&#x25A6;</button>';
+    if (s.project_path)     btns += '<button class="btn btn-ic" title="Git info" onclick="showGit(\'' + s.id + '\',\'' + s.name.replace(/'/g, '\\x27') + '\')">&#x2387;</button>';
+    if (s.github_url)       btns += '<a class="btn btn-ic" href="' + s.github_url + '" target="_blank" title="GitHub">&#x2325;</a>';
+  }
+
+  var feats = (s.features || []).map(function(f){ return '<span class="feat">' + f + '</span>'; }).join('');
+
+  return '<div class="card' + (running ? ' run' : '') + '" data-id="' + s.id + '" data-cat="' + cat + '">' +
+    '<div class="card-hd">' +
+      '<div class="card-ico">' + (s.icon || '&#x2699;') + '</div>' +
+      '<div class="card-meta">' +
+        '<div class="card-name">' + s.name + '</div>' +
+        '<span class="cbadge" style="' + catStyle(cat) + '">' + catLbl + '</span>' +
+      '</div>' +
+      '<div class="sdot ' + (running ? 'on' : 'off') + '"></div>' +
+    '</div>' +
+    '<div class="card-desc">' + (s.description || '') + '</div>' +
+    (feats ? '<div class="card-feats">' + feats + '</div>' : '') +
+    '<div class="card-ft">' +
+      '<span class="cport">PORT <b>' + port + '</b></span>' +
+      btns +
+    '</div>' +
+  '</div>';
+}
+
+function renderGrid() {
+  var grid = document.getElementById('svgrid');
+  var list = activeCat === 'all' ? services : services.filter(function(s){ return s.category === activeCat; });
+  if (!list.length) {
+    grid.innerHTML = '<div style="color:var(--txm);padding:40px;text-align:center;grid-column:1/-1">No services in this category</div>';
+    return;
+  }
+  grid.innerHTML = list.map(buildCard).join('');
+  // Only animate cards on the very first render; suppress on status polls
+  setTimeout(function(){ grid.classList.add('settled'); }, 600);
+}
+
+async function fetchStatus(showMsg) {
+  var btn = document.getElementById('refresh-btn');
+  btn.classList.add('spin');
+  try {
+    var res = await Promise.all([fetch('/api/status'), fetch('/api/config')]);
+    var status = await res[0].json();
+    var cfg    = await res[1].json();
+    txt('hdr-ip', status.local_ip);
+    services = status.services;
+    buildNav(services, cfg.categories || {});
+    renderGrid();
+    if (showMsg) toast('Refreshed', 'ok', 2000);
+  } catch(_) {
+    if (showMsg) toast('Failed to fetch status', 'err');
+  } finally {
+    btn.classList.remove('spin');
+  }
+}
+
+async function startSvc(id) {
+  var card = document.querySelector('[data-id="' + id + '"]');
+  var btn  = card && card.querySelector('.btn-go');
+  if (btn) { btn.disabled = true; btn.textContent = '\u2026'; }
+  try {
+    var d = await fetch('/api/start/' + id, {method:'POST'}).then(function(r){ return r.json(); });
+    toast(d.message, d.status === 'started' ? 'ok' : 'inf');
+    setTimeout(fetchStatus, 3000);
+  } catch(_) {
+    toast('Failed to start', 'err');
+    if (btn) { btn.disabled = false; btn.textContent = '\u25b6 Start'; }
+  }
+}
+
+async function stopSvc(id) {
+  var card = document.querySelector('[data-id="' + id + '"]');
+  var btn  = card && card.querySelector('.btn-st');
+  if (btn) { btn.disabled = true; btn.textContent = '\u2026'; }
+  try {
+    var d = await fetch('/api/stop/' + id, {method:'POST'}).then(function(r){ return r.json(); });
+    toast(d.message, 'inf');
+    setTimeout(fetchStatus, 1500);
+  } catch(_) {
+    toast('Failed to stop', 'err');
+    if (btn) { btn.disabled = false; btn.textContent = '\u25a0 Stop'; }
+  }
+}
+
+function showQr(id, url) {
+  document.getElementById('qr-title').textContent = 'QR Code';
+  document.getElementById('qr-img').src = '/api/qrcode/' + id;
+  document.getElementById('qr-url').textContent = url;
+  document.getElementById('qr-overlay').classList.add('open');
+}
+
+async function showGit(id, name) {
+  document.getElementById('git-title').textContent = name + ' \u2014 Git';
+  document.getElementById('git-content').innerHTML = '<div style="color:var(--txm)">Loading\u2026</div>';
+  document.getElementById('git-overlay').classList.add('open');
+  try {
+    var d = await fetch('/api/git/' + id).then(function(r){ return r.json(); });
+    var g = d.git;
+    if (!g) {
+      document.getElementById('git-content').innerHTML = '<div style="color:var(--txm)">' + (d.message || 'No git info') + '</div>';
+      return;
+    }
+    document.getElementById('git-content').innerHTML =
+      '<div class="grow"><span class="gkey">Branch</span><span>' + g.branch + '</span></div>' +
+      '<div class="grow"><span class="gkey">Commit</span><span>' + g.hash + '</span></div>' +
+      '<div class="grow"><span class="gkey">Last</span><span>' + g.last_commit + '</span></div>';
+  } catch(_) {
+    document.getElementById('git-content').innerHTML = '<div style="color:var(--txm)">Error loading</div>';
+  }
+}
+
+document.getElementById('qr-close').addEventListener('click', function(){ document.getElementById('qr-overlay').classList.remove('open'); });
+document.getElementById('git-close').addEventListener('click', function(){ document.getElementById('git-overlay').classList.remove('open'); });
+['qr-overlay','git-overlay'].forEach(function(id){
+  document.getElementById(id).addEventListener('click', function(e){
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+  });
+});
+
+var themeBtn = document.getElementById('theme-btn');
+var dark = localStorage.getItem('ds-theme') !== 'light';
+function applyTheme() {
+  document.body.classList.toggle('light', !dark);
+  themeBtn.textContent = dark ? '\u2600\ufe0f' : '\uD83C\uDF19';
+}
+themeBtn.addEventListener('click', function(){
+  dark = !dark;
+  localStorage.setItem('ds-theme', dark ? 'dark' : 'light');
+  applyTheme();
+});
+
+document.getElementById('refresh-btn').addEventListener('click', function(){ fetchStatus(true); });
+
+applyTheme();
+fetchStatus();
+fetchGpu();
+fetchSys();
+fetchLlm();
+setInterval(fetchStatus, 30000);
+setInterval(fetchGpu,     5000);
+setInterval(fetchSys,    10000);
+setInterval(fetchLlm,    60000);
+</script>
 </body>
 </html>

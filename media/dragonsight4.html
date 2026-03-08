@@ -294,14 +294,14 @@
 
             <div class="controls">
                 <select id="backend">
-                    <option value="ollama" selected>💎 Ollama (Always-on)</option>
+                    <option value="ollama" selected>💎 Ollama (Local VLM)</option>
                     <option value="lmstudio">🔥 LM Studio (Uncensored)</option>
                     <option value="dolphin">🐬 Dolphin Vision (Uncensored)</option>
+                    <option value="gemini">✨ Gemini Flash-Lite (Cloud)</option>
                 </select>
                 <small id="dolphinHint" style="display:none; color: #9ca3af;">Start via Dragonsuite port 8025</small>
                 <select id="ollamaModel">
-                    <option value="qwen3.5:27b" selected>Qwen3.5 27B (Default)</option>
-                    <option value="qwen3-vl:8b">Qwen3-VL 8B (Fallback)</option>
+                    <option value="qwen3-vl:8b" selected>Qwen3-VL 8B (Vision)</option>
                     <option value="llama3.2-vision:11b">Llama 3.2 Vision 11B</option>
                 </select>
                 <button id="analyzeBtn" disabled>🔍 Analyze Image</button>

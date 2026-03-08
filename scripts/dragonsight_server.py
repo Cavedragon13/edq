@@ -15,10 +15,21 @@ import os
 from pathlib import Path
 from datetime import datetime
 
+# Load .env for API keys
+_env_path = Path("/srv/containers/edq/.env")
+if _env_path.exists():
+    for _line in _env_path.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith('#') and '=' in _line:
+            _k, _v = _line.split('=', 1)
+            os.environ.setdefault(_k.strip(), _v.strip())
+
 PORT = 8080
 OLLAMA_PORT = 11434
 LMSTUDIO_PORT = 1234
 DOLPHIN_PORT = 8025
+GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
 MEDIA_DIR = Path("/srv/containers/edq/media")
 HTML_FILE = MEDIA_DIR / "dragonsight4.html"
 OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/dragonsight"))
@@ -89,6 +100,8 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             self._proxy_lmstudio()
         elif self.path == '/api/dolphin/analyze':
             self._proxy_dolphin()
+        elif self.path == '/api/gemini/generate':
+            self._proxy_gemini()
         elif self.path == '/api/save':
             self._save_metadata()
         else:
@@ -108,9 +121,10 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             # Create output directory if needed
             OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-            # Generate filename from original filename or timestamp
-            original_name = data.get('original_filename', 'unknown')
-            base_name = Path(original_name).stem
+            # Use AI-suggested filename if present, fall back to original upload name
+            suggested = data.get('suggested_name', '').strip()
+            original = data.get('original_name', data.get('original_filename', 'unknown')).strip()
+            base_name = Path(suggested or original).stem or 'unknown'
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             output_file = OUTPUT_DIR / f"{base_name}_{timestamp}.json"
 
@@ -302,6 +316,99 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(response)
 
 
+    def _proxy_gemini(self):
+        """Proxy image analysis to Google Gemini API."""
+        if not GOOGLE_API_KEY:
+            response = json.dumps({'error': 'GOOGLE_API_KEY not configured in .env'}).encode()
+            self.send_response(503)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(response)
+            return
+
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length == 0:
+                self.send_error(400, "No request body")
+                return
+
+            body = self.rfile.read(content_length)
+            data = json.loads(body)
+
+            image_base64 = data.get('image_base64', '')
+            prompt = data.get('prompt', '')
+            mime_type = data.get('mime_type', 'image/jpeg')
+
+            if not image_base64 or not prompt:
+                self.send_error(400, "Missing image_base64 or prompt")
+                return
+
+            # Build Gemini REST API request
+            gemini_url = (
+                f'https://generativelanguage.googleapis.com/v1beta/models/'
+                f'{GEMINI_MODEL}:generateContent?key={GOOGLE_API_KEY}'
+            )
+            gemini_body = json.dumps({
+                'contents': [{
+                    'parts': [
+                        {'text': prompt},
+                        {'inline_data': {'mime_type': mime_type, 'data': image_base64}}
+                    ]
+                }]
+            }).encode()
+
+            req = urllib.request.Request(gemini_url, data=gemini_body, method='POST')
+            req.add_header('Content-Type', 'application/json')
+
+            with urllib.request.urlopen(req, timeout=60) as gemini_resp:
+                gemini_data = json.loads(gemini_resp.read())
+
+            # Extract text from response
+            text = gemini_data['candidates'][0]['content']['parts'][0]['text']
+            response = json.dumps({'response': text}).encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(response)
+
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8', errors='replace')
+            try:
+                error_json = json.loads(error_body)
+                error_msg = error_json.get('error', {}).get('message', str(e))
+            except Exception:
+                error_msg = error_body[:200]
+            response = json.dumps({'error': f'Gemini API error: {error_msg}'}).encode()
+            self.send_response(502)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(response)
+
+        except (KeyError, IndexError) as e:
+            response = json.dumps({'error': f'Unexpected Gemini response format: {str(e)}'}).encode()
+            self.send_response(502)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(response)
+
+        except Exception as e:
+            response = json.dumps({'error': f'Server error: {str(e)}'}).encode()
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(response)
+
+
 class ReuseTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     """TCP server with SO_REUSEADDR and per-request threads.
 
@@ -329,6 +436,7 @@ if __name__ == "__main__":
     print(f"   Ollama Proxy: /api/ollama/generate → localhost:{OLLAMA_PORT}")
     print(f"   LM Studio Proxy: /api/lmstudio/completions → localhost:{LMSTUDIO_PORT}")
     print(f"   Dolphin Proxy: /api/dolphin/analyze → localhost:{DOLPHIN_PORT}")
+    print(f"   Gemini Proxy: /api/gemini/generate → Google API ({'✓ key loaded' if GOOGLE_API_KEY else '✗ no key'})")
     print(f"   Port: {PORT}")
     print(f"   Access: http://127.0.0.1:{PORT}")
     print(f"   LAN: http://192.168.7.226:{PORT}")
