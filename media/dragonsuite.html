@@ -86,6 +86,17 @@ body.light .hdr { background:rgba(240,240,248,.88); }
 }
 .hdr-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .hdr-ip { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--txm); }
+/* Weather chip */
+.hdr-weather {
+  display:flex; align-items:center; gap:7px; flex-shrink:0;
+  padding:3px 10px 3px 8px; border-radius:8px;
+  background:var(--bge); border:1px solid var(--bd);
+  font-size:11px; color:var(--tx2); white-space:nowrap;
+  transition:all var(--tr);
+}
+.hdr-weather img { width:22px; height:22px; flex-shrink:0; }
+.hdr-weather-temp { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; color:var(--tx); }
+.hdr-weather-cond { color:var(--txm); font-size:10px; }
 .ibtn {
   width:30px; height:30px; border-radius:7px;
   border:1px solid var(--bd); background:transparent; color:var(--tx2);
@@ -362,6 +373,11 @@ body.light .cnav { background:rgba(240,240,248,.75); }
       <div class="strack"><div class="sfill" id="h-disk-bar" style="width:0%"></div></div>
       <span class="sval" id="h-disk-val">&#8212;</span>
     </div>
+  </div>
+  <div class="hdr-weather" id="hdr-weather" title="KPSM · Portsmouth NH">
+    <img id="hdr-weather-icon" src="" alt="" style="display:none">
+    <span class="hdr-weather-temp" id="hdr-weather-temp">&#8230;</span>
+    <span class="hdr-weather-cond" id="hdr-weather-cond"></span>
   </div>
   <div class="hdr-right">
     <span class="hdr-ip" id="hdr-ip">&#8212;</span>
@@ -707,15 +723,50 @@ themeBtn.addEventListener('click', function(){
 
 document.getElementById('refresh-btn').addEventListener('click', function(){ fetchStatus(true); });
 
+// ── Weather (NWS KPSM · Portsmouth NH) ─────────────────────────────────
+function cToF(c) { return (c !== null && c !== undefined) ? Math.round(c * 9/5 + 32) : null; }
+function msToMph(ms) { return (ms !== null && ms !== undefined) ? Math.round(ms * 2.23694) : null; }
+function degToCompass(d) {
+  if (d === null || d === undefined) return '';
+  return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d / 22.5) % 16];
+}
+async function fetchWeather() {
+  try {
+    var resp = await fetch('https://api.weather.gov/stations/KPSM/observations/latest',
+      { headers: { 'User-Agent': 'Dragonsuite/3.0 (personal dashboard; Portsmouth NH)' } });
+    if (!resp.ok) throw new Error('NWS ' + resp.status);
+    var p = (await resp.json()).properties;
+    var tempF = cToF(p.temperature?.value);
+    var mph   = msToMph(p.windSpeed?.value);
+    var dir   = degToCompass(p.windDirection?.value);
+    var icon  = document.getElementById('hdr-weather-icon');
+    var tempEl = document.getElementById('hdr-weather-temp');
+    var condEl = document.getElementById('hdr-weather-cond');
+    if (p.icon) { icon.src = p.icon; icon.style.display = ''; }
+    tempEl.textContent = tempF !== null ? tempF + '\u00b0F' : '--\u00b0F';
+    var cond = p.textDescription || '';
+    var wind = (mph !== null && dir) ? dir + ' ' + mph + ' mph' : '';
+    condEl.textContent = [cond, wind].filter(Boolean).join(' \u00b7 ');
+    document.getElementById('hdr-weather').title = 'KPSM \u00b7 Portsmouth NH \u00b7 Updated ' +
+      new Date(p.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  } catch(e) {
+    document.getElementById('hdr-weather-temp').textContent = '\u26a0\ufe0f';
+    document.getElementById('hdr-weather-cond').textContent = 'unavailable';
+    console.warn('Weather:', e);
+  }
+}
+
 applyTheme();
 fetchStatus();
 fetchGpu();
 fetchSys();
 fetchLlm();
-setInterval(fetchStatus, 30000);
-setInterval(fetchGpu,     5000);
-setInterval(fetchSys,    10000);
-setInterval(fetchLlm,    60000);
+fetchWeather();
+setInterval(fetchStatus,   30000);
+setInterval(fetchGpu,       5000);
+setInterval(fetchSys,      10000);
+setInterval(fetchLlm,      60000);
+setInterval(fetchWeather, 900000); // 15 min
 </script>
 </body>
 </html>
