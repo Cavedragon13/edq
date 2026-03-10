@@ -51,15 +51,21 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                 self.send_error(404, f"Session not found: {filename}")
                 return
             try:
-                with open(file_path, 'rb') as f:
-                    content = f.read()
+                file_size = file_path.stat().st_size
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/zip')
-                self.send_header('Content-Length', len(content))
+                self.send_header('Content-Length', file_size)
                 self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
                 self._send_cors_headers()
                 self.end_headers()
-                self.wfile.write(content)
+                # Stream in 64KB chunks — avoids loading large ZIPs into RAM
+                # and keeps the write calls short so the connection stays alive.
+                with open(file_path, 'rb') as f:
+                    while True:
+                        chunk = f.read(65536)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
             except Exception as e:
                 self._send_error(500, f"Error reading session: {str(e)}")
             return
@@ -194,6 +200,18 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
 
             size_mb = len(zip_bytes) / 1024 / 1024
             print(f"   Saved session: {filename} ({size_mb:.1f} MB)")
+
+            # Also copy to Publish folder so the nightly cron job picks it up
+            # for automatic deployment to seed13productions.com
+            publish_dir = Path("/srv/containers/edq/Publish")
+            try:
+                publish_dir.mkdir(parents=True, exist_ok=True)
+                publish_path = publish_dir / filename
+                import shutil
+                shutil.copy2(str(output_path), str(publish_path))
+                print(f"   Copied to Publish queue: {publish_path}")
+            except Exception as pub_e:
+                print(f"   WARNING: Could not copy to Publish queue: {pub_e}")
 
             response = json.dumps({'success': True, 'filename': filename}).encode('utf-8')
             self.send_response(200)
