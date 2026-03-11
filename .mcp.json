@@ -32,11 +32,6 @@
       },
       "description": "Control Blender for 3D modeling, rendering, and scene manipulation (requires Blender running with MCP addon)"
     },
-    "obsidian": {
-      "command": "npx",
-      "args": ["-y", "obsidian-mcp", "/home/edq/knowledge-base"],
-      "description": "Access and manage Obsidian knowledge base via direct file access"
-    },
     "filesystem": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "/srv/containers/edq", "/home/edq"],
