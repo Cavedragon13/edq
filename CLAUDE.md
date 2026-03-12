@@ -210,7 +210,7 @@ const googleKey = process.env.GOOGLE_API_KEY;
 
 ## Environment Details
 
-- **Platform**: Linux (6.14.0-37-generic)
+- **Platform**: Linux (6.17.0-14-generic)
 - **Working Directory**: `/srv/containers/edq`
 - **Not a Git Repo**: This is a container/workspace, not version controlled
 - **User**: edq
