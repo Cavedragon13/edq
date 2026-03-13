@@ -98,3 +98,4 @@ When removing a project:
 | 2026-02-18 | Added `venv_ltxvideo` for LTX-Video-0.9.7-distilled T2V+I2V standalone (port 8028)           |
 | 2026-03-01 | Added `venv_lavasr` for LavaSR speech enhancement + BWE upsampling to 48kHz (port 8034)      |
 | 2026-03-02 | Added `venv_the_movies` for The Movies AI film studio sim (port 8035)                        |
+| 2026-03-12 | Attempted `venv_nemotron` for Nemotron Nano 9B v2 — removed; mamba-ssm/Blackwell incompatibility |
