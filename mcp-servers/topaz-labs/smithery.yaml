@@ -1,0 +1,18 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - topazApiKey
+    properties:
+      topazApiKey:
+        type: string
+        description: Your Topaz Labs API key from developer.topazlabs.com
+  commandFunction: |-
+    (config) => ({
+      command: 'uv',
+      args: ['run', '--with', 'httpx>=0.24.0', '--with', 'mcp>=1.0.0', 'server.py'],
+      env: { TOPAZ_API_KEY: config.topazApiKey }
+    })
+  exampleConfig:
+    topazApiKey: "your-topaz-api-key"
