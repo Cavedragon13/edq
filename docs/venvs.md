@@ -11,7 +11,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_florence2          | `/srv/containers/edq/venv_florence2`              | ~7GB   | `start_dragonsight.sh`        | Florence2 vision model service                             |
 | venv_flux2              | `/srv/containers/edq/venv_flux2`                  | ~7GB   | `start_flux2_klein.sh`        | DragonFlux Klein image generation                          |
 | venv_wan2gp             | `/srv/containers/edq/venv_wan2gp`                 | ~9GB   | `start_wan2gp.sh`             | Wan2GP video generation                                    |
-| venv_fish_speech        | `/srv/containers/edq/venv_fish_speech`            | ~8GB   | `start_fish_speech.sh`        | Fish Speech TTS (OpenAudio S1-mini)                        |
+| venv_fish_speech        | `/srv/containers/edq/venv_fish_speech`            | ~8GB   | `start_fish_speech.sh`        | Fish Speech TTS (Fish Audio S2-Pro, 4B)                    |
 | venv_heartmula          | `/srv/containers/edq/venv_heartmula`              | ~12GB  | `start_heartmula.sh`          | HeartMuLa music generation (3B)                            |
 | venv_sam2               | `/srv/containers/edq/venv_sam2`                   | ~6GB   | `start_sam2.sh`               | SAM 2.1 image/video segmentation                           |
 | venv_liveportrait       | `/srv/containers/edq/venv_liveportrait`           | ~8GB   | `start_liveportrait.sh`       | LivePortrait portrait animation (KlingTeam)                |
@@ -34,6 +34,8 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_dragonsong         | `/srv/containers/edq/venv_dragonsong`             | ~50MB  | `start_dragonsong.sh`         | Dragonsong - Google Lyria RealTime music (port 8029)       |
 | venv_lavasr             | `/srv/containers/edq/venv_lavasr`                 | ~2GB   | `start_lavasr.sh`             | LavaSR speech enhance + BWE upsample to 48kHz (port 8034)  |
 | venv_the_movies         | `/srv/containers/edq/venv_the_movies`             | ~50MB  | `start_the_movies.sh`         | The Movies AI film studio sim (port 8035)                  |
+| venv_tada               | `/srv/containers/edq/venv_tada`                   | ~5GB   | `start_tada.sh`               | TADA TTS (Hume AI TADA-3B-ML, port 8037)                   |
+| venv_matanyone2         | `/srv/containers/edq/venv_matanyone2`             | ~8GB   | `start_matanyone2.sh`         | MatAnyone 2 human video matting (port 8038)                |
 
 ## MCP Server Venvs
 
@@ -99,3 +101,6 @@ When removing a project:
 | 2026-03-01 | Added `venv_lavasr` for LavaSR speech enhancement + BWE upsampling to 48kHz (port 8034)      |
 | 2026-03-02 | Added `venv_the_movies` for The Movies AI film studio sim (port 8035)                        |
 | 2026-03-12 | Attempted `venv_nemotron` for Nemotron Nano 9B v2 — removed; mamba-ssm/Blackwell incompatibility |
+| 2026-03-15 | Updated `venv_fish_speech` — Fish Speech v2.0.0 / Fish Audio S2-Pro (4B)                     |
+| 2026-03-15 | Added `venv_tada` for TADA TTS (Hume AI TADA-3B-ML, port 8037)                               |
+| 2026-03-15 | Added `venv_matanyone2` for MatAnyone 2 video matting CVPR 2026 (port 8038)                  |

@@ -11,15 +11,31 @@ import gradio as gr
 import torch
 from pathlib import Path
 import os
+import sys
+import threading
 from datetime import datetime
 from PIL import Image
 import numpy as np
 import cv2
 
+# VideoX-Fun path for ControlNet support
+VIDEOX_FUN_PATH = Path("/srv/containers/edq/projects/VideoX-Fun")
+if str(VIDEOX_FUN_PATH) not in sys.path:
+    sys.path.insert(0, str(VIDEOX_FUN_PATH))
+
 # Configuration
 MODEL_ID_BASE = "Tongyi-MAI/Z-Image"
 MODEL_ID_TURBO = "Tongyi-MAI/Z-Image-Turbo"
 CONTROLNET_MODEL_ID = "alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1"
+CONTROLNET_WEIGHTS_FILENAME = "Z-Image-Turbo-Fun-Controlnet-Union-2.1.safetensors"
+# Config from VideoX-Fun/config/z_image/z_image_control_2.1.yaml
+CONTROLNET_TRANSFORMER_KWARGS = {
+    "control_layers_places": [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28],
+    "control_refiner_layers_places": [0, 1],
+    "add_control_noise_refiner": True,
+    "add_control_noise_refiner_correctly": True,
+    "control_in_dim": 33,
+}
 OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/zimage"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -52,11 +68,32 @@ ASPECT_RATIOS = {
 # Global pipeline state
 pipe_base = None
 pipe_turbo = None
-controlnet = None
+pipe_control = None
 current_model = "Base"
 loaded_loras = []
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+
+# ControlNet pre-download state
+_controlnet_weights_path = None   # set once download completes
+_controlnet_download_error = None  # set if download fails
+
+
+def _prefetch_controlnet_weights():
+    """Download ControlNet weights at startup so first generation doesn't block."""
+    global _controlnet_weights_path, _controlnet_download_error
+    try:
+        from huggingface_hub import hf_hub_download
+        print(f"[ControlNet] Pre-fetching weights ({CONTROLNET_WEIGHTS_FILENAME})...")
+        path = hf_hub_download(
+            repo_id=CONTROLNET_MODEL_ID,
+            filename=CONTROLNET_WEIGHTS_FILENAME,
+        )
+        _controlnet_weights_path = path
+        print(f"[ControlNet] Weights ready: {path}")
+    except Exception as e:
+        _controlnet_download_error = str(e)
+        print(f"[ControlNet] Pre-fetch failed: {e}")
 
 # Dragon favicon
 DRAGON_FAVICON = """
@@ -148,37 +185,28 @@ def preprocess_control_image(image: Image.Image, condition_type: str) -> Image.I
 
 
 def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
-    """Lazy load the Z-Image pipeline with memory optimizations
+    """Lazy load the Z-Image pipeline with memory optimizations"""
+    global pipe_base, pipe_turbo, pipe_control, current_model
 
-    Args:
-        model_type: "Base" or "Turbo"
-        use_controlnet: Whether to load ControlNet (only for Turbo)
-    """
-    global pipe_base, pipe_turbo, controlnet, current_model
-
-    # Memory optimization (expandable_segments is superior to max_split_size_mb)
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
+    if use_controlnet:
+        return load_control_pipeline()
 
     if model_type == "Base":
         if pipe_base is not None:
             current_model = "Base"
             return pipe_base
 
-        print(f"Loading Z-Image Base model...")
+        print("Loading Z-Image Base model...")
         try:
             from diffusers import ZImagePipeline
-
             pipe_base = ZImagePipeline.from_pretrained(MODEL_ID_BASE, torch_dtype=dtype)
-
-            # Use sequential CPU offload to fit in 16GB VRAM
             pipe_base.enable_sequential_cpu_offload()
-
-            # VAE optimizations
             if hasattr(pipe_base, 'vae'):
                 pipe_base.vae.enable_slicing()
                 pipe_base.vae.enable_tiling()
-
-            print("Z-Image Base loaded with CPU offloading + VAE optimizations")
+            print("Z-Image Base loaded with sequential CPU offload + VAE optimizations")
             current_model = "Base"
             return pipe_base
         except Exception as e:
@@ -186,51 +214,111 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
             raise
 
     else:  # Turbo
-        if use_controlnet:
-            # NOTE: ControlNet support pending diffusers update
-            # ZImageControlNetPipeline not yet available in diffusers 0.36.0
-            # For now, return error message
-            raise NotImplementedError(
-                "ControlNet support requires diffusers with ZImageControlNetPipeline support.\n"
-                "Currently available: ZImagePipeline only.\n"
-                "Workaround: Use VideoX-Fun repository (https://github.com/aigc-apps/VideoX-Fun) or wait for diffusers update.\n"
-                "For now, use Turbo mode without ControlNet for 8-step fast inference."
-            )
+        if pipe_turbo is not None:
+            current_model = "Turbo"
+            return pipe_turbo
 
-        else:
-            # Load regular Turbo pipeline (no ControlNet)
-            if pipe_turbo is not None and controlnet is None:
-                current_model = "Turbo"
-                return pipe_turbo
+        print("Loading Z-Image Turbo model...")
+        try:
+            from diffusers import ZImagePipeline
+            pipe_turbo = ZImagePipeline.from_pretrained(MODEL_ID_TURBO, torch_dtype=dtype)
+            pipe_turbo.enable_sequential_cpu_offload()
+            if hasattr(pipe_turbo, 'vae'):
+                pipe_turbo.vae.enable_slicing()
+                pipe_turbo.vae.enable_tiling()
+            print("Z-Image Turbo loaded with sequential CPU offload + VAE optimizations")
+            current_model = "Turbo"
+            return pipe_turbo
+        except Exception as e:
+            print(f"Failed to load Turbo model: {e}")
+            raise
 
-            print(f"Loading Z-Image Turbo model...")
-            try:
-                from diffusers import ZImagePipeline
 
-                pipe_turbo = ZImagePipeline.from_pretrained(MODEL_ID_TURBO, torch_dtype=dtype)
+def load_control_pipeline():
+    """Load Z-Image ControlNet pipeline via VideoX-Fun"""
+    global pipe_control, current_model, _controlnet_weights_path, _controlnet_download_error
 
-                # Use sequential CPU offload to fit in 16GB VRAM
-                pipe_turbo.enable_sequential_cpu_offload()
+    if pipe_control is not None:
+        current_model = "Control"
+        return pipe_control
 
-                # VAE optimizations
-                if hasattr(pipe_turbo, 'vae'):
-                    pipe_turbo.vae.enable_slicing()
-                    pipe_turbo.vae.enable_tiling()
+    # Check pre-fetch state
+    if _controlnet_download_error:
+        raise RuntimeError(f"ControlNet weights download failed at startup: {_controlnet_download_error}")
+    if _controlnet_weights_path is None:
+        raise RuntimeError(
+            "ControlNet weights are still downloading in the background. "
+            "Check the server console for progress — try again in a moment."
+        )
 
-                print("Z-Image Turbo loaded with CPU offloading + VAE optimizations")
-                current_model = "Turbo"
-                return pipe_turbo
-            except Exception as e:
-                print(f"Failed to load Turbo model: {e}")
-                raise
+    print("Loading Z-Image ControlNet pipeline (VideoX-Fun)...")
+    try:
+        from huggingface_hub import snapshot_download
+        from safetensors.torch import load_file
+        from diffusers import FlowMatchEulerDiscreteScheduler
+        from videox_fun.models.z_image_transformer2d_control import ZImageControlTransformer2DModel
+        from videox_fun.pipeline.pipeline_z_image_control import ZImageControlPipeline
+        from diffusers.models.autoencoders import AutoencoderKL
+        from transformers import AutoTokenizer, AutoModelForCausalLM
+
+        control_weights_path = _controlnet_weights_path
+        print(f"Control weights: {control_weights_path}")
+
+        # Get local cache path for base model
+        print("Downloading/locating Turbo base model...")
+        model_local_path = snapshot_download(MODEL_ID_TURBO)
+
+        # Load transformer with control architecture
+        print("Building control transformer from base weights...")
+        transformer = ZImageControlTransformer2DModel.from_pretrained(
+            model_local_path,
+            subfolder="transformer",
+            transformer_additional_kwargs=CONTROLNET_TRANSFORMER_KWARGS,
+            low_cpu_mem_usage=True,
+            torch_dtype=dtype,
+        )
+
+        # Layer control-specific weights on top (strict=False expected — control layers are new)
+        print("Loading ControlNet weights...")
+        state_dict = load_file(control_weights_path)
+        m, u = transformer.load_state_dict(state_dict, strict=False)
+        print(f"ControlNet weights loaded: {len(m)} missing, {len(u)} unexpected keys")
+
+        # Load remaining pipeline components from base model
+        vae = AutoencoderKL.from_pretrained(model_local_path, subfolder="vae", torch_dtype=dtype)
+        tokenizer = AutoTokenizer.from_pretrained(model_local_path, subfolder="tokenizer")
+        text_encoder = AutoModelForCausalLM.from_pretrained(
+            model_local_path, subfolder="text_encoder", torch_dtype=dtype, low_cpu_mem_usage=True
+        )
+        scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(model_local_path, subfolder="scheduler")
+
+        pipe_control = ZImageControlPipeline(
+            vae=vae,
+            tokenizer=tokenizer,
+            text_encoder=text_encoder,
+            transformer=transformer,
+            scheduler=scheduler,
+        )
+        pipe_control.enable_model_cpu_offload()
+
+        print("Z-Image ControlNet pipeline ready")
+        current_model = "Control"
+        return pipe_control
+    except Exception as e:
+        print(f"Failed to load ControlNet pipeline: {e}")
+        raise
 
 
 def apply_lora(lora_name, lora_scale=1.0):
     """Load and apply a LoRA to the current pipeline"""
-    global pipe_base, pipe_turbo, loaded_loras, current_model
+    global pipe_base, pipe_turbo, pipe_control, loaded_loras, current_model
 
-    # Get current pipeline
-    pipe = pipe_base if current_model == "Base" else pipe_turbo
+    if current_model == "Base":
+        pipe = pipe_base
+    elif current_model == "Control":
+        pipe = pipe_turbo  # LoRA not supported on control pipeline; use turbo for now
+    else:
+        pipe = pipe_turbo
 
     if pipe is None:
         return "Load model first"
@@ -330,38 +418,49 @@ def generate_image(
         progress(0.15, desc="Processing control image...")
         processed_control = preprocess_control_image(control_image, controlnet_condition)
         if processed_control:
-            # Resize to match target dimensions
             processed_control = processed_control.resize((width, height), Image.LANCZOS)
 
     progress(0.2, desc="Generating image...")
     try:
-        gen_kwargs = {
-            "prompt": prompt,
-            "height": height,
-            "width": width,
-            "num_inference_steps": num_inference_steps,
-            "generator": generator,
-        }
-
-        # Turbo model uses CFG=1.0 for 8-step mode (recommended)
-        # Note: Recent diffusers issue with guidance_scale>1 for ControlNet
-        if model_type == "Turbo" and num_inference_steps == 8:
-            gen_kwargs["guidance_scale"] = 1.0  # Fixed for 8-step turbo
-        else:
-            gen_kwargs["guidance_scale"] = guidance_scale
-
-        # Add negative prompt if provided and not using Turbo 8-step
-        if negative_prompt and negative_prompt.strip() and not (model_type == "Turbo" and num_inference_steps == 8):
-            gen_kwargs["negative_prompt"] = negative_prompt
-
-        # Add ControlNet parameters
         if use_controlnet and processed_control:
-            gen_kwargs["control_image"] = processed_control
-            gen_kwargs["controlnet_conditioning_scale"] = controlnet_scale
+            # VideoX-Fun ZImageControlPipeline expects tensor inputs
+            ctrl_array = np.array(processed_control.convert("RGB"))
+            ctrl_tensor = torch.from_numpy(ctrl_array).unsqueeze(0).permute(0, 3, 1, 2).float() / 255.0
+            inpaint_image = torch.zeros([1, 3, height, width])
+            mask_image_t = torch.ones([1, 1, height, width]) * 255
 
-        # Add LoRA scale
-        if loaded_loras and lora_scale != 1.0:
-            gen_kwargs["cross_attention_kwargs"] = {"scale": lora_scale}
+            gen_kwargs = {
+                "prompt": prompt,
+                "negative_prompt": negative_prompt if negative_prompt and negative_prompt.strip() else "",
+                "height": height,
+                "width": width,
+                "num_inference_steps": num_inference_steps,
+                "guidance_scale": guidance_scale,
+                "generator": generator,
+                "control_image": ctrl_tensor,
+                "image": inpaint_image,
+                "mask_image": mask_image_t,
+                "control_context_scale": controlnet_scale,
+            }
+        else:
+            gen_kwargs = {
+                "prompt": prompt,
+                "height": height,
+                "width": width,
+                "num_inference_steps": num_inference_steps,
+                "generator": generator,
+            }
+
+            if model_type == "Turbo" and num_inference_steps == 8:
+                gen_kwargs["guidance_scale"] = 1.0
+            else:
+                gen_kwargs["guidance_scale"] = guidance_scale
+
+            if negative_prompt and negative_prompt.strip() and not (model_type == "Turbo" and num_inference_steps == 8):
+                gen_kwargs["negative_prompt"] = negative_prompt
+
+            if loaded_loras and lora_scale != 1.0:
+                gen_kwargs["cross_attention_kwargs"] = {"scale": lora_scale}
 
         result = pipeline(**gen_kwargs)
         image = result.images[0]
@@ -482,43 +581,31 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
 
             generate_btn = gr.Button("Generate", variant="primary", size="lg")
 
-            # ControlNet section (Turbo only) - Coming Soon
-            with gr.Accordion("🚧 ControlNet Settings (Coming Soon)", open=False) as controlnet_accordion:
+            # ControlNet section (Turbo only) - powered by VideoX-Fun
+            with gr.Accordion("ControlNet Settings (Turbo only)", open=False):
                 gr.Markdown("""
-                **ControlNet Union 2.1 support is planned but not yet available.**
-
-                Waiting for diffusers to add `ZImageControlNetPipeline` support (currently not in v0.36.0).
-
-                **Planned features:**
-                - Multi-condition control: Canny (edges), Depth, Pose, HED, MLSD
-                - 15+ layer blocks for professional-grade spatial control
-                - Controlnet scale adjustment (0.65-1.0)
-
-                **Workaround:** Use [VideoX-Fun repository](https://github.com/aigc-apps/VideoX-Fun) for immediate ControlNet access.
-
-                For now, enjoy 8-step fast inference with Turbo mode! 🚀
+                **ControlNet Union 2.1** — powered by [VideoX-Fun](https://github.com/aigc-apps/VideoX-Fun).
+                Select a condition type and upload a reference image. Works with Turbo model only.
+                Control weights download automatically on first use (~2 GB).
                 """)
 
                 controlnet_condition = gr.Dropdown(
                     choices=CONTROLNET_CONDITIONS,
                     value="None",
                     label="Control Condition",
-                    info="[Disabled] Waiting for diffusers support",
-                    interactive=False
+                    info="Select condition type then upload reference image (Turbo model only)"
                 )
 
                 control_image = gr.Image(
-                    label="Control Image [Disabled - Waiting for diffusers support]",
+                    label="Control Reference Image",
                     type="pil",
                     sources=["upload", "clipboard"],
-                    interactive=False
                 )
 
                 controlnet_scale = gr.Slider(
-                    minimum=0.0, maximum=1.0, value=0.8, step=0.05,
+                    minimum=0.0, maximum=1.0, value=0.9, step=0.05,
                     label="ControlNet Scale",
-                    info="[Disabled] Waiting for diffusers support",
-                    interactive=False
+                    info="0.65–1.0 recommended (0.9 default)"
                 )
 
             # Aspect ratio
@@ -619,34 +706,22 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
 
     gr.Markdown(f"""
     ---
-    ### Model Comparison
+    ### Models
 
-    **✅ Base Model (Tongyi-MAI/Z-Image)** - Available Now
-    - 30-step inference with CFG scaling (7-10 recommended)
-    - Negative prompt support
-    - Superior photorealism, accurate hands & text rendering
-    - ~20-30 seconds per image
-    - Production ready
+    **✅ Base (Tongyi-MAI/Z-Image)**  30-step CFG · negative prompts · superior photorealism · ~20–30s
 
-    **✅ Turbo Model (8-step Fast Inference)** - Available Now
-    - 8-step fast inference (CFG fixed at 1.0 for optimal results)
-    - Up to 4x faster than Base model
-    - ~5-10 seconds per image
-    - Perfect for rapid iteration and prototyping
+    **✅ Turbo (Tongyi-MAI/Z-Image-Turbo)**  8-step fast inference · CFG=1.0 · ~5–10s
 
-    **🚧 ControlNet Union 2.1** - Coming Soon
-    - Waiting for diffusers v0.37+ with `ZImageControlNetPipeline` support
-    - Planned: Multi-condition control (Canny, Depth, Pose, HED, MLSD)
-    - Planned: Professional-grade spatial control with 15+ layer blocks
-    - **Workaround:** Use [VideoX-Fun](https://github.com/aigc-apps/VideoX-Fun) for immediate ControlNet access
+    **✅ ControlNet Union 2.1 (Turbo + VideoX-Fun)**  Canny · Depth · Pose · HED · MLSD · 15 control layers · weights auto-download on first use
 
-    **Output:** `{OUTPUT_DIR}` | **LoRAs:** `{LORA_DIR}`
+    **✅ LoRAs**  9 models available in `{LORA_DIR}` · Fast Mode uses distilled 4/8-step LoRAs
+
+    **Output:** `{OUTPUT_DIR}`
 
     **Resources:**
     - [Z-Image Base](https://huggingface.co/Tongyi-MAI/Z-Image) | [Z-Image Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo)
-    - [ControlNet Union 2.1](https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1) (Requires VideoX-Fun)
-    - [Z-Image Blog](https://gaga.art/blog/z-image-base/)
-    - [Tutorial](https://medium.com/@furkangozukara/z-image-turbo-lora-training-with-ai-toolkit-and-z-image-controlnet-full-tutorial-for-highest-4323800177f7)
+    - [ControlNet Union 2.1 weights](https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1)
+    - [VideoX-Fun repo](https://github.com/aigc-apps/VideoX-Fun) | [Z-Image Blog](https://gaga.art/blog/z-image-base/)
     """)
 
     # Event handlers
@@ -695,6 +770,9 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
 
 
 if __name__ == "__main__":
+    # Start ControlNet weights pre-fetch in background so first generation doesn't block
+    threading.Thread(target=_prefetch_controlnet_weights, daemon=True).start()
+
     print("=" * 80)
     print("Z-Image Base + Turbo ControlNet - Alibaba Tongyi Text-to-Image Generator")
     print("=" * 80)

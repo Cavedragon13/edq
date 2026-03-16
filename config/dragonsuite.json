@@ -302,7 +302,7 @@
     {
       "id": "fish-speech",
       "name": "Fish Speech",
-      "description": "TTS + Voice Cloning + Emotion Control",
+      "description": "S2-Pro (4B) TTS + Voice Cloning + Inline Emotion Tags",
       "category": "audio",
       "port": 8003,
       "path": null,
@@ -312,7 +312,8 @@
       "features": [
         "TTS",
         "Voice Clone",
-        "Emotions"
+        "50+ Languages",
+        "Inline Emotions"
       ]
     },
     {
@@ -709,6 +710,41 @@
         "Gemini 2.5"
       ],
       "stop_command": "pkill -f the_movies_server.py || true"
+    },
+    {
+      "id": "tada-tts",
+      "name": "TADA TTS",
+      "description": "Hume AI generative TTS — voice cloning with 1:1 token alignment",
+      "category": "audio",
+      "port": 8037,
+      "path": null,
+      "icon": "&#127908;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_tada.sh",
+      "project_path": null,
+      "features": [
+        "Voice Clone",
+        "9 Languages",
+        "Generative Prosody"
+      ],
+      "stop_command": "pkill -f tada_gradio.py || true"
+    },
+    {
+      "id": "matanyone2",
+      "name": "MatAnyone 2",
+      "description": "Human video matting — interactive click-to-select alpha matte extraction",
+      "category": "segmentation",
+      "port": 8038,
+      "path": null,
+      "icon": "&#9986;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_matanyone2.sh",
+      "project_path": "/srv/containers/edq/projects/matanyone2",
+      "features": [
+        "Video Matting",
+        "SAM Selection",
+        "Alpha Output",
+        "Fine Detail"
+      ],
+      "stop_command": "pkill -f 'matanyone2.*app.py' || true"
     }
   ],
   "categories": {
