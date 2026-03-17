@@ -1,5 +1,45 @@
 # Architecture Patterns
 
+## Model-Not-Found Standard Pattern
+
+All launch scripts use this exact format when a model check fails:
+
+```bash
+if [ ! -d "$MODEL_PATH" ]; then
+    echo "❌ [Service] models not found at: $MODEL_PATH"
+    echo ""
+    echo "   Run the download script first:"
+    echo "   bash scripts/download_<service>_models.sh"
+    echo ""
+    exit 1
+fi
+```
+
+For HuggingFace cache (no fixed local path):
+
+```bash
+HF_CACHE="${HF_HOME:-$HOME/.cache/huggingface}/hub"
+MODEL_CACHE="$HF_CACHE/models--Org--RepoName"
+
+if [ ! -d "$MODEL_CACHE" ]; then
+    echo "❌ [Service] models not found in HuggingFace cache."
+    echo ""
+    echo "   Run the download script first:"
+    echo "   bash scripts/download_<service>_models.sh"
+    echo ""
+    exit 1
+fi
+```
+
+Rules:
+
+- Always `exit 1` — never warn-and-continue
+- Always name the exact download script to run
+- Always include blank lines around the error block for readability
+- Pair every launch script check with a `download_<service>_models.sh`
+
+---
+
 ## Python Script Structure
 
 - Most scripts use Gradio for web interfaces

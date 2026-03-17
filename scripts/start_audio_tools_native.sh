@@ -10,8 +10,11 @@ echo "🎵 Audio Processing Suite (native UI)"
 echo "   Port: 8026"
 
 if [ ! -d "$PREPROCESS_BASE/mel-band-roformer-karaoke" ]; then
-  echo "❌ Models not found at $PREPROCESS_BASE"
-  echo "   Run: bash scripts/download_soulxsinger_models.sh"
+  echo "❌ Audio processing models not found at: $PREPROCESS_BASE"
+  echo ""
+  echo "   Run the download script first:"
+  echo "   bash scripts/download_soulxsinger_models.sh"
+  echo ""
   exit 1
 fi
 

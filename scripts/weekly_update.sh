@@ -31,6 +31,9 @@ log "--- Git repos: checking for upstream updates ---"
 
 shopt -s nullglob
 
+# Accumulate rows for the Pending Updates scorecard section
+PENDING_ROWS=""
+
 for repo_dir in "$PROJECT_DIR/projects"/*/; do
     if [ ! -d "$repo_dir/.git" ]; then
         continue
@@ -45,13 +48,17 @@ for repo_dir in "$PROJECT_DIR/projects"/*/; do
 
         if [ "$behind" = "0" ]; then
             log "  ✅ $repo_name — up to date ($current_sha)"
+            PENDING_ROWS+="| $repo_name | \`$current_sha\` | up to date | — |\n"
         elif [ "$behind" = "?" ]; then
             log "  ⚠️  $repo_name — could not determine update status"
+            PENDING_ROWS+="| $repo_name | \`$current_sha\` | unknown | check manually |\n"
         else
             log "  🔄 $repo_name — $behind commit(s) available (current: $current_sha)"
+            PENDING_ROWS+="| $repo_name | \`$current_sha\` | **$behind commit(s) available** | \`git pull\` in projects/$repo_name |\n"
         fi
     else
         log "  ⚠️  $repo_name — fetch failed (no remote or network issue)"
+        PENDING_ROWS+="| $repo_name | unknown | fetch failed | check network/remote |\n"
     fi
 done
 
@@ -96,7 +103,46 @@ for venv_name in "${!VENVS[@]}"; do
 done
 
 # -------------------------------------------------------
-# 3. Update Obsidian version scorecard git SHAs
+# 3. Update Obsidian scorecard — Pending Updates section
+# -------------------------------------------------------
+log ""
+log "--- Updating Obsidian scorecard pending updates ---"
+
+if [ -f "$SCORECARD" ] && [ -n "$PENDING_ROWS" ]; then
+    python3 - <<PYEOF
+import re
+
+scorecard_path = "$SCORECARD"
+date = "$DATE"
+rows = "$PENDING_ROWS"
+
+with open(scorecard_path, 'r') as f:
+    content = f.read()
+
+header = "| Repo | Current SHA | Behind | Action |\n|---|---|---|---|\n"
+table = header + rows.replace('\\n', '\n').rstrip('\n') + '\n'
+new_section = f"## Pending Updates\n\nLast checked: {date}\n\n{table}"
+
+# Replace existing Pending Updates section (between the heading and the next ---)
+content = re.sub(
+    r'## Pending Updates\n.*?(?=\n---)',
+    new_section,
+    content,
+    flags=re.DOTALL
+)
+
+with open(scorecard_path, 'w') as f:
+    f.write(content)
+
+print("Scorecard pending updates written.")
+PYEOF
+    log "  ✅ Pending updates section updated"
+else
+    log "  ⚠️  Scorecard not found or no git data — skipping pending updates"
+fi
+
+# -------------------------------------------------------
+# 4. Update Obsidian version scorecard git SHAs
 # -------------------------------------------------------
 log ""
 log "--- Updating Obsidian scorecard git SHAs ---"

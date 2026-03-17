@@ -15,7 +15,11 @@ if [ ! -d "$VENV" ]; then
 fi
 
 if [ ! -d "$MODEL_DIR/transformer" ]; then
-    echo "❌ Model not downloaded. Run: bash scripts/download_wan_1b_models.sh"
+    echo "❌ Wan2.1-T2V-1.3B models not found at: $MODEL_DIR"
+    echo ""
+    echo "   Run the download script first:"
+    echo "   bash scripts/download_wan_1b_models.sh"
+    echo ""
     exit 1
 fi
 

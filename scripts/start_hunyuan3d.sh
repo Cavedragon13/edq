@@ -50,6 +50,19 @@ if ! python -c "import hy3dgen" 2>/dev/null; then
     echo ""
 fi
 
+HF_CACHE="${HF_HOME:-$HOME/.cache/huggingface}/hub"
+SHAPE_MODEL_CACHE="$HF_CACHE/models--tencent--Hunyuan3D-2mini"
+TEXGEN_MODEL_CACHE="$HF_CACHE/models--tencent--Hunyuan3D-2"
+
+if [ ! -d "$SHAPE_MODEL_CACHE" ] || [ ! -d "$TEXGEN_MODEL_CACHE" ]; then
+    echo "❌ Hunyuan3D-2 models not found in HuggingFace cache."
+    echo ""
+    echo "   Run the download script first:"
+    echo "   bash scripts/download_hunyuan3d_models.sh"
+    echo ""
+    exit 1
+fi
+
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
@@ -62,8 +75,6 @@ echo "  - Image to 3D mesh generation"
 echo "  - Texture synthesis"
 echo "  - GLB/OBJ export"
 echo "  - ~6GB VRAM for shape, ~16GB with texture"
-echo ""
-echo "Models will auto-download on first use (~10GB)"
 echo ""
 echo "Output saves to: $OUTPUT_DIR"
 echo ""

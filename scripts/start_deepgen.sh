@@ -18,10 +18,11 @@ if [ ! -f "$CHECKPOINT" ]; then
 fi
 
 if [ ! -d "$MODEL_ZOO" ] && [ ! -L "$MODEL_ZOO" ]; then
-    echo "❌ model_zoo not found at $MODEL_ZOO"
+    echo "❌ DeepGen model_zoo not found at: $MODEL_ZOO"
     echo ""
-    echo "Run the model zoo setup first:"
-    echo "  bash scripts/download_deepgen_model_zoo.sh"
+    echo "   Run the download script first:"
+    echo "   bash scripts/download_deepgen_model_zoo.sh"
+    echo ""
     exit 1
 fi
 

@@ -27,6 +27,17 @@ if [ ! -d "$APP_DIR" ]; then
     exit 1
 fi
 
+CHECKPOINTS_DIR="$PROJECT_DIR/projects/matanyone2/pretrained_models"
+
+if [ ! -f "$CHECKPOINTS_DIR/sam_vit_h_4b8939.pth" ] || [ ! -f "$CHECKPOINTS_DIR/matanyone2.pth" ]; then
+    echo "❌ Model files not found at: $CHECKPOINTS_DIR"
+    echo ""
+    echo "   Run the download script first:"
+    echo "   bash scripts/download_matanyone2_models.sh"
+    echo ""
+    exit 1
+fi
+
 source "$VENV_DIR/bin/activate"
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
@@ -38,7 +49,6 @@ echo "Features:"
 echo "  - Interactive click-to-select object on first frame (SAM)"
 echo "  - Propagates alpha matte through entire video"
 echo "  - Fine detail preservation (hair, fur, semi-transparent)"
-echo "  - Models auto-download on first run (~2.5GB SAM + 0.5GB MatAnyone2)"
 echo ""
 echo "Press Ctrl+C to stop"
 echo ""

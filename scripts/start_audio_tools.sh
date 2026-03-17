@@ -15,10 +15,11 @@ fi
 
 # Check models exist
 if [ ! -d "$PREPROCESS_BASE/mel-band-roformer-karaoke" ]; then
-    echo "❌ Preprocessing models not found at $PREPROCESS_BASE"
+    echo "❌ Audio processing models not found at: $PREPROCESS_BASE"
     echo ""
-    echo "Download with:"
-    echo "  bash scripts/download_soulxsinger_models.sh"
+    echo "   Run the download script first:"
+    echo "   bash scripts/download_soulxsinger_models.sh"
+    echo ""
     exit 1
 fi
 

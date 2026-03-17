@@ -23,6 +23,19 @@ if [ ! -d "$VENV_DIR" ]; then
     exit 1
 fi
 
+HF_CACHE="${HF_HOME:-$HOME/.cache/huggingface}/hub"
+TADA_MODEL_CACHE="$HF_CACHE/models--HumeAI--tada-3b-ml"
+CODEC_CACHE="$HF_CACHE/models--HumeAI--tada-codec"
+
+if [ ! -d "$TADA_MODEL_CACHE" ] || [ ! -d "$CODEC_CACHE" ]; then
+    echo "❌ TADA models not found in HuggingFace cache."
+    echo ""
+    echo "   Run the download script first:"
+    echo "   bash scripts/download_tada_models.sh"
+    echo ""
+    exit 1
+fi
+
 source "$VENV_DIR/bin/activate"
 
 export GRADIO_SERVER_NAME="0.0.0.0"
@@ -36,7 +49,6 @@ echo "Features:"
 echo "  - Voice cloning from reference audio (5-30s)"
 echo "  - 9 language support (TADA-3B-ML)"
 echo "  - Speech continuation with extra steps"
-echo "  - Models auto-download from HuggingFace on first run"
 echo ""
 echo "Press Ctrl+C to stop"
 echo ""

@@ -40,7 +40,7 @@ This is a personal AI development environment focused on video generation, visio
 | 8100  | Dragonsuite Dashboard  | On-demand          | Central launcher                                      |
 | 8001  | DragonFlux Klein       | On-demand (GPU)    | [Image Generation](docs/services/image-generation.md) |
 | 8002  | Wan2GP                 | On-demand (GPU)    | [Video & Music](docs/services/video-music.md)         |
-| 8003  | Fish Speech            | On-demand (GPU)    | [Audio & TTS](docs/services/audio-tts.md)             |
+| 8003  | Fish Speech S2-Pro     | On-demand (GPU)    | [Audio & TTS](docs/services/audio-tts.md)             |
 | 8004  | HeartMuLa              | On-demand (GPU)    | [Video & Music](docs/services/video-music.md)         |
 | 8005  | SAM 2.1                | On-demand (GPU)    | [Vision AI](docs/services/vision-ai.md)               |
 | 8006  | LivePortrait           | On-demand (GPU)    | [Vision AI](docs/services/vision-ai.md)               |
@@ -66,6 +66,8 @@ This is a personal AI development environment focused on video generation, visio
 | 8033  | Concert Shirt          | On-demand          | Ticket OCR → concert list → print-on-demand shirt     |
 | 8034  | LavaSR                 | On-demand (GPU)    | Speech enhance + BWE upsample to 48kHz                |
 | 8035  | The Movies             | On-demand          | AI film studio — Nano Banana 2 + Veo 3.1 + Lyria 3    |
+| 8037  | TADA TTS               | On-demand (GPU)    | Hume AI voice cloning, 9 languages (TADA-3B-ML)       |
+| 8038  | MatAnyone 2            | On-demand (GPU)    | Human video matting, click-to-select, alpha output    |
 | 8888  | Jupyter (reserved)     | Future             | -                                                     |
 | 11434 | Ollama API             | Always-on (snap)   | -                                                     |
 

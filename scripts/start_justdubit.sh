@@ -9,6 +9,7 @@ cd /srv/containers/edq
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 echo "✓ Launching JustDubit Gradio UI on port 8022..."
-echo "⚠️  Note: Model checkpoints need to be downloaded first"
+echo "⚠️  JustDubit requires ~50GB of model checkpoints."
+echo "   Set checkpoint paths in scripts/justdubit_gradio.py before use."
 
 python scripts/justdubit_gradio.py
