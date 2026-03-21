@@ -492,19 +492,40 @@
     {
       "id": "homeassistant",
       "name": "Home Assistant",
-      "description": "Smart Home Hub + Kasa + HomeKit Bridge",
+      "description": "Smart Home Hub + Kasa + HomeKit Bridge (minidragon)",
       "category": "smart-home",
       "port": 8123,
+      "url": "http://192.168.7.159:8123",
+      "always_on": true,
       "path": null,
       "icon": "&#127968;",
-      "launch_command": "cd /srv/containers/edq/homeassistant && docker compose up -d",
-      "project_path": "/srv/containers/edq/homeassistant",
+      "launch_command": null,
+      "project_path": null,
       "features": [
         "Kasa",
         "HomeKit",
         "Automations"
       ],
-      "stop_command": "cd /srv/containers/edq/homeassistant && docker compose down"
+      "stop_command": null
+    },
+    {
+      "id": "pihole",
+      "name": "Pi-hole",
+      "description": "Network-wide ad blocking + DNS — admin dashboard (minidragon)",
+      "category": "smart-home",
+      "port": null,
+      "url": "http://192.168.7.159/admin",
+      "always_on": true,
+      "path": null,
+      "icon": "&#127759;",
+      "launch_command": null,
+      "project_path": null,
+      "features": [
+        "Ad Blocking",
+        "DNS",
+        "Query Log"
+      ],
+      "stop_command": null
     },
     {
       "id": "justdubit",

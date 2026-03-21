@@ -155,11 +155,12 @@ async def get_all_status():
     statuses = []
     for service in config.get("services", []):
         port = service.get("port")
-        is_running = check_port(port) if port else False
+        always_on = service.get("always_on", False)
+        is_running = True if always_on else (check_port(port) if port else False)
 
-        # Build URL
-        url = None
-        if port:
+        # Build URL — use explicit url field if set (for external-host services)
+        url = service.get("url") or None
+        if not url and port:
             url = f"http://{local_ip}:{port}"
             if service.get("path"):
                 url += service["path"]
@@ -168,6 +169,7 @@ async def get_all_status():
             "id": service.get("id"),
             "name": service.get("name"),
             "running": is_running,
+            "always_on": always_on,
             "port": port,
             "url": url,
             "category": service.get("category"),
@@ -206,13 +208,15 @@ async def get_qrcode(service_id: str):
         raise HTTPException(status_code=404, detail=f"Service '{service_id}' not found")
 
     port = service.get("port")
-    if not port:
-        raise HTTPException(status_code=400, detail="Service has no port configured")
 
-    # Build URL
-    url = f"http://{local_ip}:{port}"
-    if service.get("path"):
-        url += service["path"]
+    # Build URL — use explicit url field if set (for external-host services)
+    url = service.get("url") or None
+    if not url:
+        if not port:
+            raise HTTPException(status_code=400, detail="Service has no port configured")
+        url = f"http://{local_ip}:{port}"
+        if service.get("path"):
+            url += service["path"]
 
     # Generate QR code
     qr = qrcode.QRCode(

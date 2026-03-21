@@ -584,8 +584,11 @@ function buildCard(s) {
   var port    = s.port ? ':' + s.port : 'mcp-only';
 
   var btns = '';
-  if (!hasPort && !hasCmd) {
+  if (!hasPort && !hasCmd && !s.always_on) {
     btns = '<span class="btn btn-mc">MCP Only</span>';
+  } else if (s.always_on) {
+    if (s.url) btns += '<a class="btn btn-op" href="' + s.url + '" target="_blank">\u2197 Open</a>';
+    if (s.url) btns += '<button class="btn btn-ic" title="QR Code" onclick="showQr(\'' + s.id + '\',\'' + s.url + '\')">&#x25A6;</button>';
   } else {
     if (running && hasPort) btns += '<a class="btn btn-op" href="' + s.url + '" target="_blank">\u2197 Open</a>';
     if (running)            btns += '<button class="btn btn-st" onclick="stopSvc(\'' + s.id + '\')">\u25a0 Stop</button>';
