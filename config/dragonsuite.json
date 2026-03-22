@@ -3,7 +3,7 @@
     {
       "id": "mercury2",
       "name": "Mercury2 Diffusion Chat",
-      "description": "Inception Labs diffusion LLM — watch tokens crystallize from noise",
+      "description": "Inception Labs diffusion LLM \u2014 watch tokens crystallize from noise",
       "category": "llm",
       "port": 8036,
       "path": "/",
@@ -98,7 +98,8 @@
       "features": [
         "Image Gen",
         "LoRA"
-      ]
+      ],
+      "vram_gb": 12
     },
     {
       "id": "zimage-base",
@@ -115,7 +116,8 @@
         "CFG",
         "Neg Prompts",
         "LoRA"
-      ]
+      ],
+      "vram_gb": 10
     },
     {
       "id": "realesrgan",
@@ -132,7 +134,8 @@
         "Face Enhance",
         "Anime"
       ],
-      "stop_command": "pkill -f \"realesrgan_server.py\" || true"
+      "stop_command": "pkill -f \"realesrgan_server.py\" || true",
+      "vram_gb": 4
     },
     {
       "id": "creative-upscale",
@@ -154,7 +157,7 @@
     {
       "id": "topaz-labs",
       "name": "Topaz Labs AI",
-      "description": "Cloud AI Enhancement — use via Claude MCP (ask Claude to enhance an image)",
+      "description": "Cloud AI Enhancement \u2014 use via Claude MCP (ask Claude to enhance an image)",
       "category": "image",
       "port": null,
       "path": null,
@@ -200,7 +203,8 @@
       "features": [
         "Video Gen",
         "Multi-Model"
-      ]
+      ],
+      "vram_gb": 14
     },
     {
       "id": "wan-1b",
@@ -217,7 +221,8 @@
         "480P",
         "~8GB VRAM"
       ],
-      "stop_command": "pkill -f \"wan_1b_gradio.py\" || true"
+      "stop_command": "pkill -f \"wan_1b_gradio.py\" || true",
+      "vram_gb": 8
     },
     {
       "id": "ltxvideo",
@@ -234,7 +239,8 @@
         "I2V",
         "7-step distilled"
       ],
-      "stop_command": "pkill -f \"ltxvideo_gradio.py\" || true"
+      "stop_command": "pkill -f \"ltxvideo_gradio.py\" || true",
+      "vram_gb": 12
     },
     {
       "id": "liveportrait",
@@ -250,7 +256,8 @@
         "Portrait Anim",
         "Expression",
         "Animals"
-      ]
+      ],
+      "vram_gb": 6
     },
     {
       "id": "hunyuan3d",
@@ -265,7 +272,8 @@
       "features": [
         "Image to 3D",
         "Texture"
-      ]
+      ],
+      "vram_gb": 12
     },
     {
       "id": "qwen3-tts",
@@ -281,7 +289,8 @@
         "TTS",
         "Voice Clone",
         "Voice Design"
-      ]
+      ],
+      "vram_gb": 6
     },
     {
       "id": "qwen3-audiobook",
@@ -297,7 +306,8 @@
         "PDF",
         "EPUB",
         "Voice Clone"
-      ]
+      ],
+      "vram_gb": 6
     },
     {
       "id": "fish-speech",
@@ -314,7 +324,8 @@
         "Voice Clone",
         "50+ Languages",
         "Inline Emotions"
-      ]
+      ],
+      "vram_gb": 4
     },
     {
       "id": "heartmula",
@@ -330,7 +341,25 @@
         "Music Gen",
         "Style Tags",
         "Sections"
-      ]
+      ],
+      "vram_gb": 12
+    },
+    {
+      "id": "foundation-1",
+      "name": "Foundation-1",
+      "description": "BPM + Key-aware loop generator \u2014 WAV + MIDI output for DAW use",
+      "category": "audio",
+      "port": 8039,
+      "path": null,
+      "icon": "&#127926;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_foundation1.sh",
+      "project_path": "/srv/containers/edq/projects/foundation-1",
+      "features": [
+        "Loop Gen",
+        "MIDI Out",
+        "BPM/Key Control"
+      ],
+      "stop_command": "pkill -f 'run_gradio.py' || true"
     },
     {
       "id": "ace-step",
@@ -347,7 +376,8 @@
         "LoRA Train",
         "Cover/Edit"
       ],
-      "stop_command": "pkill -f \"acestep\" || true"
+      "stop_command": "pkill -f \"acestep\" || true",
+      "vram_gb": 4
     },
     {
       "id": "dragonsong",
@@ -380,7 +410,8 @@
         "Image Seg",
         "Video Track",
         "Auto Mask"
-      ]
+      ],
+      "vram_gb": 6
     },
     {
       "id": "rembg",
@@ -397,7 +428,8 @@
         "Alpha PNG",
         "Multi-Model"
       ],
-      "stop_command": "pkill -f \"rembg_server.py\" || true"
+      "stop_command": "pkill -f \"rembg_server.py\" || true",
+      "vram_gb": 2
     },
     {
       "id": "facefusion",
@@ -414,7 +446,8 @@
         "Live Webcam",
         "GPU Accel"
       ],
-      "stop_command": "pkill -f \"facefusion.py\" || true"
+      "stop_command": "pkill -f \"facefusion.py\" || true",
+      "vram_gb": 6
     },
     {
       "id": "qwen-image-layered",
@@ -430,7 +463,8 @@
         "Layer Decomp",
         "RGBA Export",
         "PPTX"
-      ]
+      ],
+      "vram_gb": 8
     },
     {
       "id": "horse-racing",
@@ -511,7 +545,7 @@
     {
       "id": "pihole",
       "name": "Pi-hole",
-      "description": "Network-wide ad blocking + DNS — admin dashboard (minidragon)",
+      "description": "Network-wide ad blocking + DNS \u2014 admin dashboard (minidragon)",
       "category": "smart-home",
       "port": null,
       "url": "http://192.168.7.159/admin",
@@ -593,7 +627,8 @@
         "Image Q&A",
         "Visual Analysis"
       ],
-      "stop_command": "pkill -f \"dolphin_vision_server.py\" || true"
+      "stop_command": "pkill -f \"dolphin_vision_server.py\" || true",
+      "vram_gb": 8
     },
     {
       "id": "audio-tools",
@@ -610,7 +645,8 @@
         "Dereverberation",
         "ASR (EN/ZH/YUE)"
       ],
-      "stop_command": "pkill -f \"audio_tools_server.py\" || true"
+      "stop_command": "pkill -f \"audio_tools_server.py\" || true",
+      "vram_gb": 4
     },
     {
       "id": "audiomass",
@@ -644,7 +680,8 @@
         "Bandwidth Extension",
         "48kHz output"
       ],
-      "stop_command": "pkill -f lavasr_server.py || true"
+      "stop_command": "pkill -f lavasr_server.py || true",
+      "vram_gb": 4
     },
     {
       "id": "concert-shirt",
@@ -717,7 +754,7 @@
     {
       "id": "the-movies",
       "name": "The Movies",
-      "description": "AI film studio sim — cast, budget, and watch Veo-generated short films",
+      "description": "AI film studio sim \u2014 cast, budget, and watch Veo-generated short films",
       "category": "game",
       "port": 8035,
       "path": "/",
@@ -735,7 +772,7 @@
     {
       "id": "tada-tts",
       "name": "TADA TTS",
-      "description": "Hume AI generative TTS — voice cloning with 1:1 token alignment",
+      "description": "Hume AI generative TTS \u2014 voice cloning with 1:1 token alignment",
       "category": "audio",
       "port": 8037,
       "path": null,
@@ -747,12 +784,13 @@
         "9 Languages",
         "Generative Prosody"
       ],
-      "stop_command": "pkill -f tada_gradio.py || true"
+      "stop_command": "pkill -f tada_gradio.py || true",
+      "vram_gb": 6
     },
     {
       "id": "matanyone2",
       "name": "MatAnyone 2",
-      "description": "Human video matting — interactive click-to-select alpha matte extraction",
+      "description": "Human video matting \u2014 interactive click-to-select alpha matte extraction",
       "category": "segmentation",
       "port": 8038,
       "path": null,
@@ -765,7 +803,8 @@
         "Alpha Output",
         "Fine Detail"
       ],
-      "stop_command": "pkill -f 'matanyone2.*app.py' || true"
+      "stop_command": "pkill -f 'matanyone2.*app.py' || true",
+      "vram_gb": 6
     }
   ],
   "categories": {

@@ -410,8 +410,72 @@ def find_process_by_port(port: int) -> Optional[int]:
     return None
 
 
+def kill_all_on_port(port: int) -> list[int]:
+    """Kill all processes (and their process groups) holding a port. Returns killed PIDs."""
+    killed = []
+    try:
+        result = subprocess.run(
+            ["lsof", "-ti", f":{port}"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return killed
+        pids = [int(p) for p in result.stdout.strip().split('\n') if p.strip()]
+        # SIGTERM first for graceful shutdown
+        for pid in pids:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        import time
+        time.sleep(2)
+        # SIGKILL any survivors + their process groups
+        for pid in pids:
+            try:
+                os.kill(pid, 0)  # check if still alive
+                try:
+                    pgid = os.getpgid(pid)
+                    os.killpg(pgid, signal.SIGKILL)
+                except Exception:
+                    os.kill(pid, signal.SIGKILL)
+                killed.append(pid)
+            except ProcessLookupError:
+                killed.append(pid)  # already gone, counts as killed
+    except Exception:
+        pass
+    return killed
+
+
+def get_vram_free_gb() -> float:
+    """Return free VRAM in GB, or -1 if nvidia-smi unavailable."""
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0:
+            return int(result.stdout.strip()) / 1024
+    except Exception:
+        pass
+    return -1
+
+
+def get_competing_gpu_services(config: dict, needed_gb: float) -> list[dict]:
+    """Return running GPU services that are eating into needed VRAM headroom."""
+    competing = []
+    free_gb = get_vram_free_gb()
+    if free_gb < 0 or free_gb >= needed_gb + 1:  # +1GB buffer
+        return competing
+    for s in config.get("services", []):
+        if not s.get("vram_gb") or not s.get("port"):
+            continue
+        if check_port(s["port"]):
+            competing.append({"name": s["name"], "port": s["port"], "vram_gb": s["vram_gb"]})
+    return competing
+
+
 @app.post("/api/start/{service_id}")
-async def start_service(service_id: str):
+async def start_service(service_id: str, force: bool = False):
     """Start a service by running its launch command."""
     config = load_config()
 
@@ -432,6 +496,21 @@ async def start_service(service_id: str):
     port = service.get("port")
     if port and check_port(port):
         return {"status": "already_running", "message": f"{service['name']} is already running on port {port}"}
+
+    # VRAM pre-check for GPU services
+    vram_needed = service.get("vram_gb", 0)
+    if vram_needed and not force:
+        competing = get_competing_gpu_services(config, vram_needed)
+        if competing:
+            free_gb = get_vram_free_gb()
+            names = ", ".join(f"{s['name']} ({s['vram_gb']}GB)" for s in competing)
+            return {
+                "status": "vram_warning",
+                "message": f"Only {free_gb:.1f}GB VRAM free, {vram_needed}GB needed. Running GPU services: {names}. Stop them first or use force=true to start anyway.",
+                "competing": competing,
+                "vram_free_gb": free_gb,
+                "vram_needed_gb": vram_needed,
+            }
 
     try:
         # Run in background with nohup
@@ -468,15 +547,13 @@ async def stop_service(service_id: str):
     if not check_port(port):
         return {"status": "not_running", "message": f"{service['name']} is not running"}
 
-    pid = find_process_by_port(port)
-    if not pid:
-        raise HTTPException(status_code=500, detail="Could not find process to stop")
-
     try:
-        os.kill(pid, signal.SIGTERM)
-        return {"status": "stopped", "message": f"Stopped {service['name']} (PID {pid})"}
-    except ProcessLookupError:
-        return {"status": "not_running", "message": "Process already stopped"}
+        killed = kill_all_on_port(port)
+        if not killed:
+            raise HTTPException(status_code=500, detail="Could not find process to stop")
+        return {"status": "stopped", "message": f"Stopped {service['name']} (PIDs: {killed})"}
+    except HTTPException:
+        raise
     except PermissionError:
         raise HTTPException(status_code=403, detail="Permission denied to stop process")
     except Exception as e:

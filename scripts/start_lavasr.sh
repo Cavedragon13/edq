@@ -1,4 +1,5 @@
 #!/bin/bash
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # Start LavaSR Speech Enhancement (port 8034)
 set -e
 

@@ -21,6 +21,7 @@ echo ""
 
 # Set Gradio server config via environment variables
 export GRADIO_SERVER_NAME=0.0.0.0
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export GRADIO_SERVER_PORT=8017
 
 python facefusion.py run \

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foundation-1 Composer</title>
+<style>
+  :root {
+    --bg:      #1e1e1e;
+    --bg2:     #2d2d2d;
+    --bg3:     #383838;
+    --text:    #e0e0e0;
+    --text2:   #9ca3af;
+    --accent:  #7c6fcd;
+    --accent2: #a78bfa;
+    --border:  #4a5568;
+    --ok:      #48bb78;
+    --warn:    #ed8936;
+    --err:     #fc8181;
+  }
+  body.light {
+    --bg: #f0f0f0; --bg2: #ffffff; --bg3: #e4e4e4;
+    --text: #1a1a1a; --text2: #555; --border: #ccc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; font-size: 13px;
+    transition: background .3s, color .3s;
+  }
+  header {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 { font-size: 17px; color: var(--accent2); }
+  header .sub { color: var(--text2); font-size: 11px; margin-top: 2px; }
+  .theme-btn {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+    border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; transition: transform .3s;
+  }
+  .theme-btn:hover { transform: rotate(180deg); }
+
+  .layout {
+    display: grid; grid-template-columns: 1fr 360px;
+    gap: 14px; padding: 14px; max-width: 1440px; margin: 0 auto;
+  }
+
+  /* Left scrollable column */
+  .left { overflow-y: auto; max-height: calc(100vh - 68px); display: flex; flex-direction: column; gap: 10px; }
+
+  /* Cards */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px;
+  }
+  .card-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--accent2);
+    border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 10px;
+  }
+
+  /* Mode toggle */
+  .mode-row { display: flex; gap: 8px; }
+  .mode-btn {
+    flex: 1; padding: 8px 6px; border-radius: 6px; border: 2px solid var(--border);
+    background: var(--bg3); color: var(--text2); cursor: pointer; font-size: 12px;
+    text-align: center; line-height: 1.4; transition: all .2s;
+  }
+  .mode-btn.on { border-color: var(--accent); background: rgba(124,111,205,.15); color: var(--accent2); }
+
+  /* Instrument selects */
+  .instr-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .field { margin-bottom: 0; }
+  .field label { display: block; font-size: 10px; color: var(--text2); margin-bottom: 3px; }
+  select, input[type="number"] {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+    border-radius: 4px; padding: 5px 8px; width: 100%; font-size: 12px;
+  }
+
+  /* Tag chips */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 2px; }
+  .chip {
+    padding: 2px 7px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--bg3); color: var(--text2); font-size: 11px;
+    cursor: pointer; user-select: none; transition: all .15s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .chip.on { background: rgba(124,111,205,.2); border-color: var(--accent); color: var(--accent2); }
+  .group-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin: 6px 0 3px; }
+
+  /* Right column */
+  .right { display: flex; flex-direction: column; gap: 10px; }
+
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* Slider rows */
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-row input[type="range"] { flex: 1; }
+  .sval { font-size: 11px; color: var(--text2); min-width: 34px; text-align: right; }
+
+  /* Prompt preview */
+  .prompt-box {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 4px;
+    padding: 9px; font-size: 11px; font-family: monospace; color: var(--text);
+    min-height: 52px; word-break: break-word; line-height: 1.6; margin-bottom: 7px;
+  }
+  .prompt-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0; }
+  .btn-sm {
+    padding: 4px 9px; border-radius: 4px; border: 1px solid var(--border);
+    background: var(--bg3); color: var(--text2); font-size: 11px; cursor: pointer; transition: all .2s;
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* Generate */
+  .btn-gen {
+    width: 100%; padding: 11px; border-radius: 6px; border: none;
+    background: var(--accent); color: #fff; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .2s; margin-bottom: 8px;
+  }
+  .btn-gen:hover { background: var(--accent2); }
+  .btn-gen:disabled { opacity: .5; cursor: not-allowed; }
+
+  .status { font-size: 11px; color: var(--text2); text-align: center; min-height: 16px; margin-bottom: 6px; }
+  .status.gen { color: var(--warn); }
+  .status.ok  { color: var(--ok); }
+  .status.err { color: var(--err); }
+
+  /* Output */
+  .output { display: none; }
+  .output.show { display: block; }
+  audio { width: 100%; margin-bottom: 7px; border-radius: 4px; }
+  .dl-btn {
+    display: block; width: 100%; padding: 7px; border-radius: 4px; margin-bottom: 5px;
+    border: 1px solid var(--ok); background: rgba(72,187,120,.1); color: var(--ok);
+    font-size: 11px; cursor: pointer; text-align: center; text-decoration: none; transition: all .2s;
+  }
+  .dl-btn:hover { background: rgba(72,187,120,.2); }
+  .dl-btn.midi { border-color: var(--accent); background: rgba(124,111,205,.1); color: var(--accent2); }
+  .dl-btn.midi:hover { background: rgba(124,111,205,.2); }
+  .out-img { width: 100%; border-radius: 4px; margin-bottom: 7px; display: none; }
+
+  /* Collapsibles */
+  details { margin-bottom: 6px; }
+  details summary {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--accent2); border-bottom: 1px solid var(--border); padding-bottom: 5px;
+    margin-bottom: 8px; cursor: pointer; list-style: none;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  details summary::after { content: "▾"; }
+  details[open] summary::after { content: "▴"; }
+
+  .adv-toggle {
+    background: none; border: none; color: var(--text2); cursor: pointer;
+    font-size: 11px; padding: 4px 0; width: 100%; text-align: left; display: flex; gap: 6px;
+  }
+  .adv-toggle:hover { color: var(--text); }
+  .adv-body { display: none; margin-top: 10px; }
+  .adv-body.open { display: block; }
+
+  .mt8 { margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🎵 Foundation-1 Composer</h1>
+    <div class="sub">Structured prompt builder — keys, instrument families, timbre tags, direct generation</div>
+  </div>
+  <button class="theme-btn" id="themeBtn">☀️</button>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT PANEL: instruments + tags -->
+  <div class="left">
+
+    <!-- Mode -->
+    <div class="card">
+      <div class="card-title">Generation Mode</div>
+      <div class="mode-row">
+        <button class="mode-btn on" id="modeSimple" onclick="setMode('simple')">
+          Simple (M1)<br><small style="color:var(--text2)">Coherent · predictable · keys/synth focus</small>
+        </button>
+        <button class="mode-btn" id="modeExp" onclick="setMode('experimental')">
+          Experimental (T1)<br><small style="color:var(--text2)">Bold · richer blends · synth-heavy</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- Instruments -->
+    <div class="card">
+      <details open>
+        <summary>Primary Instrument</summary>
+        <div class="instr-pair">
+          <div class="field"><label>Family</label><select id="fam1" onchange="updateSubs(1)"></select></div>
+          <div class="field"><label>Sub-instrument</label><select id="sub1" onchange="buildPrompt()"></select></div>
+        </div>
+      </details>
+      <details>
+        <summary>Secondary Instrument <span style="font-weight:normal;color:var(--text2)">(optional)</span></summary>
+        <div class="instr-pair mt8">
+          <div class="field"><label>Family</label><select id="fam2" onchange="updateSubs(2)"><option value="">None</option></select></div>
+          <div class="field"><label>Sub-instrument</label><select id="sub2" onchange="buildPrompt()"><option value="">—</option></select></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Frequency Bands -->
+    <div class="card">
+      <details open>
+        <summary>Frequency Bands</summary>
+        <div class="chip-group" id="freqChips"></div>
+      </details>
+    </div>
+
+    <!-- Timbre -->
+    <div class="card">
+      <details open>
+        <summary>Timbre &amp; Texture</summary>
+        <div class="group-label">Core</div>
+        <div class="chip-group" id="tCoreChips"></div>
+        <div class="group-label">Extended</div>
+        <div class="chip-group" id="tExtChips"></div>
+        <div class="group-label">Synth / Wave Tech</div>
+        <div class="chip-group" id="waveChips"></div>
+      </details>
+    </div>
+
+    <!-- Spatial -->
+    <div class="card">
+      <details>
+        <summary>Spatial</summary>
+        <div class="chip-group" id="spatialChips"></div>
+      </details>
+    </div>
+
+    <!-- Style -->
+    <div class="card">
+      <details>
+        <summary>Style</summary>
+        <div class="chip-group" id="styleChips"></div>
+      </details>
+    </div>
+
+    <!-- Rhythm + Structure -->
+    <div class="card">
+      <details open>
+        <summary>Rhythm &amp; Structure</summary>
+        <div class="group-label">Structure</div>
+        <div class="chip-group" id="structChips"></div>
+        <div class="group-label">Density</div>
+        <div class="chip-group" id="densChips"></div>
+        <div class="group-label">Rhythm</div>
+        <div class="chip-group" id="rhythmChips"></div>
+        <div class="group-label">Speed</div>
+        <div class="chip-group" id="speedChips"></div>
+      </details>
+    </div>
+
+  </div><!-- end left -->
+
+  <!-- RIGHT PANEL: settings + generate + output -->
+  <div class="right">
+
+    <!-- Musical settings -->
+    <div class="card">
+      <div class="card-title">Musical Settings</div>
+      <div class="settings-grid">
+        <div class="field"><label>Key</label>
+          <select id="key" onchange="buildPrompt()">
+            <option>A</option><option>A#</option><option>B</option>
+            <option selected>C</option><option>C#</option><option>D</option>
+            <option>D#</option><option>E</option><option>F</option>
+            <option>F#</option><option>G</option><option>G#</option>
+          </select>
+        </div>
+        <div class="field"><label>Scale</label>
+          <select id="scale" onchange="buildPrompt()">
+            <option value="major">Major</option>
+            <option value="minor">Minor</option>
+          </select>
+        </div>
+        <div class="field"><label>BPM</label>
+          <select id="bpm" onchange="buildPrompt()">
+            <option>100</option><option>110</option><option>120</option>
+            <option>128</option><option>130</option><option selected>140</option>
+            <option>150</option>
+          </select>
+        </div>
+        <div class="field"><label>Bars</label>
+          <select id="bars" onchange="buildPrompt()">
+            <option>4</option><option selected>8</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced -->
+    <div class="card">
+      <button class="adv-toggle" onclick="this.nextElementSibling.classList.toggle('open')">▾ Advanced Settings</button>
+      <div class="adv-body">
+        <div class="field mt8"><label>Steps (1–500, default 75 — higher = better quality)</label>
+          <div class="slider-row">
+            <input type="range" id="steps" min="1" max="500" value="75" oninput="this.nextElementSibling.textContent=this.value">
+            <span class="sval">75</span>
+          </div>
+        </div>
+        <div class="field mt8"><label>CFG Scale (0–25, default 7.0)</label>
+          <div class="slider-row">
+            <input type="range" id="cfg" min="0" max="25" step="0.1" value="7" oninput="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)">
+            <span class="sval">7.0</span>
+          </div>
+        </div>
+        <div class="settings-grid mt8">
+          <div class="field"><label>Sampler</label>
+            <select id="sampler">
+              <option value="dpmpp-3m-sde" selected>dpmpp-3m-sde (best)</option>
+              <option value="dpmpp-2m-sde">dpmpp-2m-sde</option>
+              <option value="k-heun">k-heun</option>
+              <option value="k-lms">k-lms</option>
+              <option value="k-dpmpp-2s-ancestral">k-dpmpp-2s-ancestral</option>
+              <option value="k-dpm-2">k-dpm-2</option>
+              <option value="k-dpm-fast">k-dpm-fast</option>
+            </select>
+          </div>
+          <div class="field"><label>Seed (−1 = random)</label>
+            <input type="number" id="seed" value="-1" min="-1">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompt preview -->
+    <div class="card">
+      <div class="card-title">Prompt Preview</div>
+      <div class="prompt-box" id="promptBox">Select instruments and tags above...</div>
+      <div class="prompt-actions">
+        <button class="btn-sm" id="copyBtn" onclick="copyPrompt()">📋 Copy</button>
+        <button class="btn-sm" onclick="clearAll()">✕ Clear Tags</button>
+        <button class="btn-sm" onclick="window.open('http://192.168.7.226:8039','_blank')">↗ Native UI</button>
+      </div>
+    </div>
+
+    <!-- Generate + output -->
+    <div class="card">
+      <button class="btn-gen" id="genBtn" onclick="generate()">🎵 Generate</button>
+      <div class="status" id="statusEl"></div>
+      <div class="output" id="outputEl">
+        <div class="card-title">Output</div>
+        <audio id="audioEl" controls></audio>
+        <a class="dl-btn" id="dlWav" href="#" download>⬇ Download WAV</a>
+        <a class="dl-btn midi" id="dlMidi" href="#" download style="display:none">⬇ Download MIDI</a>
+        <img class="out-img" id="pianoImg" alt="Piano Roll">
+        <img class="out-img" id="spectroImg" alt="Spectrogram">
+      </div>
+    </div>
+
+  </div><!-- end right -->
+</div><!-- end layout -->
+
+<script>
+const BASE = "http://192.168.7.226:8039";
+
+const FAMILIES = {
+  "Synth":           ["Synth Lead","Pluck","Pad","Supersaw","FM Synth","Wavetable Synth","Atmosphere","Texture"],
+  "Keys":            ["Grand Piano","Digital Piano","Rhodes Piano","Felt Piano","Wurlitzer Piano","Clavinet","Hammond Organ","Church Organ","Harpsichord"],
+  "Bass":            ["Wavetable Bass","Reese Bass","Sub Bass","Electric Bass","Analog Bass","FM Bass","Picked Bass","Digital Bass"],
+  "Bowed Strings":   ["Violin","Cello","Digital Strings","Viola","Fiddle"],
+  "Mallet":          ["Bell","Marimba","Vibraphone","Glockenspiel","Kalimba","Xylophone"],
+  "Wind":            ["Flute","Pan Flute","World Winds","Piccolo","Clarinet","Oboe","Ocarina","Bassoon"],
+  "Guitar":          ["Electric Guitar","Acoustic Guitar","Nylon Guitar"],
+  "Brass":           ["Trumpet","Brass","French Horn","Tenor Trombone","Bass Trombone","Tuba"],
+  "Vocal":           ["Texture","Choir","Ensemble","Synthetic Choir"],
+  "Plucked Strings": ["Harp","Concert Harp","Celtic Harp","Koto","Sitar"]
+};
+
+const TAGS = {
+  freq:      ["sub","sub bass","bass","low mids","mids","upper mids","highs","air"],
+  tCore:     ["warm","bright","tight","thick","airy","rich","clean","gritty","crisp","focused","metallic","dark","shiny","present","silky","sparkly","smooth"],
+  tExt:      ["cold","buzzy","round","fat","punchy","thin","soft","woody","hollow","nasal","biting","overdriven","subdued","breathy","glassy","pizzicato","staccato","snappy","full","harsh","dreamy","heavy","boomy","crispy","spiccato"],
+  wave:      ["saw","square","sine","triangle","pulse","analog","digital","fm","supersaw","reese","pitch bend","white noise","filter"],
+  spatial:   ["wide","mono","near","far","spacey","ambient","distant","intimate","small","big","deep"],
+  style:     ["dubstep","chiptune","acid","303","retro","vintage","laser","siren","fx","formant vocal","growl"],
+  struct:    ["melody","chord progression","dance chord progression","arp","bassline"],
+  dens:      ["simple","repeating","catchy","complex","epic"],
+  rhythm:    ["off beat","alternating","triplets","strummed","arp"],
+  speed:     ["slow speed","medium speed","fast speed"]
+};
+
+// Ordered for prompt building (freq > timbre > spatial > style > rhythm/structure)
+const TAG_ORDER = [
+  ...TAGS.freq,
+  ...TAGS.tCore, ...TAGS.tExt, ...TAGS.wave,
+  ...TAGS.spatial, ...TAGS.style,
+  ...TAGS.struct, ...TAGS.dens, ...TAGS.rhythm, ...TAGS.speed
+];
+
+let mode = "simple";
+const sel = new Set();
+
+window.addEventListener("DOMContentLoaded", () => {
+  initTheme();
+  populateFamilies();
+  populateTags("freqChips",    TAGS.freq);
+  populateTags("tCoreChips",   TAGS.tCore);
+  populateTags("tExtChips",    TAGS.tExt);
+  populateTags("waveChips",    TAGS.wave);
+  populateTags("spatialChips", TAGS.spatial);
+  populateTags("styleChips",   TAGS.style);
+  populateTags("structChips",  TAGS.struct);
+  populateTags("densChips",    TAGS.dens);
+  populateTags("rhythmChips",  TAGS.rhythm);
+  populateTags("speedChips",   TAGS.speed);
+  buildPrompt();
+});
+
+// Theme
+function initTheme() {
+  const saved = localStorage.getItem("f1-theme");
+  if (saved === "light") {
+    document.body.classList.add("light");
+    document.getElementById("themeBtn").textContent = "🌙";
+  }
+}
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const isLight = document.body.classList.toggle("light");
+  document.getElementById("themeBtn").textContent = isLight ? "🌙" : "☀️";
+  localStorage.setItem("f1-theme", isLight ? "light" : "dark");
+});
+
+// Instruments
+function populateFamilies() {
+  const fams = Object.keys(FAMILIES);
+  const f1 = document.getElementById("fam1");
+  const f2 = document.getElementById("fam2");
+  fams.forEach(f => {
+    f1.add(new Option(f, f));
+    f2.add(new Option(f, f));
+  });
+  f1.value = "Keys";
+  f2.value = "";
+  updateSubs(1);
+  updateSubs(2);
+}
+
+function updateSubs(n) {
+  const fam = document.getElementById("fam" + n).value;
+  const sub = document.getElementById("sub" + n);
+  sub.innerHTML = n === 2 ? "<option value=''>—</option>" : "";
+  if (fam && FAMILIES[fam]) {
+    FAMILIES[fam].forEach(s => sub.add(new Option(s, s)));
+    if (n === 1 && fam === "Keys") sub.value = "Rhodes Piano";
+  }
+  buildPrompt();
+}
+
+// Tags
+function populateTags(containerId, tags) {
+  const el = document.getElementById(containerId);
+  tags.forEach(tag => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.textContent = tag;
+    chip.addEventListener("click", () => {
+      if (sel.has(tag)) { sel.delete(tag); chip.classList.remove("on"); }
+      else              { sel.add(tag);    chip.classList.add("on");    }
+      buildPrompt();
+    });
+    el.appendChild(chip);
+  });
+}
+
+function clearAll() {
+  sel.clear();
+  document.querySelectorAll(".chip.on").forEach(c => c.classList.remove("on"));
+  buildPrompt();
+}
+
+// Mode
+function setMode(m) {
+  mode = m;
+  document.getElementById("modeSimple").classList.toggle("on", m === "simple");
+  document.getElementById("modeExp").classList.toggle("on",   m === "experimental");
+  buildPrompt();
+}
+
+// Prompt builder
+function buildPrompt() {
+  const fam1 = document.getElementById("fam1").value;
+  const sub1 = document.getElementById("sub1").value;
+  const fam2 = document.getElementById("fam2").value;
+  const sub2 = document.getElementById("sub2").value;
+  const key   = document.getElementById("key").value;
+  const scale = document.getElementById("scale").value;
+  const bpm   = document.getElementById("bpm").value;
+  const bars  = document.getElementById("bars").value;
+
+  const parts = [];
+  if (fam1)              parts.push(fam1);
+  if (sub1)              parts.push(sub1);
+  if (fam2 && sub2 && sub2 !== "") {
+    if (fam2 !== fam1)   parts.push(fam2);
+    parts.push(sub2);
+  }
+  TAG_ORDER.forEach(t => { if (sel.has(t)) parts.push(t); });
+  parts.push(key + " " + scale);
+  parts.push(bpm + " BPM");
+  parts.push(bars + " bars");
+
+  const prompt = parts.join(", ");
+  document.getElementById("promptBox").textContent = prompt;
+  return prompt;
+}
+
+function copyPrompt() {
+  const text = document.getElementById("promptBox").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById("copyBtn");
+    btn.textContent = "✓ Copied!";
+    setTimeout(() => { btn.textContent = "📋 Copy"; }, 1500);
+  });
+}
+
+// Generate
+async function generate() {
+  const prompt = buildPrompt();
+  const key   = document.getElementById("key").value;
+  const scale = document.getElementById("scale").value;
+  const bpm   = document.getElementById("bpm").value;
+  const bars  = document.getElementById("bars").value;
+  const steps = parseFloat(document.getElementById("steps").value);
+  const cfg   = parseFloat(document.getElementById("cfg").value);
+  const seed  = parseInt(document.getElementById("seed").value, 10);
+  const sampler = document.getElementById("sampler").value;
+
+  const simplePrompt = (mode === "simple")       ? prompt : "";
+  const expPrompt    = (mode === "experimental") ? prompt : "";
+
+  // Parameter order matches /info endpoint exactly:
+  // [prompt_simple, prompt_experimental, bars, bpm, key, scale,
+  //  cfg, steps, preview_every, seed, sampler,
+  //  sigma_min, sigma_max, cfg_rescale, use_style_transfer, init_audio, init_noise_level]
+  const payload = {
+    data: [
+      simplePrompt, expPrompt,
+      bars, bpm, key, scale,
+      cfg, steps,
+      0, seed,
+      sampler,
+      0.03, 500, 0.0,
+      false, null, 80
+    ]
+  };
+
+  const genBtn = document.getElementById("genBtn");
+  const status = document.getElementById("statusEl");
+  genBtn.disabled = true;
+  status.className = "status gen";
+  status.textContent = "Generating... (30–90 seconds)";
+  document.getElementById("outputEl").classList.remove("show");
+
+  try {
+    const resp = await fetch(BASE + "/run/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) throw new Error("HTTP " + resp.status + " — check that Foundation-1 is running on port 8039");
+    const result = await resp.json();
+    if (!result.data || result.data.length === 0) throw new Error("Empty response from model");
+
+    status.className = "status ok";
+    status.textContent = "Done!";
+    showOutput(result.data);
+
+  } catch (err) {
+    status.className = "status err";
+    status.textContent = "Error: " + err.message;
+    console.error(err);
+  }
+
+  genBtn.disabled = false;
+}
+
+function resolveUrl(val) {
+  if (!val) return null;
+  if (typeof val === "string") return val.startsWith("http") ? val : BASE + val;
+  if (val.url) return val.url.startsWith("http") ? val.url : BASE + val.url;
+  return null;
+}
+
+function showOutput(data) {
+  // data: [audio, spectrogram, piano_roll, midi]
+  const audioUrl  = resolveUrl(data[0]);
+  const spectroUrl = resolveUrl(data[1]);
+  const pianoUrl  = resolveUrl(data[2]);
+  const midiUrl   = resolveUrl(data[3]);
+
+  const audioEl   = document.getElementById("audioEl");
+  const dlWav     = document.getElementById("dlWav");
+  const dlMidi    = document.getElementById("dlMidi");
+  const pianoImg  = document.getElementById("pianoImg");
+  const spectroImg = document.getElementById("spectroImg");
+
+  if (audioUrl) {
+    audioEl.src = audioUrl;
+    dlWav.href  = audioUrl;
+    dlWav.style.display = "block";
+  }
+  if (midiUrl) {
+    dlMidi.href = midiUrl;
+    dlMidi.style.display = "block";
+  }
+  if (pianoUrl) {
+    pianoImg.src = pianoUrl;
+    pianoImg.style.display = "block";
+  }
+  if (spectroUrl) {
+    spectroImg.src = spectroUrl;
+    spectroImg.style.display = "block";
+  }
+
+  document.getElementById("outputEl").classList.add("show");
+  audioEl.play().catch(() => {});
+}
+</script>
+</body>
+</html>

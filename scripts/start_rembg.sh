@@ -1,4 +1,5 @@
 #!/bin/bash
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # Launch Rembg Background Remover
 # Port: 8012
 

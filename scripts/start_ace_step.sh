@@ -1,4 +1,5 @@
 #!/bin/bash
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # ACE-Step 1.5 Music Generation Launcher
 # Dragonsuite Integration - Port 8016
 

@@ -202,11 +202,11 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
         try:
             from diffusers import ZImagePipeline
             pipe_base = ZImagePipeline.from_pretrained(MODEL_ID_BASE, torch_dtype=dtype)
-            pipe_base.enable_sequential_cpu_offload()
+            pipe_base.to(device)
             if hasattr(pipe_base, 'vae'):
                 pipe_base.vae.enable_slicing()
                 pipe_base.vae.enable_tiling()
-            print("Z-Image Base loaded with sequential CPU offload + VAE optimizations")
+            print("Z-Image Base loaded directly to VRAM + VAE optimizations")
             current_model = "Base"
             return pipe_base
         except Exception as e:
@@ -222,11 +222,11 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
         try:
             from diffusers import ZImagePipeline
             pipe_turbo = ZImagePipeline.from_pretrained(MODEL_ID_TURBO, torch_dtype=dtype)
-            pipe_turbo.enable_sequential_cpu_offload()
+            pipe_turbo.enable_model_cpu_offload()
             if hasattr(pipe_turbo, 'vae'):
                 pipe_turbo.vae.enable_slicing()
                 pipe_turbo.vae.enable_tiling()
-            print("Z-Image Turbo loaded with sequential CPU offload + VAE optimizations")
+            print("Z-Image Turbo loaded with model CPU offload + VAE optimizations")
             current_model = "Turbo"
             return pipe_turbo
         except Exception as e:
