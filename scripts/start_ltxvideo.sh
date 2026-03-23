@@ -5,7 +5,7 @@ cd /srv/containers/edq
 
 VENV="venv_ltxvideo"
 SCRIPT="scripts/ltxvideo_gradio.py"
-MODEL_DIR="models/ltxvideo"
+MODEL_DIR="models/ltxvideo_098"
 PORT=8028
 
 if [ ! -d "$VENV" ]; then

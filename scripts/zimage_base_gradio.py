@@ -184,6 +184,28 @@ def preprocess_control_image(image: Image.Image, condition_type: str) -> Image.I
     return Image.fromarray(processed)
 
 
+def evict_other_models(keep: str):
+    """Unload models not currently needed to free VRAM. keep = 'base'|'turbo'|'control'"""
+    global pipe_base, pipe_turbo, pipe_control
+    import gc
+    if keep != "base" and pipe_base is not None:
+        print(f"[VRAM] Evicting Base model to free VRAM for {keep}...")
+        pipe_base.to("cpu")
+        pipe_base = None
+    if keep != "turbo" and pipe_turbo is not None:
+        print(f"[VRAM] Evicting Turbo model to free VRAM for {keep}...")
+        pipe_turbo.to("cpu") if hasattr(pipe_turbo, 'to') else None
+        pipe_turbo = None
+    if keep != "control" and pipe_control is not None:
+        print(f"[VRAM] Evicting ControlNet model to free VRAM for {keep}...")
+        pipe_control.to("cpu") if hasattr(pipe_control, 'to') else None
+        pipe_control = None
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+
+
 def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
     """Lazy load the Z-Image pipeline with memory optimizations"""
     global pipe_base, pipe_turbo, pipe_control, current_model
@@ -191,6 +213,7 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
     if use_controlnet:
+        evict_other_models("control")
         return load_control_pipeline()
 
     if model_type == "Base":
@@ -198,15 +221,16 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
             current_model = "Base"
             return pipe_base
 
+        evict_other_models("base")
         print("Loading Z-Image Base model...")
         try:
             from diffusers import ZImagePipeline
             pipe_base = ZImagePipeline.from_pretrained(MODEL_ID_BASE, torch_dtype=dtype)
-            pipe_base.to(device)
+            pipe_base.enable_model_cpu_offload()
             if hasattr(pipe_base, 'vae'):
                 pipe_base.vae.enable_slicing()
                 pipe_base.vae.enable_tiling()
-            print("Z-Image Base loaded directly to VRAM + VAE optimizations")
+            print("Z-Image Base loaded with model CPU offload + VAE optimizations")
             current_model = "Base"
             return pipe_base
         except Exception as e:
@@ -218,6 +242,7 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
             current_model = "Turbo"
             return pipe_turbo
 
+        evict_other_models("turbo")
         print("Loading Z-Image Turbo model...")
         try:
             from diffusers import ZImagePipeline

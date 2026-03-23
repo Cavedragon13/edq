@@ -805,6 +805,25 @@
       ],
       "stop_command": "pkill -f 'matanyone2.*app.py' || true",
       "vram_gb": 6
+    },
+    {
+      "id": "linkding",
+      "name": "Linkding",
+      "description": "Cross-browser bookmark manager \u2014 centralized sync for Chrome, Safari, Edge",
+      "category": "utility",
+      "port": 8039,
+      "path": "/",
+      "icon": "&#128278;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_linkding.sh",
+      "project_path": null,
+      "features": [
+        "Cross-Browser Sync",
+        "Safari Extension",
+        "Chrome Extension",
+        "Folder Tags",
+        "REST API"
+      ],
+      "stop_command": "docker compose -f /srv/containers/edq/docker/linkding/docker-compose.yml down || true"
     }
   ],
   "categories": {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-LTX-Video-0.9.7-distilled — Standalone text-to-video / image-to-video interface
-Port 8028  |  Model: Lightricks/LTX-Video-0.9.7-distilled
+LTX-Video-0.9.8-distilled — Standalone text-to-video / image-to-video interface
+Port 8028  |  Model: Lightricks/LTX-Video-0.9.8-distilled
 """
 
 import os
@@ -14,8 +14,8 @@ from PIL import Image
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
-MODEL_DIR     = Path("/srv/containers/edq/models/ltxvideo")
-UPSCALER_DIR  = Path("/srv/containers/edq/models/ltxvideo_upscaler")
+MODEL_DIR     = Path("/srv/containers/edq/models/ltxvideo_098")
+UPSCALER_DIR  = Path("/srv/containers/edq/models/ltxvideo_upscaler_098")
 OUTPUT_DIR    = Path.home() / "ai_generated" / "ltxvideo"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -27,7 +27,7 @@ for p, label in [(MODEL_DIR, "ltxvideo"), (UPSCALER_DIR, "ltxvideo_upscaler")]:
         sys.exit(1)
 
 # --- Load pipelines ---
-print("⏳ Loading LTX-Video-0.9.7-distilled…")
+print("⏳ Loading LTX-Video-0.9.8-distilled…")
 from diffusers import LTXConditionPipeline, LTXLatentUpsamplePipeline
 from diffusers.pipelines.ltx.pipeline_ltx_condition import LTXVideoCondition
 from diffusers.utils import export_to_video, load_image
@@ -36,8 +36,10 @@ pipe = LTXConditionPipeline.from_pretrained(str(MODEL_DIR), torch_dtype=torch.bf
 pipe_up = LTXLatentUpsamplePipeline.from_pretrained(
     str(UPSCALER_DIR), vae=pipe.vae, torch_dtype=torch.bfloat16
 )
-pipe.enable_model_cpu_offload()
-pipe_up.enable_model_cpu_offload()
+# 13B model: enable_model_cpu_offload() OOMs on 16GB (loads whole transformer ~13GB)
+# sequential offload loads one layer at a time — fits, but slower (~16s/step)
+pipe.enable_sequential_cpu_offload()
+pipe_up.enable_sequential_cpu_offload()
 pipe.vae.enable_tiling()
 print("✅ Model loaded")
 
@@ -164,10 +166,10 @@ label { color: #9ca3af !important; }
 .gr-button-primary { background: #3b5998 !important; border: none !important; }
 """
 
-with gr.Blocks(css=CSS, title="LTX-Video 0.9.7") as demo:
+with gr.Blocks(css=CSS, title="LTX-Video 0.9.8") as demo:
     gr.HTML("""
     <div class="dark-header">
-      <h1>🎬 LTX-Video 0.9.7 Distilled</h1>
+      <h1>🎬 LTX-Video 0.9.8 Distilled</h1>
       <p>Text-to-video & image-to-video · 7 steps · 704×512 · Lightricks</p>
     </div>
     """)
