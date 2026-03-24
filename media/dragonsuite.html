@@ -164,6 +164,33 @@ body.light .cnav { background:rgba(240,240,248,.75); }
 .sc-fill.w { background:var(--warn); } .sc-fill.d { background:var(--err); }
 .sc-sub { font-size:10.5px; color:var(--txm); margin-top:4px; }
 
+/* Pollen row */
+.pollenrow {
+  background:var(--bgc); border:1px solid var(--bd);
+  border-radius:var(--r); padding:10px 15px;
+  margin-bottom:14px;
+  display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap;
+}
+.pollen-types { display:flex; flex-wrap:wrap; gap:5px; align-items:center; flex:1; }
+.pollen-pill {
+  display:flex; align-items:center; gap:5px;
+  font-family:'JetBrains Mono',monospace; font-size:10.5px;
+  padding:2px 8px; border-radius:4px;
+  background:var(--bge); border:1px solid var(--bd);
+}
+.pollen-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.pollen-type-name { color:var(--txm); }
+.pollen-forecast { display:flex; gap:10px; align-items:flex-start; flex-shrink:0; }
+.pollen-day {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--txm);
+}
+.pollen-day-dots { display:flex; gap:2px; }
+.pollen-rec {
+  width:100%; font-size:10px; color:var(--txm); font-style:italic;
+  padding-top:2px; line-height:1.4;
+}
+
 /* LLM row */
 .llmrow {
   background:var(--bgc); border:1px solid var(--bd);
@@ -423,6 +450,13 @@ body.light .cnav { background:rgba(240,240,248,.75); }
       <div class="sc-bar"><div class="sc-fill" id="sc-disk-bar" style="width:0%"></div></div>
       <div class="sc-sub" id="sc-disk-sub">Loading&#8230;</div>
     </div>
+  </div>
+
+  <div class="pollenrow" id="pollen-row" style="display:none">
+    <span class="llm-lbl" style="padding-top:2px">POLLEN</span>
+    <div class="pollen-types" id="pollen-types"></div>
+    <div class="sep" style="height:18px;flex-shrink:0"></div>
+    <div class="pollen-forecast" id="pollen-forecast"></div>
   </div>
 
   <div class="llmrow">
@@ -725,6 +759,71 @@ themeBtn.addEventListener('click', function(){
 });
 
 document.getElementById('refresh-btn').addEventListener('click', function(){ fetchStatus(true); });
+
+// ── Pollen (Google Pollen API · KPSM coords · proxied via /api/pollen) ─
+var POLLEN_COLORS = ['#4b4f68','#34d399','#86efac','#fbbf24','#f97316','#f87171'];
+var POLLEN_LABELS = ['None','Very Low','Low','Moderate','High','Very High'];
+var DAY_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+async function fetchPollen() {
+  try {
+    var resp = await fetch('/api/pollen');
+    if (!resp.ok) return;
+    var data = await resp.json();
+    var days = data.dailyInfo || [];
+    if (!days.length) return;
+
+    var today = days[0];
+    var types = today.pollenTypeInfo || [];
+
+    // Today's pills
+    var typeHtml = types.map(function(t) {
+      var val = (t.indexInfo && t.indexInfo.value != null) ? Math.min(t.indexInfo.value, 5) : 0;
+      var col = POLLEN_COLORS[val];
+      var lbl = POLLEN_LABELS[val];
+      return '<span class="pollen-pill">' +
+        '<span class="pollen-dot" style="background:' + col + '"></span>' +
+        '<span class="pollen-type-name">' + t.displayName + '</span>' +
+        '<span style="color:' + col + '">' + lbl + '</span>' +
+        '</span>';
+    }).join('');
+    document.getElementById('pollen-types').innerHTML = typeHtml || '<span class="llm-off">No data</span>';
+
+    // Health rec — first from any type with value >= 3 (Moderate+)
+    var elevated = types.filter(function(t) {
+      return t.indexInfo && t.indexInfo.value >= 3;
+    });
+    var rec = elevated.length && elevated[0].healthRecommendations && elevated[0].healthRecommendations[0];
+    var recEl = document.getElementById('pollen-types').nextElementSibling;
+    if (recEl && recEl.classList.contains('pollen-rec')) recEl.remove();
+    if (rec) {
+      var recDiv = document.createElement('div');
+      recDiv.className = 'pollen-rec';
+      recDiv.textContent = '\u26a0\ufe0f ' + rec;
+      document.getElementById('pollen-types').insertAdjacentElement('afterend', recDiv);
+    }
+
+    // 5-day forecast strip
+    var fHtml = days.map(function(day) {
+      var d = day.date;
+      var dateObj = new Date(d.year, d.month - 1, d.day);
+      var dayName = DAY_ABBR[dateObj.getDay()];
+      var dots = (day.pollenTypeInfo || []).map(function(t) {
+        var val = (t.indexInfo && t.indexInfo.value != null) ? Math.min(t.indexInfo.value, 5) : 0;
+        return '<span class="pollen-dot" style="background:' + POLLEN_COLORS[val] + ';width:6px;height:6px"></span>';
+      }).join('');
+      return '<div class="pollen-day"><span>' + dayName + '</span><div class="pollen-day-dots">' + dots + '</div></div>';
+    }).join('');
+    document.getElementById('pollen-forecast').innerHTML = fHtml;
+
+    document.getElementById('pollen-row').style.display = 'flex';
+  } catch(e) {
+    console.warn('Pollen:', e);
+  }
+}
+
+fetchPollen();
+setInterval(fetchPollen, 3600000); // 1 hour
 
 // ── Weather (NWS KPSM · Portsmouth NH) ─────────────────────────────────
 function cToF(c) { return (c !== null && c !== undefined) ? Math.round(c * 9/5 + 32) : null; }

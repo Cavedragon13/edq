@@ -52,13 +52,13 @@ This is a personal AI development environment focused on video generation, visio
 | 8013  | Qwen-Image-Layered     | On-demand (GPU)    | [Image Generation](docs/services/image-generation.md) |
 | 8014  | Qwen3-Audiobook        | On-demand          | [Audio & TTS](docs/services/audio-tts.md)             |
 | 8015  | Dragonart Studio       | Production         | [Utilities](docs/services/utilities.md)               |
-| 8016  | Wan2.1 T2V 1.3B        | On-demand (GPU)    | Standalone fast text-to-video (~8GB VRAM)             |
+| 8016  | LTX-2 (19B)            | On-demand (GPU)    | T2V via LTX2Pipeline, sequential CPU offload          |
 | 8020  | MCP Inspector          | On-demand          | [Utilities](docs/services/utilities.md)               |
 | 8021  | ACE-Step 1.5           | On-demand (GPU)    | [Video & Music](docs/services/video-music.md)         |
 | 8025  | Dolphin Vision 7B      | On-demand (GPU)    | Uncensored VLM image Q&A                              |
 | 8026  | Audio Processing Suite | On-demand (GPU)    | Karaoke/dereverb/ASR from SoulX-Singer models         |
 | 8027  | AudioMass Editor       | On-demand          | Web audio editor (Audacity-like, client-side)         |
-| 8028  | LTX-Video 0.9.7        | On-demand (GPU)    | Standalone T2V+I2V, 7-step distilled, 3-pass upscale  |
+| 8028  | LTX-Video 0.9.8-13B    | On-demand (GPU)    | Standalone T2V+I2V, 7-step distilled, 3-pass upscale  |
 | 8029  | Dragonsong             | On-demand          | Lyria RealTime music - live prompt steering, record   |
 | 8030  | Horse Racing v2        | On-demand          | Win/Place/Show betting, parlay tickets, AI opponents  |
 | 8031  | Interactive Games      | On-demand          | Survival Series, Lunar Reckoning, text adventures     |
@@ -68,6 +68,8 @@ This is a personal AI development environment focused on video generation, visio
 | 8035  | The Movies             | On-demand          | AI film studio — Nano Banana 2 + Veo 3.1 + Lyria 3    |
 | 8037  | TADA TTS               | On-demand (GPU)    | Hume AI voice cloning, 9 languages (TADA-3B-ML)       |
 | 8038  | MatAnyone 2            | On-demand (GPU)    | Human video matting, click-to-select, alpha output    |
+| 8039  | Linkding               | On-demand          | Cross-browser bookmark manager (Docker)               |
+| 8040  | Street View Studio     | On-demand          | Street View fetch + FLUX Kontext AI transform         |
 | 8888  | Jupyter (reserved)     | Future             | -                                                     |
 | 11434 | Ollama API             | Always-on (snap)   | -                                                     |
 
@@ -97,8 +99,8 @@ This is a personal AI development environment focused on video generation, visio
 ### Video & Music - [Full docs](docs/services/video-music.md)
 
 - **Wan2GP** (8002) - Video generation (Wan 2.0)
-- **Wan2.1 T2V 1.3B** (8016) - Fast standalone text-to-video, ~8GB VRAM, diffusers
-- **LTX-Video 0.9.7** (8028) - 7-step distilled T2V+I2V with 3-pass upscale, diffusers
+- **LTX-2 (19B)** (8016) - T2V via LTX2Pipeline, sequential CPU offload, diffusers
+- **LTX-Video 0.9.8-13B** (8028) - 7-step distilled T2V+I2V with 3-pass upscale, diffusers
 - **HeartMuLa** (8004) - Music generation from lyrics (~12GB VRAM)
 - **ACE-Step 1.5** (8021) - Ultra-fast music generation (<4GB VRAM)
 

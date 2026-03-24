@@ -560,6 +560,27 @@ async def stop_service(service_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to stop service: {str(e)}")
 
 
+@app.get("/api/pollen")
+async def get_pollen():
+    """Proxy Google Pollen API — keeps API key server-side. KPSM coords (Portsmouth NH)."""
+    import urllib.request as _ur
+    from dotenv import load_dotenv as _lde
+    _lde(BASE_DIR / ".env")
+    key = os.getenv("GOOGLE_API_KEY", "")
+    if not key:
+        raise HTTPException(status_code=503, detail="GOOGLE_API_KEY not configured in .env")
+    lat, lng = 43.0789, -70.8203  # KPSM · Portsmouth NH
+    url = (
+        f"https://pollen.googleapis.com/v1/forecast:lookup"
+        f"?location.latitude={lat}&location.longitude={lng}&days=5&key={key}"
+    )
+    try:
+        with _ur.urlopen(url, timeout=8) as r:
+            return json.loads(r.read())
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 # Mount media directory for static files (favicon, etc.)
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 

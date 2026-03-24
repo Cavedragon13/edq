@@ -36,6 +36,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_the_movies         | `/srv/containers/edq/venv_the_movies`             | ~50MB  | `start_the_movies.sh`         | The Movies AI film studio sim (port 8035)                  |
 | venv_tada               | `/srv/containers/edq/venv_tada`                   | ~5GB   | `start_tada.sh`               | TADA TTS (Hume AI TADA-3B-ML, port 8037)                   |
 | venv_matanyone2         | `/srv/containers/edq/venv_matanyone2`             | ~8GB   | `start_matanyone2.sh`         | MatAnyone 2 human video matting (port 8038)                |
+| venv_streetview         | `/srv/containers/edq/venv_streetview`             | ~200MB | `start_streetview_studio.sh`  | Street View Studio — fetch + FLUX Kontext transform (8040) |
 
 ## MCP Server Venvs
 
@@ -100,7 +101,7 @@ When removing a project:
 | 2026-02-18 | Added `venv_ltxvideo` for LTX-Video-0.9.7-distilled T2V+I2V standalone (port 8028)           |
 | 2026-03-01 | Added `venv_lavasr` for LavaSR speech enhancement + BWE upsampling to 48kHz (port 8034)      |
 | 2026-03-02 | Added `venv_the_movies` for The Movies AI film studio sim (port 8035)                        |
-| 2026-03-12 | Attempted `venv_nemotron` for Nemotron Nano 9B v2 — removed; mamba-ssm/Blackwell incompatibility |
+| 2026-03-12 | Attempted `venv_nemotron` for Nemotron Nano 9B v2 — removed; mamba-ssm/Blackwell incompat.   |
 | 2026-03-15 | Updated `venv_fish_speech` — Fish Speech v2.0.0 / Fish Audio S2-Pro (4B)                     |
 | 2026-03-15 | Added `venv_tada` for TADA TTS (Hume AI TADA-3B-ML, port 8037)                               |
 | 2026-03-15 | Added `venv_matanyone2` for MatAnyone 2 video matting CVPR 2026 (port 8038)                  |

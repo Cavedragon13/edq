@@ -824,6 +824,25 @@
         "REST API"
       ],
       "stop_command": "docker compose -f /srv/containers/edq/docker/linkding/docker-compose.yml down || true"
+    },
+    {
+      "id": "streetview-studio",
+      "name": "Street View Studio",
+      "description": "Fetch any address from Google Street View · Apply AI art styles or prototype building changes with FLUX.1 Kontext",
+      "category": "image",
+      "port": 8040,
+      "path": "/",
+      "icon": "&#128506;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_streetview_studio.sh",
+      "project_path": null,
+      "features": [
+        "Google Street View",
+        "FLUX.1 Kontext Editing",
+        "Art Style Transfer",
+        "Building Prototyping",
+        "Scene Changes"
+      ],
+      "stop_command": "pkill -f 'streetview_studio_gradio.py' || true"
     }
   ],
   "categories": {
