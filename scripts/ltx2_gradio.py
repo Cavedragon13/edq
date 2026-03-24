@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-LTX-2 (19B) — Text-to-video & image-to-video via diffusers LTX2Pipeline
+LTX-2 (19B) — Text-to-video via diffusers LTX2Pipeline
 Port 8016  |  Model: Lightricks/LTX-2
 
-RTFM_VERIFY items (check before first run):
-  - LTX2Pipeline parameter names for guidance_scale, num_inference_steps:
-    https://huggingface.co/docs/diffusers/main/en/api/pipelines/ltx_video
-  - I2V conditioning parameter name (likely "image" or "conditioning_frames"):
-    check diffusers source for LTX2Pipeline.__call__
-  - Whether LTX2LatentUpsamplePipeline requires a separate upscaler model download
+LTX2Pipeline is T2V only — no image conditioning parameter.
+I2V would require a separate LTX2Image2VideoPipeline (not yet researched).
+Verified call signature: prompt, negative_prompt, height, width, num_frames,
+frame_rate, num_inference_steps, guidance_scale (default 4.0), generator,
+decode_timestep, decode_noise_scale, output_type, return_dict.
 """
 
 import os
@@ -43,8 +42,10 @@ pipe = LTX2Pipeline.from_pretrained(
     str(MODEL_DIR),
     torch_dtype=torch.bfloat16,
 )
-pipe.enable_model_cpu_offload()
-pipe.vae.enable_tiling()
+# No vae.enable_tiling() — LTX2 VAE tiler creates sub-padding-sized tiles at
+# standard resolutions, causing RuntimeError in tiled_decode. Without tiling
+# the VAE decodes fine within sequential cpu offload memory budget.
+pipe.enable_sequential_cpu_offload()
 print("✅ Model loaded")
 
 NEG_PROMPT = "worst quality, inconsistent motion, blurry, jittery, distorted"
@@ -73,40 +74,29 @@ RESOLUTION_OPTIONS = {
 }
 
 
-def generate(prompt, neg_prompt, image_input, duration_label, resolution_label,
+def generate(prompt, neg_prompt, duration_label, resolution_label,
              num_steps, guidance, seed):
     num_frames = DURATION_OPTIONS[duration_label]
     width, height = RESOLUTION_OPTIONS[resolution_label]
     seed_val = int(seed) if seed >= 0 else torch.randint(0, 2**32, (1,)).item()
     generator = torch.Generator().manual_seed(seed_val)
 
-    mode = "I2V" if image_input is not None else "T2V"
-    yield None, f"🎬 {mode} · {num_frames} frames · {width}×{height} · seed {seed_val}…"
+    yield None, f"🎬 T2V · {num_frames} frames · {width}×{height} · seed {seed_val}…"
 
     try:
-        kwargs = dict(
+        output = pipe(
             prompt=prompt,
             negative_prompt=neg_prompt,
             num_frames=num_frames,
             height=height,
             width=width,
-            # RTFM_VERIFY: confirm these parameter names in LTX2Pipeline.__call__
+            frame_rate=24.0,
             num_inference_steps=num_steps,
             guidance_scale=guidance,
             generator=generator,
             output_type="pil",
             return_dict=True,
         )
-
-        # I2V: pass reference image as conditioning
-        # RTFM_VERIFY: confirm parameter name in diffusers LTX2Pipeline source
-        if image_input is not None:
-            img = (Image.fromarray(image_input)
-                   if not isinstance(image_input, Image.Image)
-                   else image_input)
-            kwargs["image"] = img  # RTFM_VERIFY: may be "conditioning_frames" or similar
-
-        output = pipe(**kwargs)
         frames = output.frames[0]
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -132,7 +122,7 @@ with gr.Blocks(css=CSS, title="LTX-2") as demo:
     gr.HTML("""
     <div class="dark-header">
       <h1>🎬 LTX-2 (19B)</h1>
-      <p>Text-to-video & image-to-video · Lightricks · port 8016</p>
+      <p>Text-to-video · Lightricks · port 8016</p>
     </div>
     """)
 
@@ -147,11 +137,6 @@ with gr.Blocks(css=CSS, title="LTX-2") as demo:
                 label="Negative prompt",
                 value=NEG_PROMPT,
                 lines=2,
-            )
-            image_input = gr.Image(
-                label="Start frame (optional — enables image-to-video)",
-                type="numpy",
-                height=160,
             )
             with gr.Row():
                 duration = gr.Dropdown(
@@ -172,7 +157,7 @@ with gr.Blocks(css=CSS, title="LTX-2") as demo:
                 )
                 guidance = gr.Slider(
                     label="Guidance scale",
-                    minimum=1.0, maximum=10.0, step=0.5, value=7.5,
+                    minimum=1.0, maximum=10.0, step=0.5, value=4.0,
                 )
             seed = gr.Number(label="Seed (-1 = random)", value=-1, precision=0)
             btn = gr.Button("Generate", variant="primary")
@@ -183,7 +168,7 @@ with gr.Blocks(css=CSS, title="LTX-2") as demo:
 
     btn.click(
         generate,
-        inputs=[prompt, neg_prompt, image_input, duration, resolution,
+        inputs=[prompt, neg_prompt, duration, resolution,
                 num_steps, guidance, seed],
         outputs=[video_out, status],
     )
