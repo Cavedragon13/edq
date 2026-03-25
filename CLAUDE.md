@@ -212,6 +212,26 @@ const googleKey = process.env.GOOGLE_API_KEY;
 
 **Note**: The .env file is automatically loaded in bash sessions via `~/.bashrc`.
 
+### API Key Security Rule — Browser vs Server
+
+**Python servers and scripts** (Gradio, FastAPI, shell scripts): load keys from `.env` directly and call external APIs from the server process. Keys never reach the browser. This is safe by default — no extra steps needed.
+
+**Browser JavaScript/TypeScript** (React SPAs, vanilla JS apps): keys baked into a JS bundle can be read by anyone with DevTools, even on LAN. **Never inject an external API key into a browser bundle.** Instead, the local Python server (already present for every Dragonsuite service) must proxy the external API call:
+
+```text
+Browser JS  →  /api/proxy-endpoint  →  Python server  →  external API (key from .env)
+```
+
+DragonArt Studio is the only current example requiring this pattern (Gemini + OpenAI calls). All other services are Python-based and safe by default.
+
+**Checklist when building a new service with external API calls:**
+
+- Python/Gradio/FastAPI server → ✅ load key from `.env`, call API directly
+- Browser SPA → ⚠️ add a proxy endpoint to the Python server, call that instead
+- Local API (Ollama, LM Studio) → ✅ no key, no action needed
+
+**Google API project note**: All Google API keys in `.env` come from the **'vscode'** Google Cloud project. When enabling a new Google API, enable it in that project.
+
 ## Environment Details
 
 - **Platform**: Linux (6.17.0-14-generic)

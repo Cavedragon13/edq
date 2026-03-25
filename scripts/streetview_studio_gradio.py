@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Street View Studio — Fetch + AI Transform
-Port 8040 | Google Maps Street View + FLUX.1 Kontext-Dev
+Port 8040 | Google Maps Street View + FLUX.1-schnell (local, Apache 2.0)
 
 Requirements:
-  - GOOGLE_API_KEY in /srv/containers/edq/.env
+  - STREET_VIEW_API_KEY in /srv/containers/edq/.env
     Must have "Street View Static API" enabled in Google Cloud Console.
-    (Different from Google AI Studio keys — create a Maps Platform key if needed.)
-  - Internet access to HF Spaces for FLUX.1 Kontext generation
+  - FLUX.1-schnell downloaded to /srv/containers/edq/models/flux1-schnell/
+    Run: bash scripts/download_flux1_schnell.sh
 """
 
 import os
@@ -21,22 +21,27 @@ from io import BytesIO
 from dotenv import load_dotenv
 
 load_dotenv("/srv/containers/edq/.env")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.getenv("STREET_VIEW_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
 if not GOOGLE_API_KEY:
-    print("❌ GOOGLE_API_KEY not found in /srv/containers/edq/.env")
-    print("   Create a Google Maps Platform key with 'Street View Static API' enabled.")
+    print("❌ STREET_VIEW_API_KEY not found in /srv/containers/edq/.env")
+    print("   Add a Google Maps Platform key with 'Street View Static API' enabled.")
+    sys.exit(1)
+
+MODEL_PATH = "/srv/containers/edq/models/flux1-schnell"
+if not Path(MODEL_PATH).joinpath("model_index.json").exists():
+    print(f"❌ FLUX.1-schnell not found at {MODEL_PATH}")
+    print("   Run: bash scripts/download_flux1_schnell.sh")
     sys.exit(1)
 
 STREETVIEW_URL = "https://maps.googleapis.com/maps/api/streetview"
 METADATA_URL   = "https://maps.googleapis.com/maps/api/streetview/metadata"
-HF_SPACE       = "black-forest-labs/FLUX.1-Kontext-Dev"
 
 OUTPUT_DIR = Path.home() / "ai_generated" / "streetview_studio"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
-# Presets — (label, prompt) pairs.  None-prompt entries are dividers.
+# Presets — (label, prompt) pairs.
 # ---------------------------------------------------------------------------
 _PRESETS_RAW = [
     ("Custom (type your own below)", ""),
@@ -90,6 +95,30 @@ _PRESETS_RAW = [
 STYLE_PRESETS = {label: prompt for label, prompt in _PRESETS_RAW}
 PRESET_CHOICES = list(STYLE_PRESETS.keys())
 
+# ---------------------------------------------------------------------------
+# Lazy-loaded pipeline
+# ---------------------------------------------------------------------------
+_pipe = None
+
+def get_pipeline():
+    global _pipe
+    if _pipe is None:
+        import torch
+        from diffusers import FluxImg2ImgPipeline
+
+        print("⏳ Loading FLUX.1-schnell pipeline (first use)…")
+        _pipe = FluxImg2ImgPipeline.from_pretrained(
+            MODEL_PATH,
+            torch_dtype=torch.bfloat16,
+            local_files_only=True,
+        )
+        _pipe.enable_sequential_cpu_offload()
+        if hasattr(_pipe, "vae"):
+            _pipe.vae.enable_slicing()
+            _pipe.vae.enable_tiling()
+        print("✅ Pipeline ready")
+    return _pipe
+
 
 # ---------------------------------------------------------------------------
 # Street View fetch
@@ -112,7 +141,7 @@ def fetch_street_view(address, heading_auto, heading, pitch, fov):
     if status == "REQUEST_DENIED":
         return None, (
             "❌ API key rejected (REQUEST_DENIED). "
-            "Ensure your GOOGLE_API_KEY has 'Street View Static API' enabled "
+            "Ensure your STREET_VIEW_API_KEY has 'Street View Static API' enabled "
             "in Google Cloud Console → APIs & Services."
         )
     if status != "OK":
@@ -168,11 +197,9 @@ def fetch_street_view(address, heading_auto, heading, pitch, fov):
 
 
 # ---------------------------------------------------------------------------
-# AI Transform (FLUX.1 Kontext via HF Space)
+# AI Transform — local FLUX.1-schnell img2img
 # ---------------------------------------------------------------------------
-def transform_image(sv_img, preset, custom_prompt, guidance, steps, seed, randomize):
-    from gradio_client import Client, handle_file
-
+def transform_image(sv_img, preset, custom_prompt, strength, steps, seed, randomize):
     if sv_img is None:
         return None, "Fetch a Street View image first."
 
@@ -188,47 +215,42 @@ def transform_image(sv_img, preset, custom_prompt, guidance, steps, seed, random
     if not prompt:
         return None, "Enter a prompt or select a preset."
 
-    yield None, "⏳ Connecting to FLUX.1 Kontext (HF Space)…"
+    yield None, "⏳ Loading pipeline…"
 
-    tmp_path = OUTPUT_DIR / f"_tmp_{datetime.now().strftime('%H%M%S%f')}.jpg"
     try:
+        import torch
+        import random as _random
+
+        pipe = get_pipeline()
+
         if isinstance(sv_img, Image.Image):
-            sv_img.save(str(tmp_path), quality=92)
+            input_img = sv_img.convert("RGB")
         else:
-            Image.fromarray(sv_img).save(str(tmp_path), quality=92)
+            input_img = Image.fromarray(sv_img).convert("RGB")
 
-        yield None, "⏳ Generating — ~30s on the HF Space queue…"
+        actual_seed = _random.randint(0, 2**32 - 1) if randomize else int(seed)
+        generator = torch.Generator().manual_seed(actual_seed)
 
-        client = Client(HF_SPACE, verbose=False)
-        result = client.predict(
-            input_image=handle_file(str(tmp_path)),
+        yield None, f"⏳ Generating — seed {actual_seed}…"
+
+        result = pipe(
             prompt=prompt,
-            seed=int(seed),
-            randomize_seed=bool(randomize),
-            guidance_scale=float(guidance),
-            steps=int(steps),
-            api_name="/infer",
+            image=input_img,
+            strength=float(strength),
+            num_inference_steps=int(steps),
+            guidance_scale=0.0,   # schnell is guidance-distilled
+            generator=generator,
         )
-
-        # result = (image, seed_used, button_update)
-        raw_img, seed_used = result[0], result[1]
-        if isinstance(raw_img, dict):
-            out_img = Image.open(raw_img["path"])
-        elif isinstance(raw_img, str):
-            out_img = Image.open(raw_img)
-        else:
-            out_img = raw_img  # already PIL
+        out_img = result.images[0]
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        out_path = OUTPUT_DIR / f"transformed_{timestamp}_s{seed_used}.jpg"
+        out_path = OUTPUT_DIR / f"transformed_{timestamp}_s{actual_seed}.jpg"
         out_img.save(str(out_path), quality=92)
 
-        yield out_img, f"✅ Done  ·  seed {seed_used}  ·  {out_path.name}"
+        yield out_img, f"✅ Done  ·  seed {actual_seed}  ·  {out_path.name}"
 
     except Exception as e:
         yield None, f"❌ Error: {e}"
-    finally:
-        tmp_path.unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -251,7 +273,7 @@ with gr.Blocks(title="Street View Studio") as demo:
     gr.HTML("""
     <div class="dark-header">
       <h1>🗺️ Street View Studio</h1>
-      <p>Fetch any location · Apply AI art styles or prototype building changes with FLUX.1 Kontext</p>
+      <p>Fetch any location · Apply AI art styles or prototype building changes with FLUX.1-schnell (local)</p>
     </div>
     """)
 
@@ -290,7 +312,7 @@ with gr.Blocks(title="Street View Studio") as demo:
     with gr.Row():
         # ── Transform panel ──────────────────────────────────────────────
         with gr.Column(scale=1):
-            gr.HTML('<p class="section-label">2 · AI Transform  (FLUX.1 Kontext via HF Space)</p>')
+            gr.HTML('<p class="section-label">2 · AI Transform  (FLUX.1-schnell · local · Apache 2.0)</p>')
             preset = gr.Dropdown(
                 label="Style / Edit preset",
                 choices=PRESET_CHOICES,
@@ -302,12 +324,12 @@ with gr.Blocks(title="Street View Studio") as demo:
                 lines=2,
             )
             with gr.Row():
-                guidance = gr.Slider(
-                    label="Guidance scale", minimum=1.0, maximum=10.0, step=0.5, value=2.5,
-                    info="2-4 recommended for Kontext",
+                strength = gr.Slider(
+                    label="Strength", minimum=0.1, maximum=0.95, step=0.05, value=0.75,
+                    info="How much to change — lower preserves more of the original",
                 )
                 steps = gr.Slider(
-                    label="Steps", minimum=4, maximum=30, step=1, value=20,
+                    label="Steps", minimum=4, maximum=20, step=1, value=8,
                 )
             with gr.Row():
                 seed      = gr.Number(label="Seed", value=42, precision=0)
@@ -327,7 +349,7 @@ with gr.Blocks(title="Street View Studio") as demo:
 
     transform_btn.click(
         transform_image,
-        inputs=[sv_image, preset, custom_prompt, guidance, steps, seed, randomize],
+        inputs=[sv_image, preset, custom_prompt, strength, steps, seed, randomize],
         outputs=[out_image, out_status],
     )
 

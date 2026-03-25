@@ -566,9 +566,9 @@ async def get_pollen():
     import urllib.request as _ur
     from dotenv import load_dotenv as _lde
     _lde(BASE_DIR / ".env")
-    key = os.getenv("GOOGLE_API_KEY", "")
+    key = os.getenv("STREET_VIEW_API_KEY") or os.getenv("GOOGLE_API_KEY", "")
     if not key:
-        raise HTTPException(status_code=503, detail="GOOGLE_API_KEY not configured in .env")
+        raise HTTPException(status_code=503, detail="STREET_VIEW_API_KEY not configured in .env")
     lat, lng = 43.0789, -70.8203  # KPSM · Portsmouth NH
     url = (
         f"https://pollen.googleapis.com/v1/forecast:lookup"

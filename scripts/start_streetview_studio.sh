@@ -1,22 +1,30 @@
 #!/bin/bash
 # start_streetview_studio.sh — Street View Studio (port 8040)
-# Fetch + AI-transform Google Street View images via FLUX.1 Kontext
+# Fetch + AI-transform Google Street View images via FLUX.1-schnell (local, Apache 2.0)
 set -e
 
-VENV="/srv/containers/edq/venv_streetview"
+VENV="/srv/containers/edq/venv_flux2"
 SCRIPT="/srv/containers/edq/scripts/streetview_studio_gradio.py"
+MODEL_DIR="/srv/containers/edq/models/flux1-schnell"
 
-# Create venv on first run (no GPU packages — installs in ~30s)
-if [ ! -f "$VENV/bin/activate" ]; then
-    echo "⏳ First run: creating venv_streetview (lightweight, ~30s)..."
-    python3 -m venv "$VENV"
-    source "$VENV/bin/activate"
-    pip install -q --upgrade pip
-    pip install -q gradio gradio_client requests Pillow python-dotenv
-    echo "✅ venv_streetview ready"
-else
-    source "$VENV/bin/activate"
+# Model check — fail fast before wasting time
+if [ ! -f "$MODEL_DIR/model_index.json" ]; then
+    echo "❌ FLUX.1-schnell not found at $MODEL_DIR"
+    echo "   Run first: bash scripts/download_flux1_schnell.sh"
+    exit 1
 fi
 
-echo "🗺️  Starting Street View Studio on port 8040..."
+# shellcheck source=/dev/null
+source "$VENV/bin/activate"
+
+echo "🗺️  Street View Studio"
+echo "======================"
+echo "Local:  http://localhost:8040"
+echo "LAN:    http://192.168.7.226:8040"
+echo ""
+echo "Press Ctrl+C to stop"
+echo ""
+
+export PYTORCH_ALLOC_CONF=expandable_segments:True
+
 exec python3 "$SCRIPT"

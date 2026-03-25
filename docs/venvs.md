@@ -9,7 +9,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_dragonsuite        | `/srv/containers/edq/venv_dragonsuite`            | ~53MB  | `dragonsuite_server.py`       | Dashboard backend (FastAPI)                                |
 | venv_concert_shirt      | `/srv/containers/edq/venv_concert_shirt`          | ~50MB  | `start_concert_shirt.sh`      | Concert History T-Shirt Generator (port 8030)              |
 | venv_florence2          | `/srv/containers/edq/venv_florence2`              | ~7GB   | `start_dragonsight.sh`        | Florence2 vision model service                             |
-| venv_flux2              | `/srv/containers/edq/venv_flux2`                  | ~7GB   | `start_flux2_klein.sh`        | DragonFlux Klein image generation                          |
+| venv_flux2              | `/srv/containers/edq/venv_flux2`                  | ~7GB   | `start_flux2_klein.sh`        | DragonFlux Klein + Street View Studio (shared GPU stack)   |
 | venv_wan2gp             | `/srv/containers/edq/venv_wan2gp`                 | ~9GB   | `start_wan2gp.sh`             | Wan2GP video generation                                    |
 | venv_fish_speech        | `/srv/containers/edq/venv_fish_speech`            | ~8GB   | `start_fish_speech.sh`        | Fish Speech TTS (Fish Audio S2-Pro, 4B)                    |
 | venv_heartmula          | `/srv/containers/edq/venv_heartmula`              | ~12GB  | `start_heartmula.sh`          | HeartMuLa music generation (3B)                            |
@@ -36,7 +36,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_the_movies         | `/srv/containers/edq/venv_the_movies`             | ~50MB  | `start_the_movies.sh`         | The Movies AI film studio sim (port 8035)                  |
 | venv_tada               | `/srv/containers/edq/venv_tada`                   | ~5GB   | `start_tada.sh`               | TADA TTS (Hume AI TADA-3B-ML, port 8037)                   |
 | venv_matanyone2         | `/srv/containers/edq/venv_matanyone2`             | ~8GB   | `start_matanyone2.sh`         | MatAnyone 2 human video matting (port 8038)                |
-| venv_streetview         | `/srv/containers/edq/venv_streetview`             | ~200MB | `start_streetview_studio.sh`  | Street View Studio — fetch + FLUX Kontext transform (8040) |
+| venv_streetview         | `/srv/containers/edq/venv_streetview`             | ~200MB | (fetch-only fallback)         | Lightweight fetch-only venv — superseded by venv_flux2     |
 
 ## MCP Server Venvs
 
