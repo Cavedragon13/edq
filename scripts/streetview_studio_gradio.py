@@ -191,7 +191,7 @@ def fetch_street_view(address, heading_auto, heading, pitch, fov):
     )
     if pano_id:
         info += f"  ·  pano {pano_id[:10]}…"
-    info += f"\n💾 {out_path.name}"
+    info += f"\n💾 {out_path}"
 
     return img, info
 
@@ -247,7 +247,7 @@ def transform_image(sv_img, preset, custom_prompt, strength, steps, seed, random
         out_path = OUTPUT_DIR / f"transformed_{timestamp}_s{actual_seed}.jpg"
         out_img.save(str(out_path), quality=92)
 
-        yield out_img, f"✅ Done  ·  seed {actual_seed}  ·  {out_path.name}"
+        yield out_img, f"✅ Done  ·  seed {actual_seed}  ·  {out_path}"
 
     except Exception as e:
         yield None, f"❌ Error: {e}"
@@ -318,14 +318,20 @@ with gr.Blocks(title="Street View Studio") as demo:
                 choices=PRESET_CHOICES,
                 value="Watercolor painting",
             )
+            active_prompt = gr.Textbox(
+                label="Preset prompt (read-only)",
+                value=STYLE_PRESETS["Watercolor painting"],
+                lines=3,
+                interactive=False,
+            )
             custom_prompt = gr.Textbox(
-                label="Custom prompt  (appended to preset, or standalone with 'Custom')",
+                label="Custom addition  (appended to preset, or standalone with 'Custom')",
                 placeholder="e.g. change the front door to bright red",
                 lines=2,
             )
             with gr.Row():
                 strength = gr.Slider(
-                    label="Strength", minimum=0.1, maximum=0.95, step=0.05, value=0.75,
+                    label="Strength", minimum=0.1, maximum=0.99, step=0.05, value=0.90,
                     info="How much to change — lower preserves more of the original",
                 )
                 steps = gr.Slider(
@@ -340,6 +346,12 @@ with gr.Blocks(title="Street View Studio") as demo:
         with gr.Column(scale=1):
             out_image  = gr.Image(label="AI Output", type="pil", height=380, interactive=False)
             out_status = gr.Textbox(label="Status", interactive=False, lines=2)
+
+    preset.change(
+        fn=lambda p: STYLE_PRESETS.get(p, ""),
+        inputs=[preset],
+        outputs=[active_prompt],
+    )
 
     fetch_btn.click(
         fetch_street_view,
