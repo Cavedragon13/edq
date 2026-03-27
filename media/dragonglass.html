@@ -266,29 +266,6 @@
       cursor: default;
     }
 
-    .slider-row { display: flex; gap: 10px; }
-    .slider-group { flex: 1; }
-    .slider-group label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.7rem;
-      color: var(--text-dimmer);
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin-bottom: 4px;
-    }
-    .slider-group label span { color: var(--amber-dim); font-variant-numeric: tabular-nums; }
-    input[type="range"] {
-      width: 100%;
-      accent-color: var(--amber);
-      cursor: pointer;
-    }
-
-    .seed-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-    .seed-row input[type="number"] { width: 90px; }
-    .seed-row label { font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 5px; cursor: pointer; }
-    .seed-row input[type="checkbox"] { accent-color: var(--amber); cursor: pointer; width: auto; }
-
     .generate-wrap { margin-top: 12px; }
 
     /* ── Status spinner ── */
@@ -317,6 +294,50 @@
     .pac-item-query { color: var(--amber-bright) !important; }
     .pac-matched { color: var(--amber) !important; }
     .pac-icon { display: none !important; }
+
+    /* ── Style cards grid ── */
+    .style-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .style-card {
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(5,5,14,0.6);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      overflow: hidden;
+      position: relative;
+    }
+    .style-card:hover { border-color: var(--amber-dim); }
+    .style-card.selected {
+      border-color: var(--amber);
+      box-shadow: 0 0 10px var(--amber-glow);
+    }
+    .style-thumb {
+      width: 100%;
+      aspect-ratio: 1.4;
+      display: block;
+    }
+    .style-name {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-align: center;
+      padding: 4px 3px 5px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      background: rgba(5,5,14,0.75);
+      letter-spacing: 0.03em;
+    }
+    .style-card.selected .style-name {
+      color: var(--amber-bright);
+      background: rgba(196,122,46,0.12);
+    }
   </style>
 </head>
 <body>
@@ -393,32 +414,12 @@
       <div class="panel-label">Style &amp; Prompt</div>
 
       <div class="field">
-        <label>Preset</label>
-        <select id="preset-select"></select>
-      </div>
-      <div class="field">
-        <label>Preset prompt (read-only)</label>
-        <textarea id="preset-prompt" rows="3" readonly></textarea>
+        <label>Style</label>
+        <div class="style-grid" id="style-grid"></div>
       </div>
       <div class="field">
         <label>Custom addition (appended to preset, or standalone)</label>
         <textarea id="custom-prompt" rows="2" placeholder="e.g. change the front door to bright red"></textarea>
-      </div>
-
-      <div class="slider-row">
-        <div class="slider-group">
-          <label>Strength <span id="strength-val">0.90</span></label>
-          <input type="range" id="strength" min="0.1" max="0.99" step="0.05" value="0.90">
-        </div>
-        <div class="slider-group">
-          <label>Steps <span id="steps-val">8</span></label>
-          <input type="range" id="steps" min="4" max="20" step="1" value="8">
-        </div>
-      </div>
-
-      <div class="seed-row">
-        <input type="number" id="seed" value="42" min="0" max="4294967295">
-        <label><input type="checkbox" id="randomize"> Randomize seed</label>
       </div>
 
       <div class="generate-wrap">
@@ -449,35 +450,17 @@
 // Presets
 // ---------------------------------------------------------------------------
 const PRESETS = [
-  ["Custom (type your own below)", ""],
-  ["Watercolor painting",
-   "Transform this building into a delicate watercolor painting with soft transparent washes of color, wet-on-wet blending, and visible paper texture"],
-  ["Impressionist oil painting",
-   "Convert to an impressionist oil painting with thick expressive brushstrokes, rich warm color palette, and painterly atmospheric light"],
-  ["Pencil sketch",
-   "Render as a detailed architectural pencil sketch with fine hatching lines, precise linework, and shaded volumes on white paper"],
-  ["Charcoal drawing",
-   "Transform into a bold charcoal drawing with dramatic shadows, gestural strokes, and rich tonal contrast on textured paper"],
-  ["Architect's line rendering",
-   "Convert to a professional architectural line rendering with precise clean linework, minimal shading, white background, and technical drawing aesthetic"],
-  ["Night scene",
-   "Transform into a moody nighttime scene with warm glowing windows, street lights casting soft pools of light, and a deep blue-black sky"],
-  ["Golden hour",
-   "Transform into a golden hour scene with warm amber sunlight raking across the facade, long dramatic shadows, and a glowing orange sky"],
-  ["Autumn",
-   "Change the season to autumn — warm amber and orange foliage on surrounding trees, crisp fall light, fallen leaves scattered on the ground"],
-  ["Snowy winter",
-   "Transform into a winter scene with fresh snow on the roof and windowsills, bare trees, and pale cool winter light"],
-  ["Remove parked cars",
-   "Remove all parked cars and vehicles from in front of the building, leaving clean empty road and pavement"],
-  ["Modern storefront windows",
-   "Replace the existing windows with large modern floor-to-ceiling glass shop windows with elegant minimalist window displays inside"],
-  ["Add hanging flower baskets",
-   "Add colorful hanging flower baskets filled with bright blooms to the facade, entrance, and window ledges of the building"],
-  ["Fresh white exterior paint",
-   "Give the building a fresh coat of crisp clean white paint on the exterior walls while preserving all original architectural details"],
-  ["Cyberpunk",
-   "Transform the building into a cyberpunk version with neon signs, holographic advertisements, rain-slicked neon-lit surfaces, and dramatic night sky"],
+  { label: "Custom",        thumb: "linear-gradient(135deg,#1a1a2e,#2a2a3e)",                                                                  prompt: "" },
+  { label: "Watercolor",    thumb: "linear-gradient(135deg,#a0c0d8 0%,#d8b0c8 45%,#b0d0a0 75%,#d8c4b0 100%)",                                  prompt: "Transform this building into a delicate watercolor painting with soft transparent washes of color, wet-on-wet blending, and visible paper texture" },
+  { label: "Impressionist", thumb: "linear-gradient(135deg,#7a3808 0%,#c47018 40%,#d8a838 65%,#386828 100%)",                                  prompt: "Convert to an impressionist oil painting with thick expressive brushstrokes, rich warm color palette, and painterly atmospheric light" },
+  { label: "Pencil sketch", thumb: "linear-gradient(135deg,#ececec 0%,#d0d0d0 50%,#e8e8e8 100%)",                                              prompt: "Render as a detailed architectural pencil sketch with fine hatching lines, precise linework, and shaded volumes on white paper" },
+  { label: "Charcoal",      thumb: "linear-gradient(135deg,#181818 0%,#282820 40%,#080808 80%,#1c1c14 100%)",                                  prompt: "Transform into a bold charcoal drawing with dramatic shadows, gestural strokes, and rich tonal contrast on textured paper" },
+  { label: "Arch. drawing", thumb: "linear-gradient(135deg,#f2f0ea 0%,#e8e4dc 60%,#f0ece4 100%)",                                             prompt: "Convert to a professional architectural line rendering with precise clean linework, minimal shading, white background, and technical drawing aesthetic" },
+  { label: "Night scene",   thumb: "linear-gradient(135deg,#02020e 0%,#060818 45%,#0c0818 70%,#020410 100%)",                                  prompt: "Transform into a moody nighttime scene with warm glowing windows, street lights casting soft pools of light, and a deep blue-black sky" },
+  { label: "Golden hour",   thumb: "linear-gradient(135deg,#6a2c00 0%,#b85808 35%,#d88018 60%,#e8b030 100%)",                                  prompt: "Transform into a golden hour scene with warm amber sunlight raking across the facade, long dramatic shadows, and a glowing orange sky" },
+  { label: "Autumn",        thumb: "linear-gradient(135deg,#6a1800 0%,#b83808 35%,#c86008 60%,#d08810 100%)",                                  prompt: "Change the season to autumn — warm amber and orange foliage on surrounding trees, crisp fall light, fallen leaves scattered on the ground" },
+  { label: "Snowy winter",  thumb: "linear-gradient(135deg,#c0d8e8 0%,#a8c0d8 40%,#d8ecf8 80%,#e8f4ff 100%)",                                 prompt: "Transform into a winter scene with fresh snow on the roof and windowsills, bare trees, and pale cool winter light" },
+  { label: "Cyberpunk",     thumb: "linear-gradient(135deg,#060012 0%,#180028 30%,#020d1a 55%,#200030 80%,#001020 100%)",                      prompt: "Transform the building into a cyberpunk version with neon signs, holographic advertisements, rain-slicked neon-lit surfaces, and dramatic night sky" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -493,15 +476,9 @@ let panorama = null;
 const captureBtn    = document.getElementById('capture-btn');
 const generateBtn   = document.getElementById('generate-btn');
 const genSpinner    = document.getElementById('gen-spinner');
-const presetSelect  = document.getElementById('preset-select');
-const presetPrompt  = document.getElementById('preset-prompt');
+const styleGrid     = document.getElementById('style-grid');
 const customPrompt  = document.getElementById('custom-prompt');
-const strengthSlider = document.getElementById('strength');
-const stepsSlider   = document.getElementById('steps');
-const strengthVal   = document.getElementById('strength-val');
-const stepsVal      = document.getElementById('steps-val');
-const seedInput     = document.getElementById('seed');
-const randomizeChk  = document.getElementById('randomize');
+let selectedPreset  = PRESETS[1]; // default: Watercolor
 const capturedImg   = document.getElementById('captured-img');
 const capturedBox   = document.getElementById('captured-box');
 const capturedPlaceholder = document.getElementById('captured-placeholder');
@@ -514,25 +491,30 @@ const pipelineDot   = document.getElementById('pipeline-dot');
 const pipelineLabel = document.getElementById('pipeline-label');
 
 // ---------------------------------------------------------------------------
-// Init presets
+// Init style cards
 // ---------------------------------------------------------------------------
-PRESETS.forEach(([label]) => {
-  const opt = document.createElement('option');
-  opt.value = label;
-  opt.textContent = label;
-  presetSelect.appendChild(opt);
-});
-presetSelect.value = 'Watercolor painting';
-presetPrompt.value = PRESETS.find(([l]) => l === 'Watercolor painting')[1];
+PRESETS.forEach((preset) => {
+  const card  = document.createElement('div');
+  card.className = 'style-card' + (preset === selectedPreset ? ' selected' : '');
+  card.title = preset.label;
 
-presetSelect.addEventListener('change', () => {
-  const entry = PRESETS.find(([l]) => l === presetSelect.value);
-  presetPrompt.value = entry ? entry[1] : '';
-});
+  const thumb = document.createElement('div');
+  thumb.className = 'style-thumb';
+  thumb.style.background = preset.thumb;
 
-// Slider labels
-strengthSlider.addEventListener('input', () => { strengthVal.textContent = parseFloat(strengthSlider.value).toFixed(2); });
-stepsSlider.addEventListener('input',   () => { stepsVal.textContent = stepsSlider.value; });
+  const name  = document.createElement('div');
+  name.className = 'style-name';
+  name.textContent = preset.label;
+
+  card.appendChild(thumb);
+  card.appendChild(name);
+  card.addEventListener('click', () => {
+    styleGrid.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedPreset = preset;
+  });
+  styleGrid.appendChild(card);
+});
 
 // ---------------------------------------------------------------------------
 // Maps init (called by API loader)
@@ -689,11 +671,10 @@ captureBtn.addEventListener('click', async () => {
 generateBtn.addEventListener('click', async () => {
   if (!capturedImagePath) return;
 
-  const presetEntry = PRESETS.find(([l]) => l === presetSelect.value);
-  const base  = presetEntry ? presetEntry[1] : '';
+  const base  = selectedPreset.prompt;
   const extra = customPrompt.value.trim();
   let prompt;
-  if (presetSelect.value === 'Custom (type your own below)') {
+  if (selectedPreset.label === 'Custom') {
     prompt = extra;
   } else {
     prompt = extra ? base + '. ' + extra : base;
@@ -709,10 +690,6 @@ generateBtn.addEventListener('click', async () => {
   const body = {
     image_path: capturedImagePath,
     prompt:     prompt,
-    strength:   parseFloat(strengthSlider.value),
-    steps:      parseInt(stepsSlider.value),
-    seed:       parseInt(seedInput.value) || 42,
-    randomize:  randomizeChk.checked,
   };
 
   try {

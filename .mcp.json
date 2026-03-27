@@ -62,6 +62,13 @@
         "TOPAZ_API_KEY": "${TOPAZ_API_KEY}"
       },
       "description": "Topaz Labs AI image/video enhancement - upscale, denoise, restore, sharpen"
+    },
+    "stitch": {
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "${STITCH_API_KEY}"
+      },
+      "description": "Google Stitch — AI UI design generator"
     }
   }
 }

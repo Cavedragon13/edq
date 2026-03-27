@@ -69,7 +69,7 @@ This is a personal AI development environment focused on video generation, visio
 | 8037  | TADA TTS               | On-demand (GPU)    | Hume AI voice cloning, 9 languages (TADA-3B-ML)       |
 | 8038  | MatAnyone 2            | On-demand (GPU)    | Human video matting, click-to-select, alpha output    |
 | 8039  | Linkding               | On-demand          | Cross-browser bookmark manager (Docker)               |
-| 8040  | DragonGlass            | On-demand          | Google Maps scout + live Street View + FLUX transform |
+| 8040  | DragonGlass            | On-demand          | Google Maps scout + live Street View + Gemini transform |
 | 8888  | Jupyter (reserved)     | Future             | -                                                     |
 | 11434 | Ollama API             | Always-on (snap)   | -                                                     |
 

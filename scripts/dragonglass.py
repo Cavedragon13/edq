@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 DragonGlass — Street View Scout + AI Transform
-Port 8040 | Google Maps Street View + FLUX.1-schnell (local, Apache 2.0)
+Port 8040 | Google Maps Street View + Gemini image editing
 """
 
 import os
@@ -9,19 +9,19 @@ import sys
 import json
 import asyncio
 import base64
-import random as _random
 from pathlib import Path
 from datetime import datetime
 from io import BytesIO
-from typing import Optional
 
 import requests
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from PIL import Image
 from dotenv import load_dotenv
+import google.genai as genai
+from google.genai import types
 import uvicorn
 
 load_dotenv("/srv/containers/edq/.env")
@@ -31,11 +31,8 @@ if not GOOGLE_API_KEY:
     print("❌ GOOGLE_API_KEY not found in /srv/containers/edq/.env")
     sys.exit(1)
 
-MODEL_PATH = "/srv/containers/edq/models/flux1-schnell"
-if not Path(MODEL_PATH).joinpath("model_index.json").exists():
-    print(f"❌ FLUX.1-schnell not found at {MODEL_PATH}")
-    print("   Run: bash scripts/download_flux1_schnell.sh")
-    sys.exit(1)
+_genai_client = genai.Client(api_key=GOOGLE_API_KEY)
+GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image-preview"
 
 OUTPUT_DIR = Path.home() / "ai_generated" / "dragonglass"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -52,27 +49,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-_pipe = None
-
-
-def get_pipeline():
-    global _pipe
-    if _pipe is None:
-        import torch
-        from diffusers import FluxImg2ImgPipeline
-        print("⏳ Loading FLUX.1-schnell pipeline…")
-        _pipe = FluxImg2ImgPipeline.from_pretrained(
-            MODEL_PATH,
-            torch_dtype=torch.bfloat16,
-            local_files_only=True,
-        )
-        _pipe.enable_sequential_cpu_offload()
-        if hasattr(_pipe, "vae"):
-            _pipe.vae.enable_slicing()
-            _pipe.vae.enable_tiling()
-        print("✅ Pipeline ready")
-    return _pipe
 
 
 # ---------------------------------------------------------------------------
@@ -159,53 +135,54 @@ async def capture(req: CaptureRequest):
 class TransformRequest(BaseModel):
     image_path: str
     prompt: str
-    strength: float = 0.90
-    steps: int = 8
-    seed: int = 42
-    randomize: bool = False
 
 
 @app.post("/api/transform")
 async def transform(req: TransformRequest):
     async def generate():
         try:
-            yield f"data: {json.dumps({'status': 'loading', 'message': '⏳ Loading pipeline…'})}\n\n"
-
-            loop = asyncio.get_event_loop()
-            pipe = await loop.run_in_executor(None, get_pipeline)
+            yield f"data: {json.dumps({'status': 'generating', 'message': '⏳ Sending to Gemini…'})}\n\n"
 
             img_path = Path(req.image_path)
             if not img_path.exists():
                 yield f"data: {json.dumps({'status': 'error', 'message': f'Image not found: {img_path}'})}\n\n"
                 return
 
-            input_img = Image.open(img_path).convert("RGB")
-            actual_seed = _random.randint(0, 2**32 - 1) if req.randomize else req.seed
+            image_bytes = img_path.read_bytes()
 
-            yield f"data: {json.dumps({'status': 'generating', 'message': f'⏳ Generating — seed {actual_seed}…'})}\n\n"
-
-            import torch
-            generator = torch.Generator().manual_seed(actual_seed)
-
-            result = await loop.run_in_executor(None, lambda: pipe(
-                prompt=req.prompt,
-                image=input_img,
-                strength=req.strength,
-                num_inference_steps=req.steps,
-                guidance_scale=0.0,
-                generator=generator,
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, lambda: _genai_client.models.generate_content(
+                model=GEMINI_IMAGE_MODEL,
+                contents=[
+                    types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                    req.prompt,
+                ],
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE", "TEXT"],
+                ),
             ))
 
-            out_img   = result.images[0]
+            # Extract image part
+            out_bytes = None
+            for part in response.candidates[0].content.parts:
+                if part.inline_data is not None:
+                    out_bytes = part.inline_data.data
+                    break
+
+            if out_bytes is None:
+                yield f"data: {json.dumps({'status': 'error', 'message': '❌ Gemini returned no image'})}\n\n"
+                return
+
+            out_img   = Image.open(BytesIO(out_bytes)).convert("RGB")
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            out_path  = OUTPUT_DIR / f"transformed_{timestamp}_s{actual_seed}.jpg"
+            out_path  = OUTPUT_DIR / f"transformed_{timestamp}.jpg"
             out_img.save(str(out_path), quality=92)
 
             buf = BytesIO()
             out_img.save(buf, format="JPEG", quality=85)
             img_b64 = base64.b64encode(buf.getvalue()).decode()
 
-            yield f"data: {json.dumps({'status': 'done', 'message': f'✅ Done  ·  seed {actual_seed}  ·  {out_path}', 'image_b64': img_b64, 'path': str(out_path)})}\n\n"
+            yield f"data: {json.dumps({'status': 'done', 'message': f'✅ Done  ·  {out_path}', 'image_b64': img_b64, 'path': str(out_path)})}\n\n"
 
         except Exception as e:
             yield f"data: {json.dumps({'status': 'error', 'message': f'❌ {e}'})}\n\n"
@@ -215,7 +192,7 @@ async def transform(req: TransformRequest):
 
 @app.get("/api/status")
 async def status():
-    return {"pipeline_loaded": _pipe is not None, "output_dir": str(OUTPUT_DIR)}
+    return {"model": GEMINI_IMAGE_MODEL, "output_dir": str(OUTPUT_DIR)}
 
 
 if __name__ == "__main__":

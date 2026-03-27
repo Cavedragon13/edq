@@ -828,7 +828,7 @@
         {
             "id": "dragonglass",
             "name": "DragonGlass",
-            "description": "Scout any Street View location \u00b7 Capture the exact angle \u00b7 Transform with FLUX.1-schnell",
+            "description": "Scout any Street View location \u00b7 Capture the exact angle \u00b7 Transform with Gemini AI",
             "category": "image",
             "port": 8040,
             "path": "/",
@@ -838,7 +838,7 @@
             "features": [
                 "Google Maps + Street View",
                 "Live Panorama Navigation",
-                "FLUX.1-schnell Transform",
+                "Gemini Image Transform",
                 "Art Style Presets"
             ],
             "stop_command": "pkill -f 'dragonglass.py' || true"

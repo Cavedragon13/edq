@@ -11,6 +11,7 @@ import os
 import signal
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 import io
 
 from fastapi import FastAPI, HTTPException, Response
@@ -579,6 +580,36 @@ async def get_pollen():
             return json.loads(r.read())
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+CRON_JOBS = [
+    ("commit",  "nightly commit",  "logs/nightly_commit_cron.log"),
+    ("backup",  "backup",          "logs/nightly_backup_cron.log"),
+    ("publish", "publish queue",   "logs/publish_queue_cron.log"),
+    ("skills",  "sync skills",     "logs/sync_skills_cron.log"),
+    ("lint",    "kb lint",         "logs/lint_kb_cron.log"),
+    ("weekly",  "weekly update",   "logs/weekly_update.log"),
+]
+
+
+@app.get("/api/cron-logs")
+async def get_cron_logs():
+    """Return last-run status and tail for each nightly cron job."""
+    result = []
+    for key, name, rel_path in CRON_JOBS:
+        p = BASE_DIR / rel_path
+        entry: dict = {"key": key, "name": name, "exists": p.exists()}
+        if p.exists():
+            mtime = p.stat().st_mtime
+            entry["last_run_ts"] = mtime
+            entry["last_run"] = datetime.fromtimestamp(mtime).strftime("%m/%d %H:%M")
+            lines = [l for l in p.read_text(errors="replace").splitlines() if l.strip()]
+            tail = lines[-30:]
+            entry["tail"] = "\n".join(tail)
+            bad = any(w in "\n".join(lines[-5:]).lower() for w in ("error", "traceback", "exception", "failed", "fail:"))
+            entry["status"] = "error" if bad else "ok"
+        result.append(entry)
+    return result
 
 
 # Mount media directory for static files (favicon, etc.)

@@ -16,6 +16,18 @@ from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlparse, unquote
 
+# Load .env manually (dotenv not guaranteed to be installed in system Python)
+_env_path = Path('/srv/containers/edq/.env')
+if _env_path.exists():
+    for _line in _env_path.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith('#') and '=' in _line:
+            _k, _, _v = _line.partition('=')
+            if _k not in os.environ:
+                os.environ[_k] = _v
+
+GOOGLE_API_KEY = os.environ.get('STREET_VIEW_API_KEY') or os.environ.get('GOOGLE_API_KEY', '')
+
 PORT = 8015
 DIST_DIR = Path("/srv/containers/edq/projects/dragonart-studio/dist")
 OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/dragonart-studio"))
@@ -42,6 +54,10 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
         """Serve static files from dist/, or session ZIPs from sessions/"""
         # Parse path, remove query string
         path = urlparse(self.path).path
+
+        if path == '/api/config':
+            self._send_config()
+            return
 
         # Serve saved session ZIPs
         if path.startswith('/sessions/'):
@@ -104,6 +120,8 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
             self._save_video()
         elif self.path == '/api/save-session':
             self._save_session()
+        elif self.path == '/api/sv_capture':
+            self._sv_capture()
         else:
             self._send_error(404, f"Unknown endpoint: {self.path}")
 
@@ -276,6 +294,109 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
 
         except Exception as e:
             self._send_error(500, f"Save video failed: {str(e)}")
+
+    def _send_config(self):
+        """Return server config including Maps API key."""
+        result = {'mapsKey': GOOGLE_API_KEY}
+        response = json.dumps(result).encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', len(response))
+        self._send_cors_headers()
+        self.end_headers()
+        self.wfile.write(response)
+
+    def _sv_capture(self):
+        """Geocode an address and fetch a Street View Static image."""
+        import requests as req_lib
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length)
+            data = json.loads(body.decode('utf-8'))
+
+            address = data.get('address', '').strip()
+            heading = data.get('heading', 0)
+            pitch = data.get('pitch', 0)
+            fov = max(10, min(120, int(data.get('fov', 90))))
+
+            if not address:
+                self._send_error(400, "Address required")
+                return
+
+            # Geocode address
+            geo_resp = req_lib.get(
+                'https://maps.googleapis.com/maps/api/geocode/json',
+                params={'address': address, 'key': GOOGLE_API_KEY},
+                timeout=10
+            ).json()
+
+            if geo_resp.get('status') != 'OK' or not geo_resp.get('results'):
+                self._send_error(404, f"Could not geocode address: {address}")
+                return
+
+            loc = geo_resp['results'][0]['geometry']['location']
+            lat, lng = loc['lat'], loc['lng']
+
+            # Check Street View availability
+            meta = req_lib.get(
+                'https://maps.googleapis.com/maps/api/streetview/metadata',
+                params={'location': f"{lat},{lng}", 'key': GOOGLE_API_KEY, 'source': 'outdoor'},
+                timeout=10
+            ).json()
+
+            if meta.get('status') != 'OK':
+                self._send_error(404, "No Street View imagery at this location")
+                return
+
+            sv_loc = meta['location']
+
+            # Fetch Street View image
+            sv_resp = req_lib.get(
+                'https://maps.googleapis.com/maps/api/streetview',
+                params={
+                    'size': '640x640',
+                    'location': f"{sv_loc['lat']},{sv_loc['lng']}",
+                    'heading': heading,
+                    'pitch': pitch,
+                    'fov': fov,
+                    'key': GOOGLE_API_KEY,
+                    'source': 'outdoor',
+                    'return_error_code': 'true',
+                },
+                timeout=15
+            )
+
+            if sv_resp.status_code != 200:
+                self._send_error(sv_resp.status_code, "Street View API error")
+                return
+
+            img_b64 = base64.b64encode(sv_resp.content).decode()
+            date_str = meta.get('date', '')
+            pano_id = meta.get('pano_id', '')[:10]
+
+            info = f"📍 {sv_loc['lat']:.5f}, {sv_loc['lng']:.5f} · heading {heading}° · fov {fov}°"
+            if date_str:
+                info += f" · {date_str}"
+            if pano_id:
+                info += f" · pano {pano_id}…"
+
+            result = {
+                'image_b64': img_b64,
+                'info': info,
+                'lat': sv_loc['lat'],
+                'lng': sv_loc['lng'],
+            }
+            response = json.dumps(result).encode('utf-8')
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response))
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(response)
+
+        except Exception as e:
+            self._send_error(500, f"Street View capture failed: {str(e)}")
 
     def _send_error(self, code, message):
         """Send JSON error response with CORS headers."""

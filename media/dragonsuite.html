@@ -217,6 +217,27 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 }
 .llm-off { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--txm); }
 
+/* Cron row */
+.cronrow {
+  background:var(--bgc); border:1px solid var(--bd);
+  border-radius:var(--r); padding:10px 15px;
+  margin-bottom:14px;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+}
+.cron-pill {
+  display:flex; align-items:center; gap:5px;
+  font-family:'JetBrains Mono',monospace; font-size:10.5px;
+  padding:2px 8px; border-radius:4px;
+  background:var(--bge); color:var(--tx2); border:1px solid var(--bd);
+  cursor:pointer; transition:border-color var(--tr);
+}
+.cron-pill:hover { border-color:var(--bdh); }
+.cron-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.cron-dot.ok    { background:#34d399; box-shadow:0 0 4px rgba(52,211,153,.6); }
+.cron-dot.error { background:#f87171; box-shadow:0 0 4px rgba(248,113,113,.6); }
+.cron-dot.miss  { background:var(--txm); }
+.cron-when { color:var(--txm); font-size:9.5px; }
+
 /* Service grid */
 .svgrid {
   display:grid;
@@ -468,6 +489,11 @@ body.light .cnav { background:rgba(240,246,250,.80); }
     <div class="pollen-forecast" id="pollen-forecast"></div>
   </div>
 
+  <div class="cronrow" id="cron-row">
+    <span class="llm-lbl">CRON</span>
+    <div class="llm-pills" id="cron-pills"><span class="llm-off">Loading&#8230;</span></div>
+  </div>
+
   <div class="llmrow">
     <span class="llm-lbl">Ollama</span>
     <div class="llm-pills" id="ollama-models"><span class="llm-off">Not running</span></div>
@@ -487,6 +513,14 @@ body.light .cnav { background:rgba(240,246,250,.80); }
     <div class="modal-title" id="qr-title">QR Code</div>
     <img id="qr-img" src="" alt="QR Code">
     <div id="qr-url"></div>
+  </div>
+</div>
+
+<div class="overlay" id="cron-overlay">
+  <div class="modal">
+    <button class="modal-x" id="cron-close">&#x2715;</button>
+    <div class="modal-title" id="cron-title">Cron Log</div>
+    <pre id="cron-content" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txm);white-space:pre-wrap;word-break:break-all;max-height:60vh;overflow-y:auto;margin:0;padding:4px 0"></pre>
   </div>
 </div>
 
@@ -749,11 +783,38 @@ async function showGit(id, name) {
 
 document.getElementById('qr-close').addEventListener('click', function(){ document.getElementById('qr-overlay').classList.remove('open'); });
 document.getElementById('git-close').addEventListener('click', function(){ document.getElementById('git-overlay').classList.remove('open'); });
-['qr-overlay','git-overlay'].forEach(function(id){
+document.getElementById('cron-close').addEventListener('click', function(){ document.getElementById('cron-overlay').classList.remove('open'); });
+['qr-overlay','git-overlay','cron-overlay'].forEach(function(id){
   document.getElementById(id).addEventListener('click', function(e){
     if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
   });
 });
+
+// ── Cron logs ─────────────────────────────────────────────────────────────
+async function fetchCronLogs() {
+  try {
+    var jobs = await fetch('/api/cron-logs').then(function(r){ return r.json(); });
+    var html = jobs.map(function(j) {
+      var dotCls = j.exists ? (j.status === 'ok' ? 'ok' : 'error') : 'miss';
+      var when = j.last_run ? '<span class="cron-when">' + j.last_run + '</span>' : '';
+      return '<span class="cron-pill" data-key="' + j.key + '" data-name="' + j.name + '" data-tail="' + encodeURIComponent(j.tail || 'No log data') + '">' +
+        '<span class="cron-dot ' + dotCls + '"></span>' +
+        j.name + when +
+        '</span>';
+    }).join('');
+    document.getElementById('cron-pills').innerHTML = html || '<span class="llm-off">No logs found</span>';
+    document.querySelectorAll('.cron-pill').forEach(function(el){
+      el.addEventListener('click', function(){
+        document.getElementById('cron-title').textContent = el.dataset.name + ' \u2014 log';
+        document.getElementById('cron-content').textContent = decodeURIComponent(el.dataset.tail);
+        document.getElementById('cron-overlay').classList.add('open');
+      });
+    });
+  } catch(e) {
+    document.getElementById('cron-pills').innerHTML = '<span class="llm-off">Error loading logs</span>';
+  }
+}
+fetchCronLogs();
 
 var themeBtn = document.getElementById('theme-btn');
 var dark = localStorage.getItem('ds-theme') !== 'light';
