@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Rembg Background Remover - Native UI Server
-Port: 8112 (dev) → 8012 (production after approval)
+Port: 8012
 
 API:
   GET  /          → serves rembg.html

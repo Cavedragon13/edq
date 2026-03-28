@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Real-ESRGAN Upscaler - Native UI Server
-Port: 8110 (dev) → 8010 (production after approval)
+Port: 8010
 
 API:
   GET  /            → serves realesrgan.html

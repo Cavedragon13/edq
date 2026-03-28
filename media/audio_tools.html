@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audio Processing Suite</title>
+<title>Dragon Audio Workstation</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
 <style>
   :root {
@@ -83,6 +83,19 @@
   .lang-sel:focus { border-color: var(--accent); }
   .lang-sel option { background: #1e2130; }
 
+  /* Enhance checkboxes */
+  .check-row { display: flex; gap: 16px; }
+  .check-label { display: flex; align-items: center; gap: 6px; font-size: 12px;
+                 color: var(--text-dim); cursor: pointer; user-select: none; }
+  .check-label input { accent-color: var(--accent); width: 14px; height: 14px; }
+
+  /* Editor link button */
+  .btn-editor { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+                background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+                border-radius: 6px; font-size: 11px; cursor: pointer; text-decoration: none;
+                transition: all 0.12s; }
+  .btn-editor:hover { border-color: var(--accent2); color: var(--accent2); }
+
   .status-line { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
   .spinner { width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--accent);
              border-radius: 50%; animation: spin 0.7s linear infinite; }
@@ -92,11 +105,42 @@
 <body>
 
 <header>
-  <div class="logo">🎵 AUDIO PROCESSING SUITE</div>
-  <span style="color:var(--text-less);font-size:12px;">Stem Separation · Dereverb · ASR</span>
+  <div class="logo">🎵 DRAGON AUDIO WORKSTATION</div>
+  <span style="color:var(--text-less);font-size:12px;">Enhance · Stems · Dereverb · Transcribe · Edit</span>
+  <a class="btn-editor" href="/editor/" target="_blank" style="margin-left:auto;">✏️ Open Waveform Editor</a>
 </header>
 
 <div class="page">
+
+  <!-- ── Speech Enhance ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-icon">✨</span>
+      <span class="section-title">Speech Enhance</span>
+      <span class="section-desc">LavaSR · Denoise + Bandwidth Extension → 48kHz</span>
+    </div>
+    <div class="section-body">
+
+      <div class="upload-col">
+        <div class="drop-zone" id="e-drop" onclick="document.getElementById('e-file').click()">
+          <span style="font-size:24px;">🎤</span>
+          <span>Click or drag &amp; drop audio</span>
+        </div>
+        <input class="file-input" type="file" id="e-file" accept="audio/*" onchange="loadAudio('e', this.files[0])">
+        <div class="check-row">
+          <label class="check-label"><input type="checkbox" id="e-denoise" checked> Denoise</label>
+          <label class="check-label"><input type="checkbox" id="e-bwe" checked> Bandwidth (→48kHz)</label>
+        </div>
+        <button class="btn-process" id="e-btn" onclick="doEnhance()" disabled>Enhance Speech</button>
+        <div class="status-line" id="e-status"></div>
+      </div>
+
+      <div class="result-col" id="e-results">
+        <div class="result-placeholder">Enhanced audio appears here.</div>
+      </div>
+
+    </div>
+  </div>
 
   <!-- ── Karaoke Maker ── -->
   <div class="section">
@@ -186,7 +230,7 @@
 </div>
 
 <script>
-const files = { k: null, d: null, a: null };
+const files = { e: null, k: null, d: null, a: null };
 
 // ── Upload handling (shared) ───────────────────────────────────────
 function loadAudio(key, file) {
@@ -200,8 +244,8 @@ function loadAudio(key, file) {
   setStatus(key, '');
 }
 
-// Register drag-drop for all three
-['k','d','a'].forEach(key => {
+// Register drag-drop for all sections
+['e','k','d','a'].forEach(key => {
   const drop = document.getElementById(`${key}-drop`);
   drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
   drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
@@ -211,6 +255,32 @@ function loadAudio(key, file) {
     if (f?.type.startsWith('audio/')) loadAudio(key, f);
   });
 });
+
+// ── Enhance ───────────────────────────────────────────────────────
+async function doEnhance() {
+  const file = files.e;
+  if (!file) return;
+  setBusy('e', true, 'Enhancing (loads model on first run)…');
+
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('denoise', document.getElementById('e-denoise').checked ? 'true' : 'false');
+  fd.append('bwe',     document.getElementById('e-bwe').checked     ? 'true' : 'false');
+  try {
+    const resp = await fetch('/api/enhance', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    const results = document.getElementById('e-results');
+    results.innerHTML = audioCard('Enhanced (48kHz)', data.enhanced, 'enhanced');
+    drawWaveforms([[data.enhanced, 'wv-enhanced']]);
+    setStatus('e', `✓ Done — ${data.duration}s at 48kHz`);
+  } catch (err) {
+    setStatus('e', `Error: ${err.message}`);
+  } finally {
+    setBusy('e', false);
+  }
+}
 
 // ── Karaoke ───────────────────────────────────────────────────────
 async function doKaraoke() {
@@ -307,6 +377,7 @@ function audioCard(label, url, id) {
     <div class="audio-card">
       <div class="audio-card-head">
         <span class="audio-card-label">${label}</span>
+        <a class="btn-editor" href="/editor/" target="_blank" title="Open AudioMass waveform editor">✏️ Edit</a>
         <a class="btn-dl" href="${url}" download="${filename}">⬇ Download</a>
       </div>
       <canvas class="waveform-canvas" id="wv-${id}"></canvas>

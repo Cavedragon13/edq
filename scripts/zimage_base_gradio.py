@@ -435,7 +435,7 @@ def generate_image(
     # Handle seed
     if seed == -1:
         seed = torch.randint(0, 2**32, (1,)).item()
-    generator = torch.Generator(device="cpu").manual_seed(int(seed))
+    generator = torch.Generator(device=device).manual_seed(int(seed))
 
     # Preprocess control image if using ControlNet
     processed_control = None
@@ -445,14 +445,19 @@ def generate_image(
         if processed_control:
             processed_control = processed_control.resize((width, height), Image.LANCZOS)
 
+    # Flush VRAM before generation
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+
     progress(0.2, desc="Generating image...")
     try:
         if use_controlnet and processed_control:
             # VideoX-Fun ZImageControlPipeline expects tensor inputs
             ctrl_array = np.array(processed_control.convert("RGB"))
-            ctrl_tensor = torch.from_numpy(ctrl_array).unsqueeze(0).permute(0, 3, 1, 2).float() / 255.0
-            inpaint_image = torch.zeros([1, 3, height, width])
-            mask_image_t = torch.ones([1, 1, height, width]) * 255
+            ctrl_tensor = torch.from_numpy(ctrl_array).unsqueeze(0).permute(0, 3, 1, 2).float().to(device) / 255.0
+            inpaint_image = torch.zeros([1, 3, height, width], device=device)
+            mask_image_t = torch.ones([1, 1, height, width], device=device) * 255
 
             gen_kwargs = {
                 "prompt": prompt,

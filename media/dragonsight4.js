@@ -30,6 +30,9 @@
                 url: '/api/ollama/generate',
                 model: 'qwen3-vl:8b'
             },
+            florence: {
+                url: '/api/florence/analyze',
+            },
             lmstudio: {
                 url: '/api/lmstudio/completions',
                 model: 'zai-org/glm-4.6v-flash'
@@ -76,6 +79,22 @@
         const backendSelect = document.getElementById('backend');
         const ollamaModelSelect = document.getElementById('ollamaModel');
         const saveBtn = document.getElementById('saveBtn');
+
+        // Florence-2: single call returns all four fields
+        async function callFlorence(base64Image) {
+            const response = await fetch(CONFIG.florence.url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image_base64: base64Image })
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(`Florence-2 error ${response.status}: ${err.error || response.statusText}`);
+            }
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+            return data;  // { detailed, concise, tags, filename_hint }
+        }
 
         // Show/hide Ollama model selector based on backend
         function updateModelSelectorVisibility() {
@@ -402,13 +421,24 @@ CRITICAL INSTRUCTIONS:
 
                 console.log(`Using backend: ${backend}, model: ${CONFIG[backend]?.model ?? '(default)'}`);
 
-                // Get all descriptions in parallel
-                const [detailed, concise, filename, tags] = await Promise.all([
-                    describeImage(base64, 'detailed', backend),
-                    describeImage(base64, 'concise', backend),
-                    describeImage(base64, 'filename', backend),
-                    describeImage(base64, 'tags', backend)
-                ]);
+                let detailed, concise, filename, tags;
+
+                if (backend === 'florence') {
+                    // Florence-2 returns all fields in one call
+                    const result = await callFlorence(base64);
+                    detailed = result.detailed;
+                    concise  = result.concise;
+                    tags     = result.tags;
+                    filename = result.filename_hint;
+                } else {
+                    // All other backends: 4 parallel prompt calls
+                    [detailed, concise, filename, tags] = await Promise.all([
+                        describeImage(base64, 'detailed', backend),
+                        describeImage(base64, 'concise', backend),
+                        describeImage(base64, 'filename', backend),
+                        describeImage(base64, 'tags', backend)
+                    ]);
+                }
 
                 // Update UI
                 document.getElementById('detailedDesc').value = detailed;

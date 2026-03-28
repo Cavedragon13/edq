@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Dolphin Vision 7B - Native UI Server
-Port: 8125 (dev) → 8025 (production after approval)
+Port: 8025
 
 Preserves the existing /analyze JSON endpoint (used by Dragonsight 4).
 

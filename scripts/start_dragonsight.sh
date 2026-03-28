@@ -1,10 +1,10 @@
 #!/bin/bash
-# Dragonsight 4 - Start Script
+# Dragonsight 4.5 - Start Script
 # Starts the web server (port 8080) + checks Ollama dependency
 
 OUTPUT_DIR="$HOME/ai_generated/dragonsight"
 
-echo "🐉 Starting Dragonsight 4..."
+echo "🐉 Starting Dragonsight 4.5..."
 echo ""
 
 # Create output directory
@@ -24,15 +24,18 @@ else
     echo "✓ Ollama ready (qwen3-vl:8b default VLM)"
 fi
 
-# Start Dragonsight 4 HTTP server (if not already running)
-if pgrep -f "dragonsight_server.py" > /dev/null; then
-    echo "✓ Dragonsight 4 web server already running"
+VENV_PYTHON="/srv/containers/edq/venv_ai_toolkit/bin/python3"
+SERVER_SCRIPT="/srv/containers/edq/scripts/dragonsight_server_v2.py"
+
+# Start Dragonsight 4.5 HTTP server (if not already running)
+if pgrep -f "dragonsight_server_v2.py" > /dev/null; then
+    echo "✓ Dragonsight 4.5 web server already running"
 else
-    echo "⚙️  Starting Dragonsight 4 web server..."
-    nohup /usr/bin/python3 /srv/containers/edq/scripts/dragonsight_server.py > /tmp/dragonsight_server.log 2>&1 &
+    echo "⚙️  Starting Dragonsight 4.5 web server..."
+    nohup "$VENV_PYTHON" "$SERVER_SCRIPT" > /tmp/dragonsight_server.log 2>&1 &
     sleep 1
-    
-    if pgrep -f "dragonsight_server.py" > /dev/null; then
+
+    if pgrep -f "dragonsight_server_v2.py" > /dev/null; then
         echo "✓ Web server started on port 8080"
     else
         echo "❌ Failed to start web server"
@@ -42,8 +45,8 @@ else
 fi
 
 echo ""
-echo "✅ Dragonsight 4 ready"
+echo "✅ Dragonsight 4.5 ready"
 echo "   Local:  http://localhost:8080"
 echo "   LAN:    http://192.168.7.226:8080"
-echo "   Backend: Ollama (qwen3-vl:8b default VLM), Gemini, LM Studio"
+echo "   Backends: Ollama · Florence-2 (local) · Gemini · LM Studio · Dolphin"
 echo "   Output: $OUTPUT_DIR"

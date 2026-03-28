@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """
-Audio Processing Suite - Native UI Server
-Port: 8126 (dev) → 8026 (production after approval)
+Dragon Audio Workstation - Combined Server
+Port: 8026
 
-Three tools:
-  1. Karaoke: vocal / instrumental separation
-  2. Dereverb: remove room reverb from vocals
-  3. ASR: speech-to-text with timestamps (EN / ZH / YUE)
+Four tools + waveform editor:
+  1. Enhance:    LavaSR speech enhancement + 48kHz upsampling
+  2. Karaoke:    vocal / instrumental separation
+  3. Dereverb:   remove room reverb from vocals
+  4. Transcribe: speech-to-text with timestamps (EN / ZH / YUE)
+  5. Editor:     AudioMass waveform editor at /editor/
 
 API:
   GET  /                 → audio_tools.html
   GET  /audio/{filename} → serve saved audio files
-  POST /api/karaoke      → file → {vocals, instrumental, status}
-  POST /api/dereverb     → file → {dry, status}
-  POST /api/transcribe   → file + language → {transcript}
+  POST /api/enhance      → file + options → {enhanced}
+  POST /api/karaoke      → file → {vocals, instrumental}
+  POST /api/dereverb     → file → {dry}
+  POST /api/transcribe   → file + language → {segments}
+  GET  /editor/*         → AudioMass static app
 """
 
 import sys
@@ -22,9 +26,12 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
+import torch
+import torchaudio
 import uvicorn
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 # SoulX-Singer imports
 SOULX_PROJECT = "/srv/containers/edq/projects/SoulX-Singer"
@@ -42,10 +49,12 @@ EN_MODEL   = f"{PREPROCESS_BASE}/parakeet-tdt-0.6b-v2/parakeet-tdt-0.6b-v2.nemo"
 OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/audio-tools"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-MEDIA_DIR = Path("/srv/containers/edq/media")
+MEDIA_DIR     = Path("/srv/containers/edq/media")
+AUDIOMASS_DIR = Path("/srv/containers/edq/projects/AudioMass/src")
 
 _separator   = None
 _transcriber = None
+_lavasr      = None
 
 
 def get_separator():
@@ -83,11 +92,26 @@ def get_transcriber():
         return None, f"{e}\n{traceback.format_exc()}"
 
 
+def get_lavasr():
+    global _lavasr
+    if _lavasr is not None:
+        return _lavasr, None
+    try:
+        from LavaSR.model import LavaEnhance2
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"Loading LavaSR on {device}…")
+        _lavasr = LavaEnhance2(model_path="YatharthS/LavaSR", device=device)
+        return _lavasr, None
+    except Exception as e:
+        import traceback
+        return None, f"{e}\n{traceback.format_exc()}"
+
+
 def ts():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
-app = FastAPI(title="Audio Processing Suite")
+app = FastAPI(title="Dragon Audio Workstation")
 
 
 @app.get("/")
@@ -112,6 +136,49 @@ async def save_upload(upload: UploadFile) -> str:
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
         f.write(await upload.read())
         return f.name
+
+
+@app.post("/api/enhance")
+async def api_enhance(
+    file:    UploadFile = File(...),
+    denoise: str        = Form("true"),
+    bwe:     str        = Form("true"),
+):
+    import soundfile as sf
+    path = await save_upload(file)
+    lavasr, err = get_lavasr()
+    if err:
+        return JSONResponse({"error": err}, status_code=500)
+    try:
+        wav, sr = torchaudio.load(path)
+        if wav.shape[0] > 1:
+            wav = wav.mean(dim=0, keepdim=True)
+        if sr != 16000:
+            wav = torchaudio.functional.resample(wav, sr, 16000)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        wav = wav.squeeze(0).to(device)
+        with torch.inference_mode():
+            enhanced = lavasr.enhance(
+                wav,
+                enhance=bwe.lower() == "true",
+                denoise=denoise.lower() == "true",
+                batch=True,
+            )
+        enhanced_np = enhanced.cpu().numpy()
+        t = ts()
+        epath = OUTPUT_DIR / f"enhanced_{t}.wav"
+        sf.write(str(epath), enhanced_np, 48000)
+        dur = round(len(enhanced_np) / 48000, 1)
+        return JSONResponse({
+            "enhanced":    f"/audio/{epath.name}",
+            "sample_rate": 48000,
+            "duration":    dur,
+        })
+    except Exception as e:
+        import traceback
+        return JSONResponse({"error": f"{e}\n{traceback.format_exc()}"}, status_code=500)
+    finally:
+        os.unlink(path)
 
 
 @app.post("/api/karaoke")
@@ -226,7 +293,10 @@ async def api_transcribe(
         os.unlink(path)
 
 
+app.mount("/editor", StaticFiles(directory=str(AUDIOMASS_DIR), html=True), name="editor")
+
 if __name__ == "__main__":
     port = 8026
-    print(f"🎵 Audio Processing Suite (native UI) → http://0.0.0.0:{port}")
+    print(f"🎵 Dragon Audio Workstation → http://0.0.0.0:{port}")
+    print(f"   Waveform editor: http://0.0.0.0:{port}/editor/")
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

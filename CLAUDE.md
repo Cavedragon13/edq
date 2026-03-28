@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a personal AI development environment focused on video generation, vision AI, image generation, and LLM experimentation. The repository contains scripts and launchers for various AI models including Wan2GP (video generation), DragonFlux Klein (image generation), and Dragonsight 4 (vision AI).
+This is a personal AI development environment focused on video generation, vision AI, image generation, and LLM experimentation. The repository contains scripts and launchers for various AI models including Wan2GP (video generation), DragonFlux Klein (image generation), and Dragonsight 4.5 (vision AI).
 
 ## Directory Structure
 
@@ -36,7 +36,7 @@ This is a personal AI development environment focused on video generation, visio
 | Port  | Service                | Type               | Documentation                                         |
 | ----- | ---------------------- | ------------------ | ----------------------------------------------------- |
 | 1234  | LM Studio API          | On-demand (manual) | -                                                     |
-| 8080  | Dragonsight 4          | Static file server | [Vision AI](docs/services/vision-ai.md)               |
+| 8080  | Dragonsight 4.5        | On-demand (GPU)    | [Vision AI](docs/services/vision-ai.md)               |
 | 8100  | Dragonsuite Dashboard  | On-demand          | Central launcher                                      |
 | 8001  | DragonFlux Klein       | On-demand (GPU)    | [Image Generation](docs/services/image-generation.md) |
 | 8002  | Wan2GP                 | On-demand (GPU)    | [Video & Music](docs/services/video-music.md)         |
@@ -56,20 +56,20 @@ This is a personal AI development environment focused on video generation, visio
 | 8020  | MCP Inspector          | On-demand          | [Utilities](docs/services/utilities.md)               |
 | 8021  | ACE-Step 1.5           | On-demand (GPU)    | [Video & Music](docs/services/video-music.md)         |
 | 8025  | Dolphin Vision 7B      | On-demand (GPU)    | Uncensored VLM image Q&A                              |
-| 8026  | Audio Processing Suite | On-demand (GPU)    | Karaoke/dereverb/ASR from SoulX-Singer models         |
-| 8027  | AudioMass Editor       | On-demand          | Web audio editor (Audacity-like, client-side)         |
+| 8026  | Audio Workstation      | On-demand (GPU)    | Enhance+48kHz · Stems · Dereverb · ASR · /editor/     |
 | 8028  | LTX-Video 0.9.8-13B    | On-demand (GPU)    | Standalone T2V+I2V, 7-step distilled, 3-pass upscale  |
 | 8029  | Dragonsong             | On-demand          | Lyria RealTime music - live prompt steering, record   |
 | 8030  | Horse Racing v2        | On-demand          | Win/Place/Show betting, parlay tickets, AI opponents  |
 | 8031  | Interactive Games      | On-demand          | Survival Series, Lunar Reckoning, text adventures     |
 | 8032  | M.U.L.E.               | On-demand          | Economic strategy game, tribute to Dani Bunten Berry  |
 | 8033  | Concert Shirt          | On-demand          | Ticket OCR → concert list → print-on-demand shirt     |
-| 8034  | LavaSR                 | On-demand (GPU)    | Speech enhance + BWE upsample to 48kHz                |
+| 8034  | *(retired)*            | —                  | Merged into Audio Workstation (8026)                  |
 | 8035  | The Movies             | On-demand          | AI film studio — Nano Banana 2 + Veo 3.1 + Lyria 3    |
 | 8037  | TADA TTS               | On-demand (GPU)    | Hume AI voice cloning, 9 languages (TADA-3B-ML)       |
 | 8038  | MatAnyone 2            | On-demand (GPU)    | Human video matting, click-to-select, alpha output    |
 | 8039  | Linkding               | On-demand          | Cross-browser bookmark manager (Docker)               |
 | 8040  | DragonGlass            | On-demand          | Google Maps scout + live Street View + Gemini transform |
+| 8041  | AI Toolkit             | On-demand (GPU)    | LoRA trainer for FLUX — upload images, caption, train |
 | 8888  | Jupyter (reserved)     | Future             | -                                                     |
 | 11434 | Ollama API             | Always-on (snap)   | -                                                     |
 
@@ -83,9 +83,9 @@ This is a personal AI development environment focused on video generation, visio
 - Status monitoring, QR codes, git revision info
 - **Launch:** `bash scripts/start_dragonsuite.sh`
 
-**Dragonsight 4** (port 8080) - [Full docs](docs/services/vision-ai.md)
+**Dragonsight 4.5** (port 8080) - [Full docs](docs/services/vision-ai.md)
 
-- Vision AI with Ollama backend (qwen3-vl:8b, llama3.2-vision:11b)
+- Vision AI: Ollama (qwen3-vl:8b, llama3.2-vision:11b), Florence-2 (local), Gemini, LM Studio, Dolphin
 - Drag-and-drop image analysis, smart file naming
 - **Launch:** `bash scripts/start_dragonsight.sh`
 
@@ -109,8 +109,7 @@ This is a personal AI development environment focused on video generation, visio
 - **Fish Speech** (8003) - Expressive TTS with voice cloning
 - **Qwen3-TTS** (8009) - High-quality TTS with voice design
 - **Qwen3-Audiobook** (8014) - Document to audiobook conversion
-- **Audio Processing Suite** (8026) - Karaoke stem separation, vocal dereverb, ASR (EN/ZH/YUE)
-- **AudioMass Editor** (8027) - Web-based waveform editor with effects (Audacity-like)
+- **Audio Workstation** (8026) - Enhance+48kHz (LavaSR) · Stem separation · Dereverb · ASR (EN/ZH/YUE) · Waveform editor at /editor/
 
 ### Vision AI - [Full docs](docs/services/vision-ai.md)
 
