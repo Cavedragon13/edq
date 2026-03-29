@@ -36,6 +36,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_the_movies         | `/srv/containers/edq/venv_the_movies`             | ~50MB  | `start_the_movies.sh`         | The Movies AI film studio sim (port 8035)                  |
 | venv_tada               | `/srv/containers/edq/venv_tada`                   | ~5GB   | `start_tada.sh`               | TADA TTS (Hume AI TADA-3B-ML, port 8037)                   |
 | venv_matanyone2         | `/srv/containers/edq/venv_matanyone2`             | ~8GB   | `start_matanyone2.sh`         | MatAnyone 2 human video matting (port 8038)                |
+| venv_voxtral            | `/srv/containers/edq/venv_voxtral`                | ~8GB   | `start_voxtral.sh`            | Voxtral TTS (Mistral Voxtral-4B-TTS-2603, port 8042)       |
 | venv_streetview         | `/srv/containers/edq/venv_streetview`             | ~200MB | (fetch-only fallback)         | Lightweight fetch-only venv — superseded by venv_flux2     |
 
 ## MCP Server Venvs

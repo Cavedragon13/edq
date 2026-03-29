@@ -99,6 +99,7 @@
         "Image Gen",
         "LoRA"
       ],
+      "stop_command": "pkill -f 'flux2_klein_gradio.py' || true",
       "vram_gb": 12
     },
     {
@@ -117,6 +118,7 @@
         "Neg Prompts",
         "LoRA"
       ],
+      "stop_command": "pkill -f 'zimage_base_gradio.py' || true",
       "vram_gb": 10
     },
     {
@@ -204,6 +206,7 @@
         "Video Gen",
         "Multi-Model"
       ],
+      "stop_command": "pkill -f 'wgp.py' || true",
       "vram_gb": 14
     },
     {
@@ -257,6 +260,7 @@
         "Expression",
         "Animals"
       ],
+      "stop_command": "pkill -f 'venv_liveportrait.*app.py' || true",
       "vram_gb": 6
     },
     {
@@ -273,6 +277,7 @@
         "Image to 3D",
         "Texture"
       ],
+      "stop_command": "pkill -f 'venv_hunyuan3d.*gradio_app.py' || true",
       "vram_gb": 12
     },
     {
@@ -290,6 +295,7 @@
         "Voice Clone",
         "Voice Design"
       ],
+      "stop_command": "pkill -f 'venv_qwen3_tts.*app_local.py' || true",
       "vram_gb": 6
     },
     {
@@ -307,6 +313,7 @@
         "EPUB",
         "Voice Clone"
       ],
+      "stop_command": "pkill -f 'qwen3_audiobook_gradio.py' || true",
       "vram_gb": 6
     },
     {
@@ -325,6 +332,7 @@
         "50+ Languages",
         "Inline Emotions"
       ],
+      "stop_command": "pkill -f 'fish.speech.*tools.run_webui' || pkill -f 'fish-speech.*run_webui' || true",
       "vram_gb": 4
     },
     {
@@ -342,6 +350,7 @@
         "Style Tags",
         "Sections"
       ],
+      "stop_command": "pkill -f 'venv_heartmula.*app_local.py' || true",
       "vram_gb": 12
     },
     {
@@ -411,6 +420,7 @@
         "Video Track",
         "Auto Mask"
       ],
+      "stop_command": "pkill -f 'venv_sam2.*gradio_app.py' || true",
       "vram_gb": 6
     },
     {
@@ -464,6 +474,7 @@
         "RGBA Export",
         "PPTX"
       ],
+      "stop_command": "pkill -f 'qwen_image_layered_gradio.py' || true",
       "vram_gb": 8
     },
     {
@@ -483,7 +494,7 @@
         "Parlay Tickets",
         "AI Opponents"
       ],
-      "stop_command": "ps aux | grep horse-racing-v2 | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true"
+      "stop_command": "pkill -f 'horse-racing-v2' || true"
     },
     {
       "id": "interactive-games",
@@ -814,7 +825,17 @@
       "description": "LoRA trainer for FLUX \u2014 upload images, auto-caption, train",
       "port": 8041,
       "category": "image",
-      "launch": "bash scripts/start_ai_toolkit.sh"
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_ai_toolkit.sh",
+      "stop_command": "pkill -f 'flux_train_ui' || pkill -f 'start_ai_toolkit' || true"
+    },
+    {
+      "id": "voxtral-tts",
+      "name": "Voxtral TTS",
+      "description": "Mistral Voxtral-4B-TTS-2603 \u2014 20 voices, 9 languages, 24kHz",
+      "port": 8042,
+      "category": "audio",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_voxtral.sh",
+      "stop_command": "pkill -f 'venv_voxtral/bin/vllm' || true; pkill -f 'voxtral_server.py' || true; rm -f /tmp/voxtral_backend.pid"
     }
   ],
   "categories": {

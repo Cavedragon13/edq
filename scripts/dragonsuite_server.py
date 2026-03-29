@@ -549,6 +549,11 @@ async def stop_service(service_id: str):
         return {"status": "not_running", "message": f"{service['name']} is not running"}
 
     try:
+        stop_command = service.get("stop_command")
+        if stop_command:
+            subprocess.run(stop_command, shell=True, cwd="/srv/containers/edq", timeout=15)
+            kill_all_on_port(port)  # clean up anything still on the primary port
+            return {"status": "stopped", "message": f"Stopped {service['name']}"}
         killed = kill_all_on_port(port)
         if not killed:
             raise HTTPException(status_code=500, detail="Could not find process to stop")

@@ -189,3 +189,42 @@ bash scripts/start_dragonsong.sh
 - Click Play first to establish the WebSocket session, then adjust prompts/sliders live
 - Use dual prompt blend to morph between two styles in real-time
 - Record button captures the stream; save downloads a client-assembled WAV file
+
+---
+
+## Voxtral TTS
+
+**Port:** 8042
+**Purpose:** High-quality TTS via Mistral's Voxtral-4B-TTS-2603 (4B params, 24kHz, BF16)
+
+### Launch
+
+```bash
+cd /srv/containers/edq
+bash scripts/start_voxtral.sh
+```
+
+**Access at:** `http://192.168.7.226:8042`
+
+### Configuration
+
+- **Launcher**: `scripts/start_voxtral.sh`
+- **Backend**: vLLM-Omni on port 9042 (localhost only)
+- **Venv**: `venv_voxtral` (torch 2.10.0+cu128, vllm 0.18.0, vllm-omni 0.18.0)
+- **Model**: `mistralai/Voxtral-4B-TTS-2603` (~16GB download, HF cache)
+- **VRAM**: ~14GB (Stage 0 at 0.74, Stage 1 at 0.1 — set in voxtral_tts.yaml)
+- **License**: CC BY NC 4.0 (non-commercial)
+
+### Features
+
+- 20 preset voices: casual/cheerful/neutral (EN), fr/es/de/it/pt/nl/hi male+female, ar_male
+- Speed control (0.25x–4.0x)
+- Output formats: wav, mp3, flac, opus, aac, pcm
+- ~4–5s latency for a sentence, 24kHz mono output
+
+### Setup Notes
+
+- Run `scripts/download_voxtral_models.sh` before first use (downloads ~16GB + 20 voice .pt files)
+- `config.json` stub must include `audio_config.speaker_id` dict (written by download script logic)
+- YAML Stage 0 `gpu_memory_utilization` set to 0.74 (default 0.8 causes CUDA graph OOM on 16GB)
+- Do NOT pass `--gpu-memory-utilization` to `vllm serve` — it overrides the per-stage YAML values
