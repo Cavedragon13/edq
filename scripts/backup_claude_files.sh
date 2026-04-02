@@ -2,40 +2,71 @@
 # Backup all Claude Code critical files to ancalagon NAS
 # Includes: CLAUDE.md files, memory files, conversation history, plan files
 # Runs as part of nightly cron job at 0210 (2:10 AM)
-#
-# SETUP: Mount ancalagon SMB share in /etc/fstab for automatic mounting:
-# //ancalagon.lan/backups  /mnt/ancalagon  cifs  username=edq,uid=edq,gid=edq,nounix,iocharset=utf8  0  0
-# OR for Tailscale:
-# //100.100.225.124/backups  /mnt/ancalagon  cifs  username=edq,uid=edq,gid=edq,nounix,iocharset=utf8  0  0
+# Also scrubs known credentials from conversation history and locks file permissions.
 
 set -e
 
+source /srv/containers/edq/.env
+
 BACKUP_DATE=$(date +%Y-%m-%d)
-BACKUP_TIME=$(date +%Y-%m-%d_%H-%M-%S)
-BACKUP_ROOT="/mnt/ancalagon/backups/claude"
+BACKUP_ROOT="/mnt/ancalagon_backup/Cavedragon/Drive/sys/claude"
 BACKUP_DIR="$BACKUP_ROOT/$BACKUP_DATE"
 
-# Ensure ancalagon SMB share is mounted
-if [ ! -d "/mnt/ancalagon" ]; then
-  mkdir -p /mnt/ancalagon
+# --- Step 1: Scrub known credentials from conversation history ---
+echo "[$(date)] Scrubbing credentials from conversation history..."
+python3 << 'PYEOF'
+import pathlib
 
-  # Try to mount ancalagon SMB share via Tailscale or LAN
-  # ancalagon: Synology NAS, SMB (445/139) open, reachable via Tailscale subnet route
-  echo "[$(date)] Mounting ancalagon SMB share..."
+REPLACEMENTS = {
+    "galactic-diagnosis-ambulance": "<vault-password-redacted>",
+    "1324b0X0": "<adragon-ssh-password-redacted>",
+    "3nqJPqhbjo24": "<ancalagon-ssh-password-redacted>",
+    "8ae645c9-5f8b-473a-9150-d4757b70fc79": "<smithery-key-redacted>",
+    "REDACTED_SUPABASE_KEY": "<supabase-secret-redacted>",
+}
 
-  # Try Tailscale route first (100.100.225.124 from udragon)
-  if mount -t cifs //100.100.225.124/backups -o username=edq,uid=edq,gid=edq /mnt/ancalagon 2>/dev/null; then
-    echo "[$(date)] Mounted via Tailscale"
-  # Try LAN mDNS name (ancalagon.lan)
-  elif mount -t cifs //ancalagon.lan/backups -o username=edq,uid=edq,gid=edq /mnt/ancalagon 2>/dev/null; then
+root = pathlib.Path.home() / ".claude/projects"
+changed = 0
+replacements = 0
+for f in root.rglob("*.jsonl"):
+    try:
+        text = f.read_text(errors="replace")
+        new_text = text
+        for cred, placeholder in REPLACEMENTS.items():
+            count = new_text.count(cred)
+            if count:
+                replacements += count
+                new_text = new_text.replace(cred, placeholder)
+        if new_text != text:
+            f.write_text(new_text)
+            changed += 1
+    except Exception as e:
+        print(f"  Warning: could not process {f}: {e}")
+
+print(f"  Scrubbed {changed} files, {replacements} replacements")
+PYEOF
+
+# --- Step 2: Lock down conversation file permissions ---
+echo "[$(date)] Setting conversation file permissions..."
+find /home/edq/.claude/projects/ -type f -exec chmod 600 {} \;
+find /home/edq/.claude/projects/ -type d -exec chmod 700 {} \;
+
+# --- Step 3: Mount ancalagon homes share ---
+mkdir -p /mnt/ancalagon_backup
+if ! mountpoint -q /mnt/ancalagon_backup; then
+  echo "[$(date)] Mounting ancalagon homes share..."
+  if mount -t cifs //ancalagon.lan/homes -o username=admin,password="${ANCALAGON_SSH_PASS}",uid=edq,gid=edq /mnt/ancalagon_backup 2>/dev/null; then
     echo "[$(date)] Mounted via LAN (ancalagon.lan)"
+  elif mount -t cifs //192.168.7.160/homes -o username=admin,password="${ANCALAGON_SSH_PASS}",uid=edq,gid=edq /mnt/ancalagon_backup 2>/dev/null; then
+    echo "[$(date)] Mounted via IP (192.168.7.160)"
   else
     echo "[$(date)] Warning: Could not mount ancalagon. Using local fallback..."
-    BACKUP_ROOT="/tmp/claude_backups"
+    BACKUP_ROOT="/tmp/claude_backups/claude"
+    BACKUP_DIR="$BACKUP_ROOT/$BACKUP_DATE"
   fi
 fi
 
-# Create backup directory if it doesn't exist
+# Create backup directory
 mkdir -p "$BACKUP_DIR"
 
 echo "[$(date)] Starting Claude Code backup to ancalagon..."
@@ -46,12 +77,12 @@ mkdir -p "$BACKUP_DIR/srv-containers-edq"
 cp /srv/containers/edq/CLAUDE.md "$BACKUP_DIR/srv-containers-edq/"
 cp -r /srv/containers/edq/docs "$BACKUP_DIR/srv-containers-edq/" 2>/dev/null || true
 
-# Backup 2: Memory files from ~/.claude/projects/-srv-containers-edq/memory/
+# Backup 2: Memory files
 echo "  • Backing up memory files..."
 mkdir -p "$BACKUP_DIR/memory"
 cp -r /home/edq/.claude/projects/-srv-containers-edq/memory/* "$BACKUP_DIR/memory/" 2>/dev/null || true
 
-# Backup 3: Claude Code conversations (all .jsonl files)
+# Backup 3: Conversation history (already scrubbed above)
 echo "  • Backing up conversation history..."
 mkdir -p "$BACKUP_DIR/conversations"
 find /home/edq/.claude/projects -maxdepth 2 -name "*.jsonl" -exec cp {} "$BACKUP_DIR/conversations/" \; 2>/dev/null || true
@@ -61,35 +92,9 @@ echo "  • Backing up plan files..."
 mkdir -p "$BACKUP_DIR/plans"
 cp -r /home/edq/.claude/plans/* "$BACKUP_DIR/plans/" 2>/dev/null || true
 
-# Backup 5: Knowledge base Claude-related files
-echo "  • Backing up knowledge base Claude files..."
-mkdir -p "$BACKUP_DIR/knowledge-base"
-cp /home/edq/knowledge-base/AI\ Projects/CLAUDE.md "$BACKUP_DIR/knowledge-base/CLAUDE-AI-Projects.md" 2>/dev/null || true
-cp /home/edq/knowledge-base/.claude/CLAUDE.md "$BACKUP_DIR/knowledge-base/CLAUDE-dot-claude.md" 2>/dev/null || true
-cp -r "/home/edq/knowledge-base/AI Projects/Memory" "$BACKUP_DIR/knowledge-base/" 2>/dev/null || true
-
-# Create manifest with backup metadata
-cat > "$BACKUP_DIR/MANIFEST.txt" << 'EOF'
-Claude Code Backup Manifest
-===========================
-
-Backup Contents:
-- srv-containers-edq/CLAUDE.md (main project documentation)
-- srv-containers-edq/docs/ (topic-specific documentation)
-- memory/ (MEMORY.md, common_issues.md, gpu_optimization.md, web_ui_patterns.md, etc.)
-- conversations/ (all .jsonl conversation files with UUIDs)
-- plans/ (plan files from EnterPlanMode tool)
-- knowledge-base/ (CLAUDE.md files from knowledge base, Memory folder)
-
-CRITICAL LESSON (2026-02-20):
-When deleting symlinks, ALWAYS verify that actual files still exist in the target directory.
-Deleting self-referential symlinks can accidentally delete the files they point to.
-Always confirm: ls -la <target-dir>/ before and after symlink deletion.
-
-Recovery:
-If files are lost again, restore from the most recent dated backup:
-  cp -r /mnt/ancalagon/backups/claude/YYYY-MM-DD/* ~/restore-location/
-EOF
+# Backup 5: settings.json
+echo "  • Backing up settings.json..."
+cp /home/edq/.claude/settings.json "$BACKUP_DIR/" 2>/dev/null || true
 
 # Summary
 BACKUP_SIZE=$(du -sh "$BACKUP_DIR" | cut -f1)
@@ -100,8 +105,11 @@ echo "  Location: $BACKUP_DIR"
 echo "  Size: $BACKUP_SIZE"
 echo "  Files: $FILE_COUNT"
 
-# Keep only last 7 days of daily backups
-echo "  • Cleaning old backups (keeping last 7 days)..."
-find "$BACKUP_ROOT" -maxdepth 1 -type d -name "20[0-9][0-9]-*" -mtime +7 -exec rm -rf {} \; 2>/dev/null || true
+# Keep only last 14 days of daily backups
+echo "  • Cleaning old backups (keeping last 14 days)..."
+find "$BACKUP_ROOT" -maxdepth 1 -type d -name "20[0-9][0-9]-*" -mtime +14 -exec rm -rf {} \; 2>/dev/null || true
+
+# Unmount
+umount /mnt/ancalagon_backup 2>/dev/null || true
 
 echo "[$(date)] Claude Code backup finished."
