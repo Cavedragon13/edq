@@ -1,6 +1,24 @@
 {
   "services": [
     {
+      "id": "gemma4",
+      "name": "Gemma 4 E4B",
+      "description": "Google Gemma 4 \u2014 9.6GB, 128K ctx, multimodal (text + image + audio)",
+      "category": "llm",
+      "port": 8043,
+      "path": "/",
+      "icon": "&#129408;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_gemma4.sh",
+      "project_path": null,
+      "features": [
+        "128K Context",
+        "Multimodal",
+        "Streaming",
+        "Local Ollama"
+      ],
+      "stop_command": "pkill -f 'gemma4_server.py' || true"
+    },
+    {
       "id": "mercury2",
       "name": "Mercury2 Diffusion Chat",
       "description": "Inception Labs diffusion LLM \u2014 watch tokens crystallize from noise",
