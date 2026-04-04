@@ -1,51 +1,35 @@
 #!/bin/bash
-# LivePortrait - Portrait Animation
-# Image + Video = Animated Portrait (KlingTeam, 2024-2026)
-# Port 8006, LAN accessible
-
+# LivePortrait — Portrait Animation
+# Port: 8006
 set -e
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-LIVEPORTRAIT_DIR="$PROJECT_DIR/projects/LivePortrait"
-VENV_DIR="$PROJECT_DIR/venv_liveportrait"
+SERVICE_NAME="LivePortrait"
+PORT=8006
+VENV="venv_liveportrait"
+APP_DIR="$DRAGONSUITE_ROOT/projects/LivePortrait"
 OUTPUT_DIR="$HOME/ai_generated/liveportrait"
 
-echo "🎭 LivePortrait - Portrait Animation"
-echo "===================================="
-echo "Image + Driving Video = Animated Portrait"
-echo ""
+service_header "$SERVICE_NAME" "$PORT"
+gpu_preflight "$PORT"
+activate_venv "$VENV"
+set_pytorch_env
 
-# Check for CUDA
-if command -v nvidia-smi &> /dev/null; then
-    echo "GPU Info:"
-    nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv,noheader 2>/dev/null || echo "  (nvidia-smi unavailable)"
-    echo ""
-fi
-
-# Activate venv
-source "$VENV_DIR/bin/activate"
-
-# Create output directory
 mkdir -p "$OUTPUT_DIR"
-
-echo "Starting LivePortrait WebUI..."
-echo "Local:   http://localhost:8006"
-echo "LAN:     http://192.168.7.226:8006"
-echo ""
-echo "Features:"
-echo "  - Image to animated portrait"
-echo "  - Video-driven face animation"
-echo "  - Expression transfer"
-echo "  - Animals mode (cats & dogs)"
-echo ""
-echo "Output saves to: $OUTPUT_DIR"
-echo ""
-echo "Press Ctrl+C to stop"
-echo ""
-
-cd "$LIVEPORTRAIT_DIR"
 export LIVEPORTRAIT_OUTPUT_DIR="$OUTPUT_DIR"
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-export GRADIO_SERVER_NAME="0.0.0.0"
-python app.py --server-port 8006 --server-name 0.0.0.0
+
+echo "🚀 Starting $SERVICE_NAME..."
+if pgrep -f "LivePortrait.*app.py\|liveportrait.*app.py" > /dev/null; then
+    echo "✓ Already running on port $PORT"
+else
+    nohup bash -c "cd '$APP_DIR' && python app.py --server-port $PORT --server-name 0.0.0.0" > /tmp/liveportrait.log 2>&1 &
+    echo "⏳ Waiting for service..."
+    if wait_for_port "$PORT" 60; then
+        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+    else
+        echo "❌ Service did not start in time — check /tmp/liveportrait.log"
+        tail -10 /tmp/liveportrait.log
+        exit 1
+    fi
+fi
