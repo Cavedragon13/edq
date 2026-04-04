@@ -1,11 +1,20 @@
 #!/bin/bash
-# start_streetview_studio.sh — Street View Studio (port 8040)
-# Fetch + AI-transform Google Street View images via FLUX.1-schnell (local, Apache 2.0)
+# Street View Studio — fetch + AI-transform Google Street View images via FLUX.1-schnell
+# Port: 8040
 set -e
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-VENV="/srv/containers/edq/venv_flux2"
-SCRIPT="/srv/containers/edq/scripts/streetview_studio_gradio.py"
+SERVICE_NAME="Street View Studio"
+PORT=8040
+VENV="venv_flux2"
+SCRIPT="scripts/streetview_studio_gradio.py"
 MODEL_DIR="/srv/containers/edq/models/flux1-schnell"
+
+service_header "$SERVICE_NAME" "$PORT"
+gpu_preflight "$PORT"
+activate_venv "$VENV"
+set_pytorch_env
 
 # Model check — fail fast before wasting time
 if [ ! -f "$MODEL_DIR/model_index.json" ]; then
@@ -13,18 +22,21 @@ if [ ! -f "$MODEL_DIR/model_index.json" ]; then
     echo "   Run first: bash scripts/download_flux1_schnell.sh"
     exit 1
 fi
-
-# shellcheck source=/dev/null
-source "$VENV/bin/activate"
-
-echo "🗺️  Street View Studio"
-echo "======================"
-echo "Local:  http://localhost:8040"
-echo "LAN:    http://192.168.7.226:8040"
-echo ""
-echo "Press Ctrl+C to stop"
+echo "✓ Models found"
 echo ""
 
-export PYTORCH_ALLOC_CONF=expandable_segments:True
+echo "🚀 Starting $SERVICE_NAME..."
 
-exec python3 "$SCRIPT"
+if pgrep -f "streetview_studio_gradio.py" > /dev/null; then
+    echo "✓ Already running on port $PORT"
+else
+    nohup python "$SCRIPT" > /tmp/streetview_studio.log 2>&1 &
+    echo "⏳ Waiting for service..."
+    if wait_for_port "$PORT" 30; then
+        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+    else
+        echo "❌ Failed — check /tmp/streetview_studio.log"
+        tail -10 /tmp/streetview_studio.log
+        exit 1
+    fi
+fi

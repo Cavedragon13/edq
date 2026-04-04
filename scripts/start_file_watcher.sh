@@ -1,10 +1,16 @@
 #!/bin/bash
+# Dragon File Watcher — Background daemon for file change detection
+# No port (background daemon)
 set -e
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-echo "🐉 Starting Dragon File Watcher..."
+SERVICE_NAME="Dragon File Watcher"
+VENV="venv_dragonsuite"
+SCRIPT="scripts/file_watcher.py"
 
-# Activate venv
-source /srv/containers/edq/venv_dragonsuite/bin/activate
+service_header "$SERVICE_NAME" ""
+activate_venv "$VENV"
 
 # Install watchdog if not present
 if ! python -c "import watchdog" 2>/dev/null; then
@@ -15,10 +21,9 @@ fi
 # Check if Ollama is running
 if ! curl -s http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
     echo "❌ Ollama is not running!"
-    echo "Please ensure Ollama is running on port 11434"
+    echo "   Please ensure Ollama is running on port 11434"
     exit 1
 fi
 
-# Run the file watcher
-echo "✓ Starting file watcher service..."
-python /srv/containers/edq/scripts/file_watcher.py
+echo "🚀 Starting $SERVICE_NAME..."
+python "$SCRIPT"

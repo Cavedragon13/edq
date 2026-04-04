@@ -1,48 +1,34 @@
 #!/bin/bash
-# DragonFlux Klein - FLUX.2-klein Image Generator
-# Exposes on LAN via port 8001
+# DragonFlux Klein — FLUX.2-klein Image Generator with LoRA Support
+# Port: 8001
+set -e
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-VENV_DIR="$PROJECT_DIR/venv_flux2"
+SERVICE_NAME="DragonFlux Klein"
+PORT=8001
+VENV="venv_flux2"
+SCRIPT="scripts/flux2_klein_gradio.py"
 
-echo "DragonFlux Klein"
-echo "================"
-echo "FLUX.2-klein Image Generator with LoRA Support"
-echo ""
+service_header "$SERVICE_NAME" "$PORT"
+gpu_preflight "$PORT"
+activate_venv "$VENV"
+set_pytorch_env
 
-# Check for CUDA (don't fail if nvidia-smi has issues)
-if command -v nvidia-smi &> /dev/null; then
-    echo "🎮 GPU Info:"
-    nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv,noheader 2>/dev/null || echo "  (nvidia-smi unavailable)"
-    echo ""
+mkdir -p "$HOME/ai_generated/flux2-klein"
+mkdir -p "$HOME/models/loras/flux-klein"
+echo "🚀 Starting $SERVICE_NAME..."
+
+if pgrep -f "flux2_klein_gradio.py" > /dev/null; then
+    echo "✓ Already running on port $PORT"
+else
+    nohup python "$SCRIPT" > /tmp/flux2_klein.log 2>&1 &
+    echo "⏳ Waiting for service..."
+    if wait_for_port "$PORT" 60; then
+        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+    else
+        echo "❌ Service did not start in time — check /tmp/flux2_klein.log"
+        tail -10 /tmp/flux2_klein.log
+        exit 1
+    fi
 fi
-
-# Check/create venv
-if [ ! -d "$VENV_DIR" ]; then
-    echo "📦 Creating virtual environment..."
-    python3 -m venv "$VENV_DIR"
-    echo "📦 Installing dependencies..."
-    "$VENV_DIR/bin/pip" install -U diffusers transformers accelerate gradio torch
-fi
-
-# Activate venv
-source "$VENV_DIR/bin/activate"
-
-echo ""
-echo "Starting DragonFlux Klein..."
-echo "Local:   http://localhost:8001"
-echo "LAN:     http://192.168.7.226:8001"
-echo ""
-echo "LoRA directory: ~/models/loras/flux-klein/"
-echo "Output directory: ~/ai_generated/flux2-klein/"
-echo ""
-echo "Press Ctrl+C to stop"
-echo ""
-
-cd "$PROJECT_DIR"
-
-# Memory optimization for 16GB VRAM
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-
-python scripts/flux2_klein_gradio.py

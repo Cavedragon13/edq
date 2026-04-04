@@ -1,15 +1,33 @@
 #!/bin/bash
+# JustDubit — video dubbing / lip-sync service
+# Port: 8022
 set -e
-
-echo "🎬 Starting JustDubit..."
-
 cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-# Set CUDA memory config
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+SERVICE_NAME="JustDubit"
+PORT=8022
+SCRIPT="scripts/justdubit_gradio.py"
 
-echo "✓ Launching JustDubit Gradio UI on port 8022..."
+service_header "$SERVICE_NAME" "$PORT"
+gpu_preflight "$PORT"
+set_pytorch_env
+
 echo "⚠️  JustDubit requires ~50GB of model checkpoints."
-echo "   Set checkpoint paths in scripts/justdubit_gradio.py before use."
+echo "   Set checkpoint paths in $SCRIPT before use."
+echo ""
+echo "🚀 Starting $SERVICE_NAME..."
 
-python scripts/justdubit_gradio.py
+if pgrep -f "justdubit_gradio.py" > /dev/null; then
+    echo "✓ Already running on port $PORT"
+else
+    nohup python "$SCRIPT" > /tmp/justdubit.log 2>&1 &
+    echo "⏳ Waiting for service..."
+    if wait_for_port "$PORT" 60; then
+        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+    else
+        echo "❌ Failed — check /tmp/justdubit.log"
+        tail -10 /tmp/justdubit.log
+        exit 1
+    fi
+fi

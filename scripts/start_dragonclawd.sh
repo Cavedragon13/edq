@@ -1,27 +1,21 @@
 #!/bin/bash
+# Dragonclawd — Personal AI Agent (Telegram bot)
+# No port  |  venv_dragonsuite
 set -e
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-BASE_DIR="/srv/containers/edq"
-VENV_DIR="$BASE_DIR/venv_dragonsuite"
+SERVICE_NAME="Dragonclawd"
 
-echo "🐉 Dragonclawd — Personal AI Agent"
-echo "   Telegram bot powered by Claude Haiku + Dragonsuite"
-echo ""
+service_header "$SERVICE_NAME" ""
 
-# Activate venv (shared with dragonsuite)
-if [ ! -d "$VENV_DIR" ]; then
-    echo "❌ venv_dragonsuite not found at $VENV_DIR"
-    echo "   Run: bash scripts/start_dragonsuite.sh first to create it"
-    exit 1
-fi
+activate_venv "venv_dragonsuite"
 
-source "$VENV_DIR/bin/activate"
-
-# Ensure Telegram/Anthropic packages are present
+# Ensure required packages are present
 pip install --quiet "python-telegram-bot[all]" anthropic gradio_client python-dotenv mcp 2>/dev/null
 
-# Check .env has required tokens
-source "$BASE_DIR/.env" 2>/dev/null || true
+# Check .env for required tokens
+source /srv/containers/edq/.env 2>/dev/null || true
 
 if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
     echo "⚠️  TELEGRAM_BOT_TOKEN not set in .env"
@@ -42,5 +36,5 @@ echo "   Token: ${TELEGRAM_BOT_TOKEN:0:10}..."
 echo "   Allowed users: ${TELEGRAM_ALLOWED_USERS:-'(not set!)'}"
 echo ""
 
-cd "$BASE_DIR"
+echo "🚀 Starting $SERVICE_NAME..."
 exec python scripts/dragonclawd_server.py

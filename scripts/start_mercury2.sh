@@ -1,40 +1,37 @@
 #!/bin/bash
-# Mercury2 Diffusion Chat - Start Script
-# Starts the web server (port 8036) for Inception Labs Mercury2 API
-
+# Mercury2 Diffusion Chat — Start Script
+# Port: 8036  |  No GPU venv  |  Requires MERCURY2_API_KEY
 set -e
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-echo "⚗️  Starting Mercury2 Diffusion Chat..."
-echo ""
+SERVICE_NAME="Mercury2 Diffusion Chat"
+PORT=8036
+
+service_header "$SERVICE_NAME" "$PORT"
+clear_port "$PORT"
 
 # Check API key
 source /srv/containers/edq/.env 2>/dev/null || true
 if [ -z "$MERCURY2_API_KEY" ]; then
-    echo "❌ ERROR: MERCURY2_API_KEY not found in /srv/containers/edq/.env"
+    echo "❌ MERCURY2_API_KEY not found in /srv/containers/edq/.env"
     exit 1
 fi
 echo "✓ Mercury2 API key found"
 
-# Start server if not already running
+echo "🚀 Starting $SERVICE_NAME..."
 if pgrep -f "mercury2_server.py" > /dev/null; then
-    echo "✓ Mercury2 server already running"
+    echo "✓ Already running on port $PORT"
 else
-    echo "⚙️  Starting Mercury2 server..."
-    nohup /usr/bin/python3 /srv/containers/edq/scripts/mercury2_server.py > /tmp/mercury2_server.log 2>&1 &
-    sleep 1
-
-    if pgrep -f "mercury2_server.py" > /dev/null; then
-        echo "✓ Server started on port 8036"
+    nohup /usr/bin/python3 scripts/mercury2_server.py > /tmp/mercury2_server.log 2>&1 &
+    echo "⏳ Waiting for service..."
+    if wait_for_port "$PORT" 30; then
+        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+        echo "   Model: mercury-2 (Inception Labs)"
+        echo "   Feature: Diffusion streaming — watch tokens crystallize"
     else
-        echo "❌ Failed to start server"
+        echo "❌ Service did not start in time — check /tmp/mercury2_server.log"
         tail -10 /tmp/mercury2_server.log
         exit 1
     fi
 fi
-
-echo ""
-echo "✅ Mercury2 ready"
-echo "   Local:  http://localhost:8036"
-echo "   LAN:    http://192.168.7.226:8036"
-echo "   Model:  mercury-2 (Inception Labs)"
-echo "   Feature: Diffusion streaming — watch tokens crystallize"

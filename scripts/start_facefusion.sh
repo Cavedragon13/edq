@@ -1,29 +1,37 @@
 #!/bin/bash
+# FaceFusion — Face Swap & Manipulation
+# Port: 8017
 set -e
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-echo "🎭 Starting FaceFusion - Face Swap & Manipulation..."
+SERVICE_NAME="FaceFusion"
+PORT=8017
+VENV="venv_facefusion"
 
-# Activate venv
-source /srv/containers/edq/venv_facefusion/bin/activate
+service_header "$SERVICE_NAME" "$PORT"
+gpu_preflight "$PORT"
+activate_venv "$VENV"
+set_pytorch_env
 
-# Navigate to FaceFusion directory
-cd /srv/containers/edq/projects/facefusion
-
-# Check if Ollama is running (optional, for best results)
-if curl -s http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
-    echo "✓ Ollama detected (can be used for face analysis)"
-fi
-
-# Launch FaceFusion with Gradio interface
-echo "✓ Launching FaceFusion web interface..."
-echo "📍 Access at: http://192.168.7.226:8017"
-echo ""
-
-# Set Gradio server config via environment variables
 export GRADIO_SERVER_NAME=0.0.0.0
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-export GRADIO_SERVER_PORT=8017
+export GRADIO_SERVER_PORT=$PORT
 
-python facefusion.py run \
-    --execution-providers cuda \
-    --ui-layouts webcam benchmark
+echo "🚀 Starting $SERVICE_NAME..."
+
+if pgrep -f "facefusion.py" > /dev/null; then
+    echo "✓ Already running on port $PORT"
+else
+    cd /srv/containers/edq/projects/facefusion
+    nohup python facefusion.py run \
+        --execution-providers cuda \
+        --ui-layouts webcam benchmark \
+        > /tmp/facefusion.log 2>&1 &
+    if wait_for_port "$PORT" 60; then
+        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+    else
+        echo "❌ Failed — check /tmp/facefusion.log"
+        tail -10 /tmp/facefusion.log
+        exit 1
+    fi
+fi

@@ -1,10 +1,18 @@
 #!/bin/bash
+# Foundation-1 — Music Generation Model
+# Port: 8039  |  GPU  |  venv_foundation1
 set -e
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-PROJECT_DIR="/srv/containers/edq/projects/foundation-1"
-MODEL="/srv/containers/edq/projects/foundation-1/models/Foundation_1.safetensors"
-CONFIG="/srv/containers/edq/projects/foundation-1/models/model_config.json"
+SERVICE_NAME="Foundation-1"
 PORT=8039
+VENV="venv_foundation1"
+PROJECT_DIR="/srv/containers/edq/projects/foundation-1"
+MODEL="$PROJECT_DIR/models/Foundation_1.safetensors"
+CONFIG="$PROJECT_DIR/models/model_config.json"
+
+service_header "$SERVICE_NAME" "$PORT"
 
 if [ ! -f "$MODEL" ]; then
     echo "❌ Foundation-1 model not found: $MODEL"
@@ -12,16 +20,29 @@ if [ ! -f "$MODEL" ]; then
     exit 1
 fi
 
-source /srv/containers/edq/venv_foundation1/bin/activate
+gpu_preflight "$PORT"
+activate_venv "$VENV"
+set_pytorch_env
 
 export GRADIO_SERVER_PORT=$PORT
 export GRADIO_SERVER_NAME="0.0.0.0"
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
-echo "🎵 Starting Foundation-1 on port $PORT..."
-cd "$PROJECT_DIR"
-exec python run_gradio.py \
-    --model-config "$CONFIG" \
-    --ckpt-path "$MODEL" \
-    --model-half \
-    --title "Foundation-1"
+echo "🚀 Starting $SERVICE_NAME..."
+if pgrep -f "run_gradio.py" > /dev/null; then
+    echo "✓ Already running on port $PORT"
+else
+    cd "$PROJECT_DIR"
+    nohup python run_gradio.py \
+        --model-config "$CONFIG" \
+        --ckpt-path "$MODEL" \
+        --model-half \
+        --title "Foundation-1" > /tmp/foundation1.log 2>&1 &
+    echo "⏳ Waiting for service..."
+    if wait_for_port "$PORT" 60; then
+        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+    else
+        echo "❌ Service did not start in time — check /tmp/foundation1.log"
+        tail -10 /tmp/foundation1.log
+        exit 1
+    fi
+fi
