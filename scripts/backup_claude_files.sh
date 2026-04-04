@@ -17,13 +17,16 @@ echo "[$(date)] Scrubbing credentials from conversation history..."
 python3 << 'PYEOF'
 import pathlib
 
-REPLACEMENTS = {
-    "galactic-diagnosis-ambulance": "<vault-password-redacted>",
-    "1324b0X0": "<adragon-ssh-password-redacted>",
-    "3nqJPqhbjo24": "<ancalagon-ssh-password-redacted>",
-    "8ae645c9-5f8b-473a-9150-d4757b70fc79": "<smithery-key-redacted>",
-    "REDACTED_SUPABASE_KEY": "<supabase-secret-redacted>",
-}
+# Credentials list lives outside the repo to avoid committing secrets
+# File: ~/.claude/scrub-credentials.txt  (format: secret:placeholder, one per line)
+CREDS_FILE = pathlib.Path.home() / ".claude/scrub-credentials.txt"
+REPLACEMENTS = {}
+if CREDS_FILE.exists():
+    for line in CREDS_FILE.read_text().splitlines():
+        line = line.strip()
+        if line and ":" in line:
+            secret, placeholder = line.split(":", 1)
+            REPLACEMENTS[secret] = placeholder
 
 root = pathlib.Path.home() / ".claude/projects"
 changed = 0
