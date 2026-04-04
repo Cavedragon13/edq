@@ -27,7 +27,7 @@
         // Configuration
         const CONFIG = {
             ollama: {
-                url: '/api/ollama/generate',
+                url: '/api/ollama/chat',
                 model: 'qwen3-vl:8b'
             },
             florence: {
@@ -58,7 +58,7 @@
                 await fetch(CONFIG.ollama.url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model, keep_alive: 0, stream: false })
+                    body: JSON.stringify({ model, messages: [], keep_alive: 0, stream: false })
                 });
             } catch (e) { /* silent — eviction is best-effort */ }
         }
@@ -98,7 +98,7 @@
 
         // Show/hide Ollama model selector based on backend
         function updateModelSelectorVisibility() {
-            ollamaModelSelect.style.display = backendSelect.value === 'ollama' ? 'block' : 'none';
+            document.getElementById('ollamaModelGroup').style.display = backendSelect.value === 'ollama' ? 'flex' : 'none';
             const dolphinHint = document.getElementById('dolphinHint');
             if (dolphinHint) dolphinHint.style.display = backendSelect.value === 'dolphin' ? 'inline' : 'none';
         }
@@ -226,15 +226,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         model: model,
-                        prompt: prompt,
-                        images: [base64Image],
+                        messages: [{ role: 'user', content: prompt, images: [base64Image] }],
                         stream: false
                     })
                 });
 
                 if (!response.ok) throw new Error(`Ollama HTTP ${response.status}: ${response.statusText}`);
                 const data = await response.json();
-                return data.response;
+                // Strip <think>...</think> blocks (reasoning models like Gemma 4)
+                let content = data.message?.content ?? '';
+                content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                return content;
             } catch (error) {
                 throw new Error(`Ollama (${model}) failed: ${error.message}. Is Ollama running?`);
             }
@@ -452,7 +454,32 @@ CRITICAL INSTRUCTIONS:
 
                 if (backend === 'ollama') lastOllamaModel = getOllamaModel();
                 saveBtn.classList.remove('hidden');
-                showSuccess('✓ Analysis complete!');
+
+                // Auto-save metadata to server output directory
+                try {
+                    const metadata = {
+                        original_name: currentImage.name,
+                        suggested_name: document.getElementById('filename').value,
+                        detailed_description: detailed,
+                        concise_description: concise,
+                        tags: tags,
+                        analyzed_date: new Date().toISOString(),
+                        backend: backendSelect.value
+                    };
+                    const saveResponse = await fetch('/api/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(metadata)
+                    });
+                    const saveResult = await saveResponse.json();
+                    if (saveResult.success) {
+                        showSuccess(`✓ Analysis complete — saved to ${saveResult.file}`);
+                    } else {
+                        showSuccess('✓ Analysis complete (auto-save failed — use Save button)');
+                    }
+                } catch (e) {
+                    showSuccess('✓ Analysis complete (server unavailable — use Save button)');
+                }
 
             } catch (error) {
                 console.error('Analysis error:', error);
@@ -464,7 +491,7 @@ CRITICAL INSTRUCTIONS:
         });
 
         // Save Metadata
-        saveBtn.addEventListener('click', async () => {
+        saveBtn.addEventListener('click', () => {
             const metadata = {
                 original_name: currentImage.name,
                 suggested_name: document.getElementById('filename').value,
@@ -474,41 +501,14 @@ CRITICAL INSTRUCTIONS:
                 analyzed_date: new Date().toISOString(),
                 backend: backendSelect.value
             };
-
-            // Save to server output directory
-            try {
-                const saveResponse = await fetch('/api/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(metadata)
-                });
-                const saveResult = await saveResponse.json();
-                if (saveResult.success) {
-                    showSuccess(`Saved to ${saveResult.file}`);
-                } else {
-                    console.warn('Server save failed:', saveResult.error);
-                    // Fall back to download
-                    const blob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${currentImage.name}_metadata.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    showSuccess('Metadata downloaded (server save failed)');
-                }
-            } catch (e) {
-                console.warn('Server save error:', e);
-                // Fall back to download
-                const blob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${currentImage.name}_metadata.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                showSuccess('Metadata downloaded (server unavailable)');
-            }
+            const blob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${document.getElementById('filename').value.replace(/\.[^.]+$/, '')}_metadata.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showSuccess('✓ Downloaded to your Downloads folder');
         });
 
         console.log('🐉 Dragonsight 4 loaded! Press Ctrl+V to paste images.');

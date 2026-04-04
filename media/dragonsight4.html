@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dragonsight 4.5 - Uncensored Vision AI</title>
+    <title>Dragonsight 4.6 - Uncensored Vision AI</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
     <style>
         * {
@@ -131,6 +131,24 @@
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .control-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+        }
+
+        body.dark-mode .control-label {
+            color: #9ca3af;
         }
 
         select, button {
@@ -276,7 +294,7 @@
     <div class="container">
         <div class="header">
             <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
-            <h1>🐉 Dragonsight 4.5</h1>
+            <h1>🐉 Dragonsight 4.6</h1>
             <p>Uncensored Vision AI - Image Description + Smart Naming</p>
             <p style="font-size: 0.9em; margin-top: 10px;">Drag & drop, click, or press Ctrl+V to paste images</p>
         </div>
@@ -293,18 +311,25 @@
             </div>
 
             <div class="controls">
-                <select id="backend">
-                    <option value="ollama" selected>💎 Ollama (Local VLM)</option>
-                    <option value="florence">🌸 Florence-2 (Local, Fast)</option>
-                    <option value="lmstudio">🔥 LM Studio (Uncensored)</option>
-                    <option value="dolphin">🐬 Dolphin Vision (Uncensored)</option>
-                    <option value="gemini">✨ Gemini Flash-Lite (Cloud)</option>
-                </select>
-                <small id="dolphinHint" style="display:none; color: #9ca3af;">Start via Dragonsuite port 8025</small>
-                <select id="ollamaModel">
-                    <option value="qwen3-vl:8b" selected>Qwen3-VL 8B (Vision)</option>
-                    <option value="llama3.2-vision:11b">Llama 3.2 Vision 11B</option>
-                </select>
+                <div class="control-group">
+                    <span class="control-label">Backend</span>
+                    <select id="backend">
+                        <option value="ollama" selected>💎 Ollama (Local VLM)</option>
+                        <option value="florence">🌸 Florence-2 (Local, Fast)</option>
+                        <option value="lmstudio">🔥 LM Studio (Uncensored)</option>
+                        <option value="dolphin">🐬 Dolphin Vision (Uncensored)</option>
+                        <option value="gemini">✨ Gemini Flash-Lite (Cloud)</option>
+                    </select>
+                    <small id="dolphinHint" style="display:none; color: #9ca3af;">Start via Dragonsuite port 8025</small>
+                </div>
+                <div class="control-group" id="ollamaModelGroup">
+                    <span class="control-label">Model</span>
+                    <select id="ollamaModel">
+                        <option value="qwen3-vl:8b" selected>Qwen3-VL 8B (Vision)</option>
+                        <option value="llama3.2-vision:11b">Llama 3.2 Vision 11B</option>
+                        <option value="gemma4:e4b">Gemma 4 E4B (Multimodal)</option>
+                    </select>
+                </div>
                 <button id="analyzeBtn" disabled>🔍 Analyze Image</button>
             </div>
 
@@ -342,7 +367,7 @@
                 <textarea id="filename" rows="1" placeholder="suggested_filename.jpg" readonly></textarea>
             </div>
 
-            <button id="saveBtn" class="hidden" style="width: 100%; margin-top: 10px;">💾 Download Metadata JSON</button>
+            <button id="saveBtn" class="hidden" style="width: 100%; margin-top: 10px;">⬇️ Download Working Copy</button>
         </div>
     </div>
 

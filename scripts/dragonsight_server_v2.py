@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dragonsight 4.5 - Local HTTP Server with Ollama Proxy + Florence-2
+Dragonsight 4.6 - Local HTTP Server with Ollama Proxy + Florence-2
 Serves dragonsight4.html on port 8080
 Proxies /api/ollama/* to localhost:11434 (avoids CORS issues)
 Runs Florence-2 locally for /api/florence/analyze
@@ -140,7 +140,7 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(404, f"Path {self.path} not found")
 
     def do_POST(self):
-        if self.path == '/api/ollama/generate':
+        if self.path == '/api/ollama/chat':
             self._proxy_ollama()
         elif self.path == '/api/florence/analyze':
             self._handle_florence()
@@ -174,7 +174,7 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             return
         try:
             req = urllib.request.Request(
-                f'http://127.0.0.1:{OLLAMA_PORT}/api/generate',
+                f'http://127.0.0.1:{OLLAMA_PORT}/api/chat',
                 data=body, method='POST'
             )
             req.add_header('Content-Type', 'application/json')
@@ -222,11 +222,11 @@ if __name__ == "__main__":
         print(f"ERROR: {HTML_FILE} not found")
         exit(1)
 
-    print(f"🐉 Dragonsight 4.5")
+    print(f"🐉 Dragonsight 4.6")
     print(f"   Serving:      {HTML_FILE}")
     print(f"   Port:         {PORT}")
     print(f"   LAN:          http://192.168.7.226:{PORT}")
-    print(f"   Backends:     Ollama · Florence-2 (local) · Gemini · LM Studio · Dolphin")
+    print(f"   Backends:     Ollama (chat API) · Florence-2 (local) · Gemini · LM Studio · Dolphin")
     print(f"   Florence-2:   loads on first request (~10s)")
     print()
 
@@ -234,4 +234,4 @@ if __name__ == "__main__":
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("\n✓ Dragonsight 4.5 stopped")
+            print("\n✓ Dragonsight 4.6 stopped")

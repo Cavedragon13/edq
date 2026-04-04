@@ -1,10 +1,10 @@
 #!/bin/bash
-# Dragonsight 4.5 - Start Script
+# Dragonsight 4.6 - Start Script
 # Starts the web server (port 8080) + checks Ollama dependency
 
 OUTPUT_DIR="$HOME/ai_generated/dragonsight"
 
-echo "🐉 Starting Dragonsight 4.5..."
+echo "🐉 Starting Dragonsight 4.6..."
 echo ""
 
 # Create output directory
@@ -27,11 +27,11 @@ fi
 VENV_PYTHON="/srv/containers/edq/venv_ai_toolkit/bin/python3"
 SERVER_SCRIPT="/srv/containers/edq/scripts/dragonsight_server_v2.py"
 
-# Start Dragonsight 4.5 HTTP server (if not already running)
+# Start Dragonsight 4.6 HTTP server (if not already running)
 if pgrep -f "dragonsight_server_v2.py" > /dev/null; then
-    echo "✓ Dragonsight 4.5 web server already running"
+    echo "✓ Dragonsight 4.6 web server already running"
 else
-    echo "⚙️  Starting Dragonsight 4.5 web server..."
+    echo "⚙️  Starting Dragonsight 4.6 web server..."
     nohup "$VENV_PYTHON" "$SERVER_SCRIPT" > /tmp/dragonsight_server.log 2>&1 &
     sleep 1
 
@@ -45,7 +45,7 @@ else
 fi
 
 echo ""
-echo "✅ Dragonsight 4.5 ready"
+echo "✅ Dragonsight 4.6 ready"
 echo "   Local:  http://localhost:8080"
 echo "   LAN:    http://192.168.7.226:8080"
 echo "   Backends: Ollama · Florence-2 (local) · Gemini · LM Studio · Dolphin"

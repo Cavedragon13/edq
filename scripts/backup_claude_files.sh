@@ -55,9 +55,7 @@ find /home/edq/.claude/projects/ -type d -exec chmod 700 {} \;
 mkdir -p /mnt/ancalagon_backup
 if ! mountpoint -q /mnt/ancalagon_backup; then
   echo "[$(date)] Mounting ancalagon homes share..."
-  if mount -t cifs //ancalagon.lan/homes -o username=admin,password="${ANCALAGON_SSH_PASS}",uid=edq,gid=edq /mnt/ancalagon_backup 2>/dev/null; then
-    echo "[$(date)] Mounted via LAN (ancalagon.lan)"
-  elif mount -t cifs //192.168.7.160/homes -o username=admin,password="${ANCALAGON_SSH_PASS}",uid=edq,gid=edq /mnt/ancalagon_backup 2>/dev/null; then
+  if sudo mount -t cifs //192.168.7.160/homes -o username=admin,password="${ANCALAGON_SSH_PASS}",uid=edq,gid=edq /mnt/ancalagon_backup 2>/dev/null; then
     echo "[$(date)] Mounted via IP (192.168.7.160)"
   else
     echo "[$(date)] Warning: Could not mount ancalagon. Using local fallback..."
@@ -110,6 +108,6 @@ echo "  • Cleaning old backups (keeping last 14 days)..."
 find "$BACKUP_ROOT" -maxdepth 1 -type d -name "20[0-9][0-9]-*" -mtime +14 -exec rm -rf {} \; 2>/dev/null || true
 
 # Unmount
-umount /mnt/ancalagon_backup 2>/dev/null || true
+sudo umount /mnt/ancalagon_backup 2>/dev/null || true
 
 echo "[$(date)] Claude Code backup finished."

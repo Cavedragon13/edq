@@ -1,3 +1,8 @@
+# DEPRECATED: Superseded by dragonsight_server_v2.py (Dragonsight 4.6)
+# This is the original v1 server — uses /api/generate (legacy Ollama API),
+# no Florence-2, no /api/chat proxy. Kept for reference only.
+# DO NOT USE — start_dragonsight.sh now runs dragonsight_server_v2.py
+#
 #!/usr/bin/env python3
 """
 Dragonsight 4 - Local HTTP Server with Ollama Proxy
