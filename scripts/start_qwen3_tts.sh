@@ -1,38 +1,20 @@
 #!/bin/bash
 # Qwen3-TTS - Text-to-Speech with Voice Cloning and Voice Design
 # Port 8009, LAN accessible
-
 set -e
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-QWEN_TTS_DIR="$PROJECT_DIR/projects/qwen3-tts"
-VENV_DIR="$PROJECT_DIR/venv_qwen3_tts"
+SERVICE_NAME="Qwen3-TTS"
+PORT=8009
+VENV="venv_qwen3_tts"
+
+QWEN_TTS_DIR="$DRAGONSUITE_ROOT/projects/qwen3-tts"
 OUTPUT_DIR="$HOME/ai_generated/qwen3-tts"
 
-echo "🗣️ Qwen3-TTS"
-echo "============"
-echo "Text-to-Speech with Voice Cloning and Voice Design"
-echo ""
-
-# Check for CUDA
-if command -v nvidia-smi &> /dev/null; then
-    echo "🎮 GPU Info:"
-    nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv,noheader 2>/dev/null || echo "  (nvidia-smi unavailable)"
-    echo ""
-fi
-
-# Create project directory if needed
-mkdir -p "$QWEN_TTS_DIR"
-
-# Check/create venv
-if [ ! -d "$VENV_DIR" ]; then
-    echo "📦 Creating virtual environment..."
-    python3 -m venv "$VENV_DIR"
-fi
-
-# Activate venv
-source "$VENV_DIR/bin/activate"
+service_header "$SERVICE_NAME" "$PORT"
+gpu_preflight "$PORT"
+activate_venv "$VENV"
 
 # Check if qwen-tts is installed
 if ! python -c "import qwen_tts" 2>/dev/null; then
@@ -53,29 +35,22 @@ if ! python -c "import qwen_tts" 2>/dev/null; then
     echo ""
 fi
 
-# Create output directory
+set_pytorch_env
+mkdir -p "$QWEN_TTS_DIR"
 mkdir -p "$OUTPUT_DIR"
 
-echo "🌐 Starting Qwen3-TTS WebUI..."
-echo "📡 Local:   http://localhost:8009"
-echo "📡 LAN:     http://192.168.7.226:8009"
-echo ""
-echo "Features:"
-echo "  - TTS: 9 predefined voices + style control"
-echo "  - Voice Clone: Clone any voice from audio sample"
-echo "  - Voice Design: Create voices from descriptions"
-echo ""
-echo "Note: Models are loaded on-demand (~6GB each)"
-echo "      Switching features may take a moment to load"
-echo ""
-echo "Output saves to: $OUTPUT_DIR"
-echo ""
-echo "Press Ctrl+C to stop"
-echo ""
-
-cd "$QWEN_TTS_DIR"
-
-# Memory optimization for 16GB VRAM
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-
-python -u app_local.py
+echo "🚀 Starting $SERVICE_NAME..."
+if pgrep -f "qwen3-tts/app_local.py" > /dev/null; then
+    echo "✓ Already running on port $PORT"
+else
+    cd "$QWEN_TTS_DIR"
+    nohup python -u app_local.py > /tmp/qwen3_tts.log 2>&1 &
+    echo "⏳ Waiting for service..."
+    if wait_for_port "$PORT" 60; then
+        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+    else
+        echo "❌ Service did not start in time — check /tmp/qwen3_tts.log"
+        tail -10 /tmp/qwen3_tts.log
+        exit 1
+    fi
+fi
