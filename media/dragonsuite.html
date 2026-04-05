@@ -56,51 +56,74 @@ body::before {
 /* Header */
 .hdr {
   position:sticky; top:0; z-index:100;
-  height:58px; display:flex; align-items:center; gap:16px; padding:0 22px;
-  background:rgba(5,9,15,.92); backdrop-filter:blur(24px);
+  min-height:52px; display:flex; align-items:center; gap:0; padding:0;
+  background:rgba(5,9,15,.94); backdrop-filter:blur(24px);
   border-bottom:1px solid rgba(34,211,238,.1);
   box-shadow:0 1px 0 rgba(34,211,238,.04);
   transition:background .3s;
 }
-body.light .hdr { background:rgba(240,246,250,.92); border-bottom-color:rgba(8,145,178,.15); }
-.logo { display:flex; align-items:center; gap:8px; text-decoration:none; flex-shrink:0; }
-.logo-icon { font-size:20px; line-height:1; }
+body.light .hdr { background:rgba(240,246,250,.94); border-bottom-color:rgba(8,145,178,.15); }
+
+/* Left anchor: logo + weather inline */
+.hdr-left {
+  display:flex; flex-direction:row; align-items:center; gap:14px;
+  padding:0 18px 0 22px; flex-shrink:0;
+  border-right:1px solid var(--bd); height:100%;
+}
+.logo { display:flex; align-items:center; gap:8px; text-decoration:none; }
+.logo-icon { font-size:18px; line-height:1; }
 .logo-text {
-  font-family:'Chakra Petch',sans-serif; font-size:1rem; font-weight:700;
+  font-family:'Chakra Petch',sans-serif; font-size:.9rem; font-weight:700;
   color:var(--tx); letter-spacing:.06em; text-transform:uppercase;
 }
 .logo-text em { color:var(--ac); font-style:normal; }
-.sep { width:1px; height:24px; background:var(--bd); flex-shrink:0; }
-.hdr-stats { display:flex; align-items:center; gap:14px; flex:1; min-width:0; }
-.schip { display:flex; align-items:center; gap:7px; flex-shrink:0; }
-.slbl {
-  font-family:'JetBrains Mono',monospace; font-size:9.5px;
-  color:var(--txm); text-transform:uppercase; letter-spacing:.08em;
-}
-.strack { width:76px; height:4px; background:rgba(255,255,255,.05); border-radius:2px; overflow:hidden; }
-.sfill {
-  height:100%; border-radius:2px; background:var(--run);
-  transition:width .6s ease;
-  box-shadow:0 0 6px rgba(52,211,153,.4);
-}
-.sfill.w { background:var(--warn); } .sfill.d { background:var(--err); }
-.sval {
-  font-family:'JetBrains Mono',monospace; font-size:10.5px;
-  color:var(--tx2); font-weight:500; min-width:32px;
-}
-.hdr-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
-.hdr-ip { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--txm); }
-/* Weather chip */
+
+/* Weather inline next to logo */
 .hdr-weather {
-  display:flex; align-items:center; gap:7px; flex-shrink:0;
-  padding:3px 10px 3px 8px; border-radius:8px;
-  background:var(--bge); border:1px solid var(--bd);
+  display:flex; align-items:center; gap:6px;
   font-size:11px; color:var(--tx2); white-space:nowrap;
-  transition:all var(--tr);
+  padding-left:14px; border-left:1px solid var(--bd);
 }
-.hdr-weather img { width:22px; height:22px; flex-shrink:0; }
-.hdr-weather-temp { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; color:var(--tx); }
-.hdr-weather-cond { color:var(--txm); font-size:10px; }
+.hdr-weather img { width:18px; height:18px; flex-shrink:0; }
+.hdr-weather-temp { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--tx); }
+.hdr-weather-cond { color:var(--tx2); font-size:10.5px; }
+
+/* Middle: pollen strip */
+.hdr-pollen {
+  flex:1; min-width:0;
+  display:flex; align-items:center; gap:10px; flex-wrap:nowrap;
+  padding:0 18px; overflow:hidden;
+}
+.hdr-pollen-label {
+  font-family:'JetBrains Mono',monospace; font-size:9px;
+  text-transform:uppercase; letter-spacing:.12em;
+  color:var(--tx2); flex-shrink:0;
+}
+.hdr-pollen-pills { display:flex; align-items:center; gap:5px; flex-wrap:wrap; overflow:hidden; }
+.hdr-pollen-pill {
+  display:flex; align-items:center; gap:4px;
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  padding:2px 7px; border-radius:4px;
+  background:var(--bge); border:1px solid var(--bd);
+  white-space:nowrap;
+}
+.hdr-pollen-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.hdr-pollen-name { color:var(--tx2); }
+.hdr-pollen-val { color:var(--tx); font-weight:500; }
+
+/* Right: ip + controls */
+.hdr-right {
+  display:flex; align-items:center; gap:8px; flex-shrink:0;
+  padding:0 16px; border-left:1px solid var(--bd);
+}
+.hdr-ip { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--tx2); }
+
+.sep { width:1px; height:24px; background:var(--bd); flex-shrink:0; }
+/* Keep sfill/strack/schip for backward compat with any JS refs */
+.schip { display:none; }
+.sfill { height:100%; border-radius:2px; background:var(--run); transition:width .6s ease; }
+.sfill.w { background:var(--warn); } .sfill.d { background:var(--err); }
+
 .ibtn {
   width:30px; height:30px; border-radius:7px;
   border:1px solid var(--bd); background:transparent; color:var(--tx2);
@@ -152,23 +175,48 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 }
 .sc {
   background:var(--bgc); border:1px solid var(--bd);
-  border-radius:var(--r); padding:14px 16px;
-  transition:border-color var(--tr);
+  border-radius:var(--r); padding:0;
+  transition:border-color var(--tr), box-shadow var(--tr);
+  overflow:hidden; position:relative;
 }
-.sc:hover { border-color:var(--bdh); }
+.sc:hover { border-color:var(--bdh); box-shadow:0 4px 20px rgba(0,0,0,.25); }
+/* Colored top stripe per card */
+.sc::before {
+  content:''; display:block; height:3px;
+  background:var(--sc-accent, var(--ac));
+  box-shadow:0 0 12px var(--sc-accent-glow, rgba(34,211,238,.5));
+}
+.sc-inner { padding:12px 16px 14px; }
+/* Label row: type chip + qualifier */
 .sc-lbl {
+  display:flex; align-items:baseline; gap:6px;
+  margin-bottom:10px;
+}
+.sc-lbl-type {
+  font-size:10px; font-family:'JetBrains Mono',monospace;
+  text-transform:uppercase; letter-spacing:.10em;
+  color:var(--sc-accent, var(--ac));
+  font-weight:600;
+}
+.sc-lbl-qual {
   font-size:9px; font-family:'JetBrains Mono',monospace;
-  text-transform:uppercase; letter-spacing:.12em;
-  color:var(--txm); margin-bottom:9px;
+  text-transform:uppercase; letter-spacing:.08em;
+  color:var(--tx2); opacity:0.6;
 }
 .sc-val {
   font-family:'JetBrains Mono',monospace;
-  font-size:20px; font-weight:500; color:var(--tx); margin-bottom:6px;
+  font-size:22px; font-weight:500; color:var(--tx); margin-bottom:8px;
+  line-height:1;
 }
-.sc-bar { height:3px; background:rgba(255,255,255,.05); border-radius:2px; overflow:hidden; }
-.sc-fill { height:100%; border-radius:2px; background:var(--run); transition:width .6s ease; box-shadow:0 0 6px rgba(52,211,153,.35); }
-.sc-fill.w { background:var(--warn); box-shadow:0 0 6px rgba(251,191,36,.35); } .sc-fill.d { background:var(--err); box-shadow:0 0 6px rgba(248,113,113,.35); }
-.sc-sub { font-size:10.5px; color:var(--txm); margin-top:4px; }
+.sc-bar { height:5px; background:rgba(255,255,255,.06); border-radius:3px; overflow:hidden; margin-bottom:6px; }
+.sc-fill {
+  height:100%; border-radius:3px; background:var(--sc-accent, var(--run));
+  transition:width .6s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 0 8px var(--sc-accent-glow, rgba(52,211,153,.5));
+}
+.sc-fill.w { background:var(--warn); box-shadow:0 0 8px rgba(251,191,36,.4); }
+.sc-fill.d { background:var(--err); box-shadow:0 0 8px rgba(248,113,113,.4); }
+.sc-sub { font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--tx2); line-height:1.3; }
 
 /* Pollen row */
 .pollenrow {
@@ -185,50 +233,46 @@ body.light .cnav { background:rgba(240,246,250,.80); }
   background:var(--bge); border:1px solid var(--bd);
 }
 .pollen-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-.pollen-type-name { color:var(--txm); }
+.pollen-type-name { color:var(--tx2); }
 .pollen-forecast { display:flex; gap:10px; align-items:flex-start; flex-shrink:0; }
 .pollen-day {
   display:flex; flex-direction:column; align-items:center; gap:3px;
-  font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--txm);
+  font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--tx2);
 }
 .pollen-day-dots { display:flex; gap:2px; }
 .pollen-rec {
-  width:100%; font-size:10px; color:var(--txm); font-style:italic;
+  width:100%; font-size:10.5px; color:var(--tx2); font-style:italic;
   padding-top:2px; line-height:1.4;
 }
 
-/* LLM row */
-.llmrow {
+/* LLM / Cron rows — shared footer strip style */
+.llmrow, .cronrow {
   background:var(--bgc); border:1px solid var(--bd);
-  border-radius:var(--r); padding:10px 15px;
-  margin-bottom:26px;
+  border-radius:var(--r); padding:11px 16px;
+  margin-top:12px;
   display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap;
 }
+.llmrow { margin-top:10px; }
 .llm-lbl {
-  font-size:9.5px; font-family:'JetBrains Mono',monospace;
-  text-transform:uppercase; letter-spacing:.1em;
-  color:var(--txm); flex-shrink:0; padding-top:2px; min-width:56px;
+  font-size:10px; font-family:'JetBrains Mono',monospace;
+  text-transform:uppercase; letter-spacing:.10em;
+  color:var(--tx2); flex-shrink:0; padding-top:3px; min-width:60px;
+  font-weight:600;
 }
 .llm-pills { display:flex; flex-wrap:wrap; gap:5px; flex:1; }
 .llm-pill {
-  font-family:'JetBrains Mono',monospace; font-size:10.5px;
-  padding:2px 7px; border-radius:4px;
-  background:var(--bge); color:var(--tx2); border:1px solid var(--bd);
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  padding:3px 8px; border-radius:4px;
+  background:var(--bge); color:var(--tx); border:1px solid var(--bd);
 }
-.llm-off { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--txm); }
+.llm-off { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--tx2); }
 
-/* Cron row */
-.cronrow {
-  background:var(--bgc); border:1px solid var(--bd);
-  border-radius:var(--r); padding:10px 15px;
-  margin-bottom:14px;
-  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-}
+.cronrow { align-items:center; }
 .cron-pill {
   display:flex; align-items:center; gap:5px;
-  font-family:'JetBrains Mono',monospace; font-size:10.5px;
-  padding:2px 8px; border-radius:4px;
-  background:var(--bge); color:var(--tx2); border:1px solid var(--bd);
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  padding:3px 8px; border-radius:4px;
+  background:var(--bge); color:var(--tx); border:1px solid var(--bd);
   cursor:pointer; transition:border-color var(--tr);
 }
 .cron-pill:hover { border-color:var(--bdh); }
@@ -236,7 +280,18 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 .cron-dot.ok    { background:#34d399; box-shadow:0 0 4px rgba(52,211,153,.6); }
 .cron-dot.error { background:#f87171; box-shadow:0 0 4px rgba(248,113,113,.6); }
 .cron-dot.miss  { background:var(--txm); }
-.cron-when { color:var(--txm); font-size:9.5px; }
+.cron-when { color:var(--tx2); font-size:10px; }
+
+/* Footer status zone */
+.footer-status {
+  margin-top:32px; padding-top:20px;
+  border-top:1px solid var(--bd);
+}
+.footer-status-title {
+  font-family:'JetBrains Mono',monospace; font-size:9px;
+  text-transform:uppercase; letter-spacing:.14em;
+  color:var(--txm); margin-bottom:10px;
+}
 
 /* Service grid */
 .svgrid {
@@ -292,19 +347,19 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 .sdot.off { background:var(--txm); }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-.card-desc { font-size:12.5px; color:var(--tx2); line-height:1.5; }
+.card-desc { font-size:12.5px; color:var(--tx); line-height:1.55; opacity:.82; }
 .card-feats { display:flex; flex-wrap:wrap; gap:4px; }
 .feat {
-  font-size:9.5px; font-family:'JetBrains Mono',monospace;
-  padding:2px 6px; border-radius:4px;
-  background:var(--bge); color:var(--txm); border:1px solid var(--bd);
+  font-size:10px; font-family:'JetBrains Mono',monospace;
+  padding:2px 7px; border-radius:4px;
+  background:var(--bge); color:var(--tx2); border:1px solid var(--bd);
 }
 .card-ft { display:flex; align-items:center; gap:6px; margin-top:auto; flex-wrap:wrap; }
 .cport {
   font-family:'JetBrains Mono',monospace;
-  font-size:10px; color:var(--txm); flex:1;
+  font-size:10.5px; color:var(--tx2); flex:1;
 }
-.cport b { color:var(--tx2); font-weight:400; }
+.cport b { color:var(--tx); font-weight:500; }
 
 /* Buttons */
 .btn {
@@ -399,53 +454,34 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 <body>
 
 <header class="hdr">
-  <a class="logo" href="#">
-    <span class="logo-icon">&#x1F409;</span>
-    <span class="logo-text">Dragon<em>suite</em></span>
-  </a>
-  <div class="sep"></div>
-  <div class="hdr-stats">
-    <div class="schip">
-      <span class="slbl">VRAM</span>
-      <div class="strack"><div class="sfill" id="h-vram-bar" style="width:0%"></div></div>
-      <span class="sval" id="h-vram-val">&#8212;</span>
-    </div>
-    <div class="schip">
-      <span class="slbl">GPU</span>
-      <div class="strack"><div class="sfill" id="h-gpu-bar" style="width:0%"></div></div>
-      <span class="sval" id="h-gpu-val">&#8212;</span>
-    </div>
-    <div class="schip">
-      <span class="slbl">CPU</span>
-      <div class="strack"><div class="sfill" id="h-cpu-bar" style="width:0%"></div></div>
-      <span class="sval" id="h-cpu-val">&#8212;</span>
-    </div>
-    <div class="schip">
-      <span class="slbl">RAM</span>
-      <div class="strack"><div class="sfill" id="h-ram-bar" style="width:0%"></div></div>
-      <span class="sval" id="h-ram-val">&#8212;</span>
-    </div>
-    <div class="schip">
-      <span class="slbl">DISK</span>
-      <div class="strack"><div class="sfill" id="h-disk-bar" style="width:0%"></div></div>
-      <span class="sval" id="h-disk-val">&#8212;</span>
+  <div class="hdr-left">
+    <a class="logo" href="#">
+      <span class="logo-icon">&#x1F409;</span>
+      <span class="logo-text">Dragon<em>suite</em></span>
+    </a>
+    <div class="hdr-weather" id="hdr-weather" title="KPSM · Portsmouth NH">
+      <img id="hdr-weather-icon" src="" alt="" style="display:none">
+      <span class="hdr-weather-temp" id="hdr-weather-temp">&#8230;</span>
+      <span class="hdr-weather-cond" id="hdr-weather-cond"></span>
     </div>
   </div>
-  <div class="hdr-weather" id="hdr-weather" title="KPSM · Portsmouth NH">
-    <img id="hdr-weather-icon" src="" alt="" style="display:none">
-    <span class="hdr-weather-temp" id="hdr-weather-temp">&#8230;</span>
-    <span class="hdr-weather-cond" id="hdr-weather-cond"></span>
+  <div class="hdr-pollen" id="hdr-pollen-strip">
+    <span class="hdr-pollen-label">Pollen</span>
+    <div class="hdr-pollen-pills" id="hdr-pollen-pills"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txm)">&#8212;</span></div>
+  </div>
+  <!-- hidden stat bars kept for JS compat -->
+  <div style="display:none">
+    <div id="h-vram-bar"></div><div id="h-gpu-bar"></div>
+    <div id="h-cpu-bar"></div><div id="h-ram-bar"></div><div id="h-disk-bar"></div>
+    <span id="h-vram-val"></span><span id="h-gpu-val"></span>
+    <span id="h-cpu-val"></span><span id="h-ram-val"></span><span id="h-disk-val"></span>
+  </div>
+  <!-- IP/refresh hidden; theme toggle kept for JS compat but moved to nav -->
+  <div style="display:none">
+    <span id="hdr-ip"></span>
+    <button id="refresh-btn"></button>
   </div>
   <div class="hdr-right">
-    <span class="hdr-ip" id="hdr-ip">&#8212;</span>
-    <button class="ibtn" id="refresh-btn" title="Refresh">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-        <path d="M21 3v5h-5"/>
-        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-        <path d="M8 16H3v5"/>
-      </svg>
-    </button>
     <button class="ibtn" id="theme-btn" title="Toggle theme">&#9728;&#65039;</button>
   </div>
 </header>
@@ -456,54 +492,63 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 
 <main class="main">
   <div class="sgrid">
-    <div class="sc">
-      <div class="sc-lbl">VRAM Usage</div>
-      <div class="sc-val" id="sc-vram-val">&#8212; GB</div>
-      <div class="sc-bar"><div class="sc-fill" id="sc-vram-bar" style="width:0%"></div></div>
-      <div class="sc-sub" id="sc-vram-sub">Loading&#8230;</div>
+    <div class="sc" style="--sc-accent:#22d3ee;--sc-accent-glow:rgba(34,211,238,.45)">
+      <div class="sc-inner">
+        <div class="sc-lbl"><span class="sc-lbl-type">VRAM</span><span class="sc-lbl-qual">GPU Memory</span></div>
+        <div class="sc-val" id="sc-vram-val">&#8212; GB</div>
+        <div class="sc-bar"><div class="sc-fill" id="sc-vram-bar" style="width:0%"></div></div>
+        <div class="sc-sub" id="sc-vram-sub">Loading&#8230;</div>
+      </div>
     </div>
-    <div class="sc">
-      <div class="sc-lbl">GPU Utilization</div>
-      <div class="sc-val" id="sc-gpu-val">&#8212;%</div>
-      <div class="sc-bar"><div class="sc-fill" id="sc-gpu-bar" style="width:0%"></div></div>
-      <div class="sc-sub" id="sc-gpu-sub">&#8212;&#176;C</div>
+    <div class="sc" style="--sc-accent:#fb923c;--sc-accent-glow:rgba(251,146,60,.45)">
+      <div class="sc-inner">
+        <div class="sc-lbl"><span class="sc-lbl-type">GPU</span><span class="sc-lbl-qual">Utilization</span></div>
+        <div class="sc-val" id="sc-gpu-val">&#8212;%</div>
+        <div class="sc-bar"><div class="sc-fill" id="sc-gpu-bar" style="width:0%"></div></div>
+        <div class="sc-sub" id="sc-gpu-sub">&#8212;&#176;C</div>
+      </div>
     </div>
-    <div class="sc">
-      <div class="sc-lbl">CPU + RAM</div>
-      <div class="sc-val" id="sc-cpu-val">&#8212;%</div>
-      <div class="sc-bar"><div class="sc-fill" id="sc-cpu-bar" style="width:0%"></div></div>
-      <div class="sc-sub" id="sc-ram-sub">RAM &#8212;</div>
+    <div class="sc" style="--sc-accent:#34d399;--sc-accent-glow:rgba(52,211,153,.45)">
+      <div class="sc-inner">
+        <div class="sc-lbl"><span class="sc-lbl-type">CPU</span><span class="sc-lbl-qual">+ RAM</span></div>
+        <div class="sc-val" id="sc-cpu-val">&#8212;%</div>
+        <div class="sc-bar"><div class="sc-fill" id="sc-cpu-bar" style="width:0%"></div></div>
+        <div class="sc-sub" id="sc-ram-sub">RAM &#8212;</div>
+      </div>
     </div>
-    <div class="sc">
-      <div class="sc-lbl">Disk &middot; Projects SSD</div>
-      <div class="sc-val" id="sc-disk-val">&#8212; GB</div>
-      <div class="sc-bar"><div class="sc-fill" id="sc-disk-bar" style="width:0%"></div></div>
-      <div class="sc-sub" id="sc-disk-sub">Loading&#8230;</div>
+    <div class="sc" style="--sc-accent:#fbbf24;--sc-accent-glow:rgba(251,191,36,.45)">
+      <div class="sc-inner">
+        <div class="sc-lbl"><span class="sc-lbl-type">DISK</span><span class="sc-lbl-qual">Projects SSD</span></div>
+        <div class="sc-val" id="sc-disk-val">&#8212; GB</div>
+        <div class="sc-bar"><div class="sc-fill" id="sc-disk-bar" style="width:0%"></div></div>
+        <div class="sc-sub" id="sc-disk-sub">Loading&#8230;</div>
+      </div>
     </div>
   </div>
 
-  <div class="pollenrow" id="pollen-row" style="display:none">
-    <span class="llm-lbl" style="padding-top:2px">POLLEN</span>
-    <div class="pollen-types" id="pollen-types"></div>
-    <div class="sep" style="height:18px;flex-shrink:0"></div>
-    <div class="pollen-forecast" id="pollen-forecast"></div>
-  </div>
-
-  <div class="cronrow" id="cron-row">
-    <span class="llm-lbl">CRON</span>
-    <div class="llm-pills" id="cron-pills"><span class="llm-off">Loading&#8230;</span></div>
-  </div>
-
-  <div class="llmrow">
-    <span class="llm-lbl">Ollama</span>
-    <div class="llm-pills" id="ollama-models"><span class="llm-off">Not running</span></div>
-    <div class="sep" style="height:18px;flex-shrink:0"></div>
-    <span class="llm-lbl">LM Studio</span>
-    <div class="llm-pills" id="lms-models"><span class="llm-off">Not running</span></div>
+  <!-- legacy pollen row hidden — data now in header strip -->
+  <div id="pollen-row" style="display:none">
+    <div id="pollen-types"></div>
+    <div id="pollen-forecast"></div>
   </div>
 
   <div class="svgrid" id="svgrid">
-    <div style="color:var(--txm);padding:40px;text-align:center;grid-column:1/-1">Loading&#8230;</div>
+    <div style="color:var(--tx2);padding:40px;text-align:center;grid-column:1/-1">Loading&#8230;</div>
+  </div>
+
+  <div class="footer-status">
+    <div class="footer-status-title">System Status</div>
+    <div class="cronrow" id="cron-row">
+      <span class="llm-lbl">CRON</span>
+      <div class="llm-pills" id="cron-pills"><span class="llm-off">Loading&#8230;</span></div>
+    </div>
+    <div class="llmrow">
+      <span class="llm-lbl">Ollama</span>
+      <div class="llm-pills" id="ollama-models"><span class="llm-off">Not running</span></div>
+      <div class="sep" style="height:18px;flex-shrink:0"></div>
+      <span class="llm-lbl">LM Studio</span>
+      <div class="llm-pills" id="lms-models"><span class="llm-off">Not running</span></div>
+    </div>
   </div>
 </main>
 
@@ -886,7 +931,20 @@ async function fetchPollen() {
     }).join('');
     document.getElementById('pollen-forecast').innerHTML = fHtml;
 
-    document.getElementById('pollen-row').style.display = 'flex';
+    // pollen-row is legacy hidden; data now lives in header strip
+
+    // Populate header pollen strip
+    var hdrPills = document.getElementById('hdr-pollen-pills');
+    if (hdrPills) {
+      var hdrHtml = types.map(function(t) {
+        var val = (t.indexInfo && t.indexInfo.value != null) ? Math.min(t.indexInfo.value, 5) : 0;
+        var col = POLLEN_COLORS[val];
+        var lbl = POLLEN_LABELS[val];
+        var name = (t.displayName || '').replace('Tree','Tr.').replace('Grass','Gr.').replace('Weed','Wd.').trim();
+        return '<span class="hdr-pollen-pill"><span class="hdr-pollen-dot" style="background:' + col + '"></span><span class="hdr-pollen-name">' + name + '</span><span class="hdr-pollen-val" style="color:' + col + '">' + lbl + '</span></span>';
+      }).join('');
+      hdrPills.innerHTML = hdrHtml || '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--txm)">No data</span>';
+    }
   } catch(e) {
     console.warn('Pollen:', e);
   }
