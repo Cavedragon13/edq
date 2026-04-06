@@ -435,7 +435,7 @@ def generate_image(
     # Handle seed
     if seed == -1:
         seed = torch.randint(0, 2**32, (1,)).item()
-    generator = torch.Generator(device=device).manual_seed(int(seed))
+    generator = torch.Generator(device="cpu").manual_seed(int(seed))
 
     # Preprocess control image if using ControlNet
     processed_control = None
@@ -446,6 +446,8 @@ def generate_image(
             processed_control = processed_control.resize((width, height), Image.LANCZOS)
 
     # Flush VRAM before generation
+    import gc
+    gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         torch.cuda.synchronize()

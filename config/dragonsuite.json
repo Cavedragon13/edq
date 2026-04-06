@@ -106,6 +106,25 @@
       "stop_command": "pkill -f \"blender.*background.*blender_mcp_startup\" || true"
     },
     {
+      "id": "dragonsheet",
+      "name": "DragonSheet",
+      "description": "Sheet generation + auto-slice — prompt → grid → N individual assets",
+      "category": "image",
+      "port": 8044,
+      "path": "/",
+      "icon": "&#129689;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonsheet.sh",
+      "project_path": "projects/dragonsheet",
+      "features": [
+        "Sheet Gen",
+        "Auto-Slice",
+        "SAM2 Extract",
+        "ZIP Export"
+      ],
+      "stop_command": "pkill -f 'dragonsheet_server' || true",
+      "vram_gb": 0
+    },
+    {
       "id": "dragonflux-klein",
       "name": "DragonFlux Klein",
       "description": "Image Generation + LoRA Support",
