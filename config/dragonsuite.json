@@ -109,7 +109,7 @@
       "id": "dragonsheet",
       "name": "DragonSheet",
       "description": "Sheet generation + auto-slice — prompt → grid → N individual assets",
-      "category": "image",
+      "category": "segmentation",
       "port": 8044,
       "path": "/",
       "icon": "&#129689;",
@@ -840,24 +840,6 @@
         "REST API"
       ],
       "stop_command": "docker compose -f /srv/containers/edq/docker/linkding/docker-compose.yml down || true"
-    },
-    {
-      "id": "dragonglass",
-      "name": "DragonGlass",
-      "description": "Scout any Street View location · Capture the exact angle · Transform with Gemini AI",
-      "category": "image",
-      "port": 8040,
-      "path": "/",
-      "icon": "&#9670;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonglass.sh",
-      "project_path": null,
-      "features": [
-        "Google Maps + Street View",
-        "Live Panorama Navigation",
-        "Gemini Image Transform",
-        "Art Style Presets"
-      ],
-      "stop_command": "pkill -f 'dragonglass.py' || true"
     },
     {
       "id": "ai-toolkit",
