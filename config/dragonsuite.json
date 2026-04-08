@@ -574,6 +574,24 @@
       "stop_command": "pkill -f 'http.server 8032' || pkill -f 'mule_game_web.py' || true"
     },
     {
+      "id": "dnd-generator",
+      "name": "Dungeon Generator",
+      "description": "Browser-based D&D character generator with 5d6-drop-two stats, gear sheet, portraits, and dark mode",
+      "category": "game",
+      "port": 8034,
+      "path": "/",
+      "icon": "&#127922;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dnd_generator.sh",
+      "project_path": "/srv/containers/edq/projects/dnd-generator",
+      "features": [
+        "5d6 Keep Best 3",
+        "SIWDCCh Sheet",
+        "Portrait Generator",
+        "Light and Dark Modes"
+      ],
+      "stop_command": "pkill -f 'http.server 8034' || true"
+    },
+    {
       "id": "homeassistant",
       "name": "Home Assistant",
       "description": "Smart Home Hub + Kasa + HomeKit Bridge (minidragon)",
