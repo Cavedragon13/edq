@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concert History T-Shirt</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%A4%3C/text%3E%3C/svg%3E">
+  <style>
+    /* ── Reset & base ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* ── Dark mode (default) ───────────────────────────────────────────── */
+    body.dark {
+      background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+      color: #e0e0e0;
+    }
+    body.light {
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8ecf8 100%);
+      color: #1a1a2e;
+    }
+
+    /* ── Layout ────────────────────────────────────────────────────────── */
+    header {
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid;
+      transition: border-color 0.3s;
+    }
+    body.dark  header { border-color: #2d2d4a; background: rgba(0,0,0,0.3); }
+    body.light header { border-color: #c8d0e8; background: rgba(255,255,255,0.7); }
+
+    .logo { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.05em; }
+    body.dark  .logo { color: #a78bfa; }
+    body.light .logo { color: #4f46e5; }
+
+    .logo span { font-weight: 300; }
+
+    #theme-toggle {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 2px solid;
+      background: transparent;
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.3s ease, border-color 0.3s;
+    }
+    #theme-toggle:hover { transform: rotate(180deg); }
+    body.dark  #theme-toggle { border-color: #4a5568; color: #e0e0e0; }
+    body.light #theme-toggle { border-color: #a0aec0; color: #1a1a2e; }
+
+    main { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    /* ── Cards / Steps ─────────────────────────────────────────────────── */
+    .card {
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    body.dark  .card { background: rgba(255,255,255,0.04); border-color: #2d2d4a; }
+    body.light .card { background: rgba(255,255,255,0.8);  border-color: #d1d9ef; }
+
+    .step-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    body.dark  .step-label { color: #a78bfa; }
+    body.light .step-label { color: #6366f1; }
+
+    .card h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 1.25rem; }
+
+    /* ── Upload zone ───────────────────────────────────────────────────── */
+    #drop-zone {
+      border: 2px dashed;
+      border-radius: 10px;
+      padding: 2.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    body.dark  #drop-zone { border-color: #4a5568; color: #9ca3af; }
+    body.light #drop-zone { border-color: #a0aec0; color: #6b7280; }
+    #drop-zone.dragover,
+    body.dark  #drop-zone:hover { border-color: #a78bfa; background: rgba(167,139,250,0.06); }
+    body.light #drop-zone:hover { border-color: #6366f1; background: rgba(99,102,241,0.05); }
+    #drop-zone .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    #drop-zone p { margin: 0; font-size: 0.9rem; }
+    #file-input { display: none; }
+
+    #file-list { margin-top: 1rem; }
+    .file-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      margin: 0.25rem;
+    }
+    body.dark  .file-chip { background: #2d2d4a; color: #c4b5fd; }
+    body.light .file-chip { background: #e8eaf6; color: #4f46e5; }
+    .file-chip button {
+      background: none; border: none; cursor: pointer;
+      font-size: 1rem; line-height: 1; padding: 0;
+      opacity: 0.6;
+    }
+    .file-chip button:hover { opacity: 1; }
+    body.dark  .file-chip button { color: #e0e0e0; }
+    body.light .file-chip button { color: #1a1a2e; }
+
+    /* ── Concert table ─────────────────────────────────────────────────── */
+    .concert-table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th {
+      text-align: left;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    body.dark  th { color: #9ca3af; border-bottom: 1px solid #374151; }
+    body.light th { color: #6b7280; border-bottom: 1px solid #d1d9ef; }
+    td { padding: 0.4rem 0.3rem; }
+    tr:not(:last-child) td {
+      border-bottom: 1px solid;
+    }
+    body.dark  tr td { border-color: #1f2937; }
+    body.light tr td { border-color: #e8ecf5; }
+
+    table input[type="text"], table input[type="date"] {
+      width: 100%;
+      padding: 0.3rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid;
+      font-size: 0.86rem;
+      background: transparent;
+      transition: border-color 0.2s;
+    }
+    body.dark  table input { border-color: #374151; color: #e0e0e0; background: rgba(255,255,255,0.04); }
+    body.light table input { border-color: #c8d0e8; color: #1a1a2e; background: rgba(255,255,255,0.8); }
+    table input:focus { outline: none; }
+    body.dark  table input:focus { border-color: #a78bfa; }
+    body.light table input:focus { border-color: #6366f1; }
+
+    .verified-badge {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .verified-badge.yes { background: #065f46; color: #6ee7b7; }
+    .verified-badge.no  { background: #374151; color: #9ca3af; }
+
+    .btn-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      opacity: 0.6;
+    }
+    .btn-icon:hover { opacity: 1; }
+    body.dark  .btn-icon { color: #e0e0e0; }
+    body.light .btn-icon { color: #1a1a2e; }
+
+    .add-row-btn {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px dashed;
+      background: transparent;
+      transition: background 0.2s;
+    }
+    body.dark  .add-row-btn { border-color: #4a5568; color: #9ca3af; }
+    body.light .add-row-btn { border-color: #a0aec0; color: #6b7280; }
+    .add-row-btn:hover { background: rgba(167,139,250,0.08); }
+
+    /* ── Form controls ─────────────────────────────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .field label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    body.dark  .field label { color: #9ca3af; }
+    body.light .field label { color: #6b7280; }
+
+    select, input[type="text"], textarea {
+      padding: 0.55rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid;
+      font-size: 0.9rem;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    body.dark  select, body.dark  input[type="text"], body.dark  textarea {
+      background: rgba(255,255,255,0.05);
+      border-color: #374151;
+      color: #e0e0e0;
+    }
+    body.light select, body.light input[type="text"], body.light textarea {
+      background: rgba(255,255,255,0.8);
+      border-color: #c8d0e8;
+      color: #1a1a2e;
+    }
+    select:focus, input:focus, textarea:focus { outline: none; }
+    body.dark  select:focus, body.dark  input:focus, body.dark  textarea:focus { border-color: #a78bfa; }
+    body.light select:focus, body.light input:focus, body.light textarea:focus { border-color: #6366f1; }
+
+    .char-count { font-size: 0.75rem; text-align: right; }
+    body.dark  .char-count { color: #6b7280; }
+    body.light .char-count { color: #9ca3af; }
+    .char-count.warn { color: #f59e0b; }
+
+    /* ── Checkboxes (addons) ───────────────────────────────────────────── */
+    .checkbox-group { display: flex; flex-direction: column; gap: 0.6rem; }
+    .checkbox-item { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.9rem; }
+    .checkbox-item input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: #a78bfa;
+      cursor: pointer;
+    }
+
+    /* ── Slogan picker ─────────────────────────────────────────────────── */
+    .slogan-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
+    }
+    .slogan-chip {
+      padding: 0.55rem 0.8rem;
+      border-radius: 8px;
+      border: 2px solid;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    body.dark  .slogan-chip { border-color: #374151; color: #9ca3af; }
+    body.light .slogan-chip { border-color: #c8d0e8; color: #6b7280; }
+    .slogan-chip:hover, .slogan-chip.selected {
+      border-color: #a78bfa;
+      color: #a78bfa;
+      background: rgba(167,139,250,0.1);
+    }
+
+    /* ── Buttons ───────────────────────────────────────────────────────── */
+    .btn {
+      padding: 0.7rem 1.75rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn:active:not(:disabled) { transform: translateY(0); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff; }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid;
+    }
+    body.dark  .btn-secondary { border-color: #4a5568; color: #e0e0e0; }
+    body.light .btn-secondary { border-color: #a0aec0; color: #374151; }
+    .btn-success { background: linear-gradient(135deg, #059669, #10b981); color: #fff; }
+
+    .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.25rem; }
+
+    /* ── Status / progress ─────────────────────────────────────────────── */
+    .status-bar {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    body.dark  .status-bar { background: rgba(255,255,255,0.04); }
+    body.light .status-bar { background: rgba(0,0,0,0.04); }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid #a78bfa;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: #fca5a5;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      margin: 0.75rem 0;
+    }
+    .success-box {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: #6ee7b7;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+      margin: 0.75rem 0;
+    }
+
+    /* ── Design preview ────────────────────────────────────────────────── */
+    .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    @media (max-width: 500px) { .preview-grid { grid-template-columns: 1fr; } }
+    .preview-panel { text-align: center; }
+    .preview-panel p { font-size: 0.78rem; margin-bottom: 0.5rem; opacity: 0.6; }
+    .preview-panel img {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid;
+    }
+    body.dark  .preview-panel img { border-color: #374151; background: #fff; }
+    body.light .preview-panel img { border-color: #c8d0e8; background: #fff; }
+
+    /* ── Result link ───────────────────────────────────────────────────── */
+    .product-link-box {
+      padding: 1.25rem;
+      border-radius: 10px;
+      text-align: center;
+      border: 1px solid;
+    }
+    body.dark  .product-link-box { background: rgba(16,185,129,0.07); border-color: rgba(16,185,129,0.3); }
+    body.light .product-link-box { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.3); }
+    .product-link-box a {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #10b981;
+      word-break: break-all;
+    }
+
+    /* ── Tabs (Step 1 modes) ───────────────────────────────────────────── */
+    .tab-bar { display: flex; gap: 0; margin-bottom: 1.25rem; border-radius: 8px; overflow: hidden; border: 1px solid; }
+    body.dark  .tab-bar { border-color: #374151; }
+    body.light .tab-bar { border-color: #c8d0e8; }
+    .tab-btn {
+      flex: 1; padding: 0.6rem 1rem; font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; border: none; background: transparent;
+      transition: background 0.15s, color 0.15s;
+    }
+    body.dark  .tab-btn { color: #9ca3af; }
+    body.light .tab-btn { color: #6b7280; }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      color: #fff;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Browse panel ──────────────────────────────────────────────────── */
+    .browse-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+    @media (max-width: 560px) { .browse-form { grid-template-columns: 1fr; } }
+    .browse-form input { padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid; font-size: 0.9rem; }
+    body.dark  .browse-form input { background: rgba(255,255,255,0.05); border-color: #374151; color: #e0e0e0; }
+    body.light .browse-form input { background: rgba(255,255,255,0.8);  border-color: #c8d0e8; color: #1a1a2e; }
+    .browse-form input:focus { outline: none; }
+    body.dark  .browse-form input:focus { border-color: #a78bfa; }
+    body.light .browse-form input:focus { border-color: #6366f1; }
+
+    .browse-results { margin-top: 0.75rem; max-height: 420px; overflow-y: auto; }
+    .setlist-item {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.65rem 0.5rem;
+      border-bottom: 1px solid;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.12s;
+    }
+    body.dark  .setlist-item { border-color: #1f2937; }
+    body.light .setlist-item { border-color: #e8ecf5; }
+    .setlist-item:hover { background: rgba(167,139,250,0.07); }
+    .setlist-item.selected { background: rgba(167,139,250,0.13); }
+    .setlist-item input[type="checkbox"] { margin-top: 0.15rem; flex-shrink: 0; accent-color: #a78bfa; }
+    .setlist-meta { flex: 1; min-width: 0; }
+    .setlist-meta strong { font-size: 0.9rem; display: block; }
+    .setlist-meta span { font-size: 0.78rem; opacity: 0.6; }
+    .setlist-songs { font-size: 0.72rem; opacity: 0.45; margin-top: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .browse-pagination { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.85rem; justify-content: center; }
+    .browse-pagination button { padding: 0.35rem 0.85rem; border-radius: 6px; border: 1px solid; cursor: pointer; background: transparent; font-size: 0.82rem; }
+    body.dark  .browse-pagination button { border-color: #374151; color: #9ca3af; }
+    body.light .browse-pagination button { border-color: #a0aec0; color: #6b7280; }
+    .browse-pagination button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .browse-pagination button:not(:disabled):hover { border-color: #a78bfa; color: #a78bfa; }
+
+    .add-selected-btn { margin-top: 0.75rem; }
+
+    /* ── Misc ──────────────────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+    .section-divider { margin: 2rem 0 1.25rem; }
+    .section-divider hr { border: none; height: 1px; }
+    body.dark  .section-divider hr { background: #2d2d4a; }
+    body.light .section-divider hr { background: #d1d9ef; }
+
+    .text-muted { font-size: 0.82rem; opacity: 0.55; }
+  </style>
+</head>
+<body class="dark">
+
+<header>
+  <div class="logo">Concert<span>Shirt</span> 🎸</div>
+  <button id="theme-toggle" title="Toggle dark/light mode">☀️</button>
+</header>
+
+<main>
+
+  <!-- Step 1: Upload or Browse -->
+  <div class="card" id="step-upload">
+    <div class="step-label">Step 1</div>
+    <h2>Add Your Concerts</h2>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-upload-btn" onclick="switchTab('upload')">🎟️ Upload Tickets</button>
+      <button class="tab-btn" id="tab-browse-btn" onclick="switchTab('browse')">🔍 Browse My History</button>
+    </div>
+
+    <!-- Tab: Upload -->
+    <div class="tab-panel active" id="tab-upload">
+      <div id="drop-zone">
+        <div class="icon">🎟️</div>
+        <p>Drag &amp; drop ticket images here, or click to browse</p>
+        <p class="text-muted" style="margin-top:0.4rem">JPG or PNG · up to 10 tickets</p>
+      </div>
+      <input type="file" id="file-input" accept="image/jpeg,image/png" multiple>
+      <div id="file-list"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="ocr-btn" disabled>Extract Concert Info →</button>
+      </div>
+      <div id="ocr-status" class="hidden"></div>
+    </div>
+
+    <!-- Tab: Browse Setlist.fm -->
+    <div class="tab-panel" id="tab-browse">
+      <p class="text-muted" style="margin-bottom:0.9rem">Search Setlist.fm for shows you attended. Check the ones to include on your shirt.</p>
+      <div class="browse-form">
+        <input type="text" id="browse-artist" placeholder="Artist / Band *" autocomplete="off">
+        <input type="text" id="browse-venue"  placeholder="Venue (optional)">
+        <input type="text" id="browse-city"   placeholder="City (optional)">
+        <input type="text" id="browse-year"   placeholder="Year (optional, e.g. 2019)">
+      </div>
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn btn-secondary" id="browse-search-btn">Search →</button>
+      </div>
+      <div id="browse-status" class="hidden"></div>
+      <div id="browse-results" class="browse-results hidden"></div>
+      <div id="browse-pagination" class="browse-pagination hidden">
+        <button id="browse-prev-btn" disabled>← Prev</button>
+        <span id="browse-page-info"></span>
+        <button id="browse-next-btn">Next →</button>
+      </div>
+      <div class="btn-row add-selected-btn hidden" id="add-selected-row">
+        <button class="btn btn-primary" id="add-selected-btn">Add Selected to Shirt →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Review concerts -->
+  <div class="card hidden" id="step-concerts">
+    <div class="step-label">Step 2</div>
+    <h2>Review &amp; Edit Concerts</h2>
+    <p class="text-muted" style="margin-bottom:1rem">Auto-extracted from your tickets — correct any mistakes below.</p>
+    <div class="concert-table-wrap">
+      <table id="concert-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Band / Artist</th>
+            <th>Venue</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="concert-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" id="add-row-btn">+ Add concert</button>
+    <div style="margin-top:1.25rem">
+      <label class="checkbox-item" style="font-size:0.9rem;font-weight:500">
+        <input type="checkbox" id="attest-checkbox" style="width:18px;height:18px;accent-color:#a78bfa">
+        I attended all the concerts listed above
+      </label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="to-step3-btn" disabled>Customize Shirt →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Customize -->
+  <div class="card hidden" id="step-customize">
+    <div class="step-label">Step 3</div>
+    <h2>Customize Your Shirt</h2>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Shirt Type</label>
+        <select id="shirt-type">
+          <option value="tshirt">T-Shirt</option>
+          <option value="tank">Tank Top</option>
+          <option value="hoodie">Hoodie</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Font Style</label>
+        <select id="font-style">
+          <option value="clean">Clean (Arial)</option>
+          <option value="metal">Metal (Black Ops)</option>
+          <option value="country">Country (Rye)</option>
+          <option value="pop">Pop (Pacifico)</option>
+        </select>
+      </div>
+      <div class="field" id="front-size-field">
+        <label>Front Logo Size</label>
+        <select id="front-logo-size">
+          <option value="small">Small (2")</option>
+          <option value="medium" selected>Medium (3")</option>
+          <option value="large">Large (4")</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Custom Footer Text <span class="text-muted">(optional)</span></label>
+        <input type="text" id="custom-text" placeholder="e.g. ANGRY OLD MAN" maxlength="50">
+        <div class="char-count" id="custom-char-count">0 / 50</div>
+      </div>
+    </div>
+
+    <!-- Add-ons -->
+    <div class="field" id="addons-field" style="margin-top:1.1rem">
+      <label>Add-ons</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item" id="shoulder-addon">
+          <input type="checkbox" id="addon-shoulder" value="shoulder_text"> Shoulder text (custom text printed across shoulders)
+        </label>
+        <label class="checkbox-item" id="sleeve-addon">
+          <input type="checkbox" id="addon-sleeve" value="sleeve_graphics"> Sleeve graphics (flames / guitars / drumsticks)
+        </label>
+      </div>
+    </div>
+
+    <!-- Front slogan picker -->
+    <div class="field hidden" id="front-slogan-field" style="margin-top:1.1rem">
+      <label>Front Logo Slogan</label>
+      <div class="slogan-grid" id="slogan-grid">
+        <!-- populated by JS -->
+      </div>
+      <div class="field">
+        <input type="text" id="slogan-custom-input" placeholder="Or type a custom slogan…" maxlength="40">
+        <div class="char-count" id="slogan-char-count">0 / 40</div>
+      </div>
+      <div id="slogan-warning" class="hidden error-box" style="margin-top:0.5rem"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="generate-btn">Generate Design →</button>
+    </div>
+    <div id="generate-status" class="hidden"></div>
+  </div>
+
+  <!-- Step 4: Preview & Publish -->
+  <div class="card hidden" id="step-preview">
+    <div class="step-label">Step 4</div>
+    <h2>Your Design</h2>
+    <div class="preview-grid" id="preview-grid">
+      <div class="preview-panel" id="back-preview">
+        <p>BACK PRINT</p>
+        <img id="back-img" src="" alt="Back print preview">
+      </div>
+      <div class="preview-panel" id="front-preview">
+        <p>FRONT LOGO</p>
+        <img id="front-img" src="" alt="Front print preview">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-success" id="publish-btn">Publish to Printful →</button>
+      <button class="btn btn-secondary" id="redo-design-btn">← Edit Design</button>
+    </div>
+    <div id="publish-status" class="hidden"></div>
+    <div id="product-result" class="hidden product-link-box" style="margin-top:1rem">
+      <p style="margin-bottom:0.5rem;font-size:0.9rem;">🎉 Your shirt is live!</p>
+      <a id="product-link" href="#" target="_blank">View on Printful</a>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Tab switching (Step 1) ────────────────────────────────────────────────
+function switchTab(which) {
+  ['upload', 'browse'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === which);
+    document.getElementById(`tab-${t}-btn`).classList.toggle('active', t === which);
+  });
+}
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+const body = document.body;
+const themeBtn = document.getElementById('theme-toggle');
+const savedTheme = localStorage.getItem('concert-shirt-theme');
+if (savedTheme === 'light') {
+  body.classList.replace('dark', 'light');
+  themeBtn.textContent = '🌙';
+} else {
+  localStorage.setItem('concert-shirt-theme', 'dark');
+}
+themeBtn.addEventListener('click', () => {
+  const isDark = body.classList.contains('dark');
+  body.classList.replace(isDark ? 'dark' : 'light', isDark ? 'light' : 'dark');
+  themeBtn.textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('concert-shirt-theme', isDark ? 'light' : 'dark');
+});
+
+// ── State ──────────────────────────────────────────────────────────────────
+let jobId = null;
+let uploadedFiles = [];
+const SLOGANS = [
+  'MY CONCERT HISTORY',
+  'I WAS THERE',
+  'BEEN THERE HEARD THAT',
+  'LIVE & LOUD',
+  'CONCERT VETERAN',
+  'SEEN THEM LIVE',
+];
+let selectedSlogan = SLOGANS[0];
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const show = id => $(id).classList.remove('hidden');
+const hide = id => $(id).classList.add('hidden');
+
+function showStatus(id, html, type = 'loading') {
+  const el = $(id);
+  el.classList.remove('hidden', 'error-box', 'success-box', 'status-bar');
+  if (type === 'loading') {
+    el.className = 'status-bar';
+    el.innerHTML = `<div class="spinner"></div><span>${html}</span>`;
+  } else if (type === 'error') {
+    el.className = 'error-box';
+    el.innerHTML = html;
+  } else if (type === 'success') {
+    el.className = 'success-box';
+    el.innerHTML = html;
+  }
+}
+function clearStatus(id) { $(id).innerHTML = ''; $(id).classList.add('hidden'); }
+
+// ── File upload ────────────────────────────────────────────────────────────
+const dropZone = $('drop-zone');
+const fileInput = $('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  addFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => addFiles(fileInput.files));
+
+function addFiles(fileList) {
+  for (const f of fileList) {
+    if (!['image/jpeg','image/png'].includes(f.type)) continue;
+    if (uploadedFiles.length >= 10) break;
+    if (!uploadedFiles.find(x => x.name === f.name && x.size === f.size)) {
+      uploadedFiles.push(f);
+    }
+  }
+  renderFileList();
+  $('ocr-btn').disabled = uploadedFiles.length === 0;
+}
+
+function renderFileList() {
+  const el = $('file-list');
+  el.innerHTML = uploadedFiles.map((f, i) => `
+    <span class="file-chip">
+      🎟️ ${f.name}
+      <button onclick="removeFile(${i})" title="Remove">×</button>
+    </span>
+  `).join('');
+}
+
+function removeFile(i) {
+  uploadedFiles.splice(i, 1);
+  renderFileList();
+  $('ocr-btn').disabled = uploadedFiles.length === 0;
+}
+
+// ── Browse Setlist.fm ─────────────────────────────────────────────────────
+let browsePage = 1;
+let browseTotal = 0;
+let browseTotalPages = 1;
+let browseResults = [];
+
+async function runBrowse(page = 1) {
+  const artist = $('browse-artist').value.trim();
+  const venue  = $('browse-venue').value.trim();
+  const city   = $('browse-city').value.trim();
+  const year   = $('browse-year').value.trim();
+  if (!artist && !venue && !city) {
+    showStatus('browse-status', 'Enter at least an artist, venue, or city.', 'error');
+    return;
+  }
+  $('browse-search-btn').disabled = true;
+  showStatus('browse-status', 'Searching Setlist.fm…');
+  hide('browse-results');
+  hide('browse-pagination');
+  hide('add-selected-row');
+
+  const params = new URLSearchParams({ page });
+  if (artist) params.append('artist', artist);
+  if (venue)  params.append('venue',  venue);
+  if (city)   params.append('city',   city);
+  if (year)   params.append('year',   year);
+
+  try {
+    const res = await fetch(`/api/browse?${params}`);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Search failed');
+
+    browseResults = data.setlists;
+    browseTotal = data.total;
+    browseTotalPages = data.pages;
+    browsePage = data.page;
+
+    clearStatus('browse-status');
+    renderBrowseResults();
+  } catch (e) {
+    showStatus('browse-status', e.message, 'error');
+  }
+  $('browse-search-btn').disabled = false;
+}
+
+function renderBrowseResults() {
+  const el = $('browse-results');
+  if (!browseResults.length) {
+    el.innerHTML = '<p class="text-muted" style="padding:1rem 0">No shows found — try broadening your search.</p>';
+    el.classList.remove('hidden');
+    return;
+  }
+
+  el.innerHTML = browseResults.map((s, i) => `
+    <label class="setlist-item" id="browse-item-${i}">
+      <input type="checkbox" class="browse-check" data-idx="${i}">
+      <div class="setlist-meta">
+        <strong>${s.band}</strong>
+        <span>${s.date}  ·  ${s.venue}${s.city ? ', ' + s.city : ''}</span>
+        ${s.songs.length ? `<div class="setlist-songs">🎵 ${s.songs.join(' · ')}</div>` : ''}
+      </div>
+    </label>
+  `).join('');
+
+  el.classList.remove('hidden');
+  show('add-selected-row');
+
+  // Pagination
+  $('browse-page-info').textContent = `Page ${browsePage} of ${browseTotalPages}  (${browseTotal} shows)`;
+  $('browse-prev-btn').disabled = browsePage <= 1;
+  $('browse-next-btn').disabled = browsePage >= browseTotalPages;
+  show('browse-pagination');
+
+  // Highlight row on check
+  el.querySelectorAll('.browse-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.setlist-item').classList.toggle('selected', cb.checked);
+    });
+  });
+}
+
+$('browse-search-btn').addEventListener('click', () => runBrowse(1));
+$('browse-artist').addEventListener('keydown', e => { if (e.key === 'Enter') runBrowse(1); });
+
+$('browse-prev-btn').addEventListener('click', () => runBrowse(browsePage - 1));
+$('browse-next-btn').addEventListener('click', () => runBrowse(browsePage + 1));
+
+$('add-selected-btn').addEventListener('click', () => {
+  const checked = Array.from($('browse-results').querySelectorAll('.browse-check:checked'));
+  if (!checked.length) {
+    showStatus('browse-status', 'Check at least one show first.', 'error');
+    return;
+  }
+  const toAdd = checked.map(cb => browseResults[+cb.dataset.idx]);
+  // Populate concert table (show Step 2)
+  const existing = getConcerts();
+  show('step-concerts');
+  // Clear and re-populate with existing + newly browsed
+  $('concert-tbody').innerHTML = '';
+  existing.forEach(c => addConcertRow(c));
+  toAdd.forEach(s => addConcertRow({ date: s.date, band: s.band, venue: s.venue, verified: false }));
+  $('step-concerts').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// ── OCR / Submit ───────────────────────────────────────────────────────────
+$('ocr-btn').addEventListener('click', async () => {
+  if (!uploadedFiles.length) return;
+  $('ocr-btn').disabled = true;
+  showStatus('ocr-status', 'Extracting concert info from tickets…');
+
+  const fd = new FormData();
+  uploadedFiles.forEach(f => fd.append('files', f));
+  // Include form defaults; user will customise in Step 3
+  fd.append('shirt_type', 'tshirt');
+  fd.append('font', 'clean');
+  fd.append('front_logo_size', 'medium');
+  fd.append('addons', '[]');
+  fd.append('custom_text', '');
+  fd.append('slogan', SLOGANS[0]);
+
+  try {
+    const res = await fetch('/api/submit', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Submit failed');
+    jobId = data.job_id;
+    pollOCR();
+  } catch (e) {
+    showStatus('ocr-status', e.message, 'error');
+    $('ocr-btn').disabled = false;
+  }
+});
+
+async function pollOCR() {
+  const res = await fetch(`/api/submit/${jobId}`);
+  const data = await res.json();
+  if (data.status === 'processing') {
+    setTimeout(pollOCR, 1200);
+    return;
+  }
+  if (data.status === 'ocr_done' || data.concerts?.length) {
+    clearStatus('ocr-status');
+    populateConcertTable(data.concerts || []);
+    show('step-concerts');
+    $('step-concerts').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    showStatus('ocr-status', 'OCR completed but no concerts found. Add them manually below.', 'error');
+    populateConcertTable([]);
+    show('step-concerts');
+  }
+}
+
+// ── Concert table ──────────────────────────────────────────────────────────
+function populateConcertTable(concerts) {
+  const tbody = $('concert-tbody');
+  tbody.innerHTML = '';
+  if (!concerts.length) addConcertRow();
+  else concerts.forEach(c => addConcertRow(c));
+}
+
+function addConcertRow(c = {}) {
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td><input type="date" value="${c.date || ''}" class="c-date"></td>
+    <td><input type="text" value="${c.band || ''}" placeholder="Artist" class="c-band"></td>
+    <td><input type="text" value="${c.venue || ''}" placeholder="Venue" class="c-venue"></td>
+    <td><span class="verified-badge ${c.verified ? 'yes' : 'no'}">${c.verified ? '✓ Verified' : '— Unverified'}</span></td>
+    <td><button class="btn-icon" onclick="removeRow(this)" title="Remove row">🗑️</button></td>
+  `;
+  $('concert-tbody').appendChild(row);
+}
+
+function removeRow(btn) {
+  btn.closest('tr').remove();
+}
+
+$('add-row-btn').addEventListener('click', () => {
+  addConcertRow();
+});
+
+function getConcerts() {
+  return Array.from($('concert-tbody').querySelectorAll('tr')).map(row => ({
+    date:  row.querySelector('.c-date').value,
+    venue: row.querySelector('.c-venue').value,
+    band:  row.querySelector('.c-band').value,
+    verified: row.querySelector('.verified-badge').classList.contains('yes'),
+  })).filter(c => c.band || c.venue);
+}
+
+// ── Attestation checkbox enables next step ─────────────────────────────────
+$('attest-checkbox').addEventListener('change', () => {
+  $('to-step3-btn').disabled = !$('attest-checkbox').checked;
+  if ($('attest-checkbox').checked) {
+    // Mark all rows confirmed
+    $('concert-tbody').querySelectorAll('.verified-badge').forEach(badge => {
+      badge.textContent = '✓ Confirmed';
+      badge.className = 'verified-badge yes';
+    });
+  } else {
+    $('concert-tbody').querySelectorAll('.verified-badge').forEach(badge => {
+      badge.textContent = '— Unconfirmed';
+      badge.className = 'verified-badge no';
+    });
+  }
+});
+
+$('to-step3-btn').addEventListener('click', () => {
+  show('step-customize');
+  buildSloganGrid();
+  $('step-customize').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// ── Customize form logic ───────────────────────────────────────────────────
+$('shirt-type').addEventListener('change', updateFormVisibility);
+$('addon-shoulder').addEventListener('change', updateFormVisibility);
+
+function updateFormVisibility() {
+  const type = $('shirt-type').value;
+  const isShoulderChecked = $('addon-shoulder').checked;
+
+  // Tank: hide front logo size and sleeve add-on
+  if (type === 'tank') {
+    hide('front-size-field');
+    hide('sleeve-addon');
+    $('addon-sleeve').checked = false;
+    hide('front-slogan-field');
+  } else {
+    show('front-size-field');
+    show('sleeve-addon');
+    show('front-slogan-field');
+  }
+
+  // Shoulder text: require custom text
+  if (isShoulderChecked) {
+    $('custom-text').placeholder = 'Required for shoulder text (max 50 chars)';
+  } else {
+    $('custom-text').placeholder = 'e.g. ANGRY OLD MAN';
+  }
+}
+
+// Char counters
+$('custom-text').addEventListener('input', () => {
+  const n = $('custom-text').value.length;
+  const el = $('custom-char-count');
+  el.textContent = `${n} / 50`;
+  el.className = `char-count${n > 40 ? ' warn' : ''}`;
+  if (n > 0) debounceCheckText($('custom-text'), 'slogan-warning');
+});
+
+$('slogan-custom-input').addEventListener('input', () => {
+  const n = $('slogan-custom-input').value.length;
+  const el = $('slogan-char-count');
+  el.textContent = `${n} / 40`;
+  el.className = `char-count${n > 32 ? ' warn' : ''}`;
+  if (n > 0) {
+    selectedSlogan = $('slogan-custom-input').value;
+    deactivateSloganChips();
+    debounceCheckText($('slogan-custom-input'), 'slogan-warning');
+  }
+});
+
+let textDebounce = null;
+function debounceCheckText(inputEl, warningId) {
+  clearTimeout(textDebounce);
+  textDebounce = setTimeout(async () => {
+    const res = await fetch('/api/validate/text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: inputEl.value }),
+    });
+    const data = await res.json();
+    if (!data.clean) {
+      showStatus(warningId, `⚠️ Flagged words: ${data.flagged_words.join(', ')}. ${data.suggestion}`, 'error');
+    } else {
+      hide(warningId);
+    }
+  }, 600);
+}
+
+// ── Slogan picker ──────────────────────────────────────────────────────────
+function buildSloganGrid() {
+  const grid = $('slogan-grid');
+  grid.innerHTML = SLOGANS.map(s => `
+    <button class="slogan-chip${s === selectedSlogan ? ' selected' : ''}"
+            onclick="selectSlogan('${s}', this)">${s}</button>
+  `).join('');
+}
+
+function deactivateSloganChips() {
+  $('slogan-grid').querySelectorAll('.slogan-chip').forEach(c => c.classList.remove('selected'));
+}
+
+function selectSlogan(s, btn) {
+  selectedSlogan = s;
+  deactivateSloganChips();
+  btn.classList.add('selected');
+  $('slogan-custom-input').value = '';
+  $('slogan-char-count').textContent = '0 / 40';
+  hide('slogan-warning');
+}
+
+// ── Generate design ────────────────────────────────────────────────────────
+$('generate-btn').addEventListener('click', async () => {
+  const concerts = getConcerts();
+  if (!concerts.length) {
+    showStatus('generate-status', 'Add at least one concert first.', 'error');
+    return;
+  }
+  if ($('addon-shoulder').checked && !$('custom-text').value.trim()) {
+    showStatus('generate-status', 'Shoulder text add-on requires custom text to be filled in.', 'error');
+    return;
+  }
+
+  const addons = [];
+  if ($('addon-shoulder').checked) addons.push('shoulder_text');
+  if ($('addon-sleeve').checked)   addons.push('sleeve_graphics');
+
+  const payload = {
+    job_id: jobId || 'preview',
+    concerts,
+    shirt_type: $('shirt-type').value,
+    font: $('font-style').value,
+    front_logo_size: $('front-logo-size').value,
+    addons,
+    custom_text: $('custom-text').value.trim(),
+    slogan: $('slogan-custom-input').value.trim() || selectedSlogan,
+  };
+
+  $('generate-btn').disabled = true;
+  showStatus('generate-status', 'Generating your design (this takes ~5 seconds)…');
+
+  try {
+    const res = await fetch('/api/design/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok || data.errors?.length) throw new Error((data.errors || [data.detail]).join(' '));
+
+    clearStatus('generate-status');
+    $('back-img').src = data.design_back_url + '?t=' + Date.now();
+
+    if (data.design_front_url) {
+      $('front-img').src = data.design_front_url + '?t=' + Date.now();
+      show('front-preview');
+    } else {
+      hide('front-preview');
+    }
+
+    // Store publish state
+    $('publish-btn').dataset.jobId = payload.job_id;
+    $('publish-btn').dataset.shirtType = payload.shirt_type;
+
+    show('step-preview');
+    $('step-preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    showStatus('generate-status', e.message, 'error');
+  }
+  $('generate-btn').disabled = false;
+});
+
+$('redo-design-btn').addEventListener('click', () => {
+  hide('step-preview');
+  $('step-customize').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// ── Publish to Printful ────────────────────────────────────────────────────
+$('publish-btn').addEventListener('click', async () => {
+  $('publish-btn').disabled = true;
+  showStatus('publish-status', 'Publishing to Printful…');
+  hide('product-result');
+
+  const payload = {
+    job_id: $('publish-btn').dataset.jobId,
+    shirt_type: $('publish-btn').dataset.shirtType,
+  };
+
+  try {
+    const res = await fetch('/api/design/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Publish failed');
+
+    clearStatus('publish-status');
+    const link = data.printful_product_url || '#';
+    $('product-link').href = link;
+    $('product-link').textContent = link;
+    show('product-result');
+  } catch (e) {
+    showStatus('publish-status', e.message, 'error');
+    $('publish-btn').disabled = false;
+  }
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+updateFormVisibility();
+show('front-slogan-field');
+</script>
+</body>
+</html>

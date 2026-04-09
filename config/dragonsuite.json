@@ -581,6 +581,7 @@
       "port": 8034,
       "path": "/",
       "icon": "&#127922;",
+      "thumbnail": "/media/thumbnails/dnd-generator.png",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_dnd_generator.sh",
       "project_path": "/srv/containers/edq/projects/dnd-generator",
       "features": [
@@ -876,6 +877,24 @@
       "category": "audio",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_voxtral.sh",
       "stop_command": "pkill -f 'venv_voxtral/bin/vllm' || true; pkill -f 'voxtral_server.py' || true; rm -f /tmp/voxtral_backend.pid"
+    },
+    {
+      "id": "omnivoice",
+      "name": "OmniVoice",
+      "description": "Zero-shot TTS + Voice Cloning + Voice Design across 600+ languages",
+      "category": "audio",
+      "port": 8045,
+      "path": "/",
+      "icon": "&#127908;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_omnivoice.sh",
+      "project_path": "/srv/containers/edq/projects/OmniVoice",
+      "features": [
+        "TTS",
+        "Voice Clone",
+        "Voice Design",
+        "600+ Languages"
+      ],
+      "stop_command": "pkill -f \"omnivoice-demo.*--port 8045\" || pkill -f \"python.*omnivoice.*demo\" || true"
     }
   ],
   "categories": {

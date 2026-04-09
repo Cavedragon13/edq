@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dungeon Generator</title>
+    <meta
+      name="description"
+      content="Browser-based D&D character generator with 5d6 rolls, gear notes, and rerollable portrait art."
+    >
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23284734'/%3E%3Cpath d='M18 14h18c8 0 14 6 14 14s-6 14-14 14H18z' fill='%23f6efdf'/%3E%3Ctext x='20' y='40' font-size='26' font-family='Georgia,serif' fill='%23995f2f'%3Ed20%3C/text%3E%3C/svg%3E"
+    >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="masthead">
+        <div class="brand-block">
+          <p class="eyebrow">Old-school dice. Fast modern rerolls.</p>
+          <h1>Dungeon Generator</h1>
+          <p class="lede">
+            Roll each stat as 5d6, keep the best 3, sketch the hero, and toss them back into fate if the build feels cursed.
+          </p>
+        </div>
+        <div class="action-row">
+          <button id="themeToggleButton" class="button button-theme" aria-pressed="false">
+            <span id="themeToggleIcon" aria-hidden="true">🌙</span>
+            <span id="themeToggleLabel">Dark Mode</span>
+          </button>
+          <button id="newCharacterButton" class="button button-strong">New Adventurer</button>
+          <button id="rerollStatsButton" class="button">Reroll Stats</button>
+          <button id="rerollPortraitButton" class="button">Reroll Portrait</button>
+          <button id="savePortraitButton" class="button">Save Portrait</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="visual-column">
+          <div class="panel panel-portrait">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Character Image</p>
+                <h2>Portrait Forge</h2>
+              </div>
+              <p class="microcopy">Make a face. If it misses, reroll it.</p>
+            </div>
+            <div class="portrait-frame">
+              <img id="portraitImage" alt="Generated fantasy character portrait">
+            </div>
+            <p id="portraitCaption" class="portrait-caption"></p>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Character Spark</p>
+                <h2>Table Hook</h2>
+              </div>
+            </div>
+            <p id="characterSpark" class="spark-copy"></p>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Art Prompt</p>
+                <h2>Prompt Builder</h2>
+              </div>
+              <button id="copyPromptButton" class="button button-small">Copy Prompt</button>
+            </div>
+            <textarea
+              id="promptOutput"
+              class="prompt-output"
+              readonly
+              aria-label="Portrait prompt"
+            ></textarea>
+          </div>
+        </section>
+
+        <section class="sheet-column">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Adventurer Sheet</p>
+                <h2>Identity</h2>
+              </div>
+              <p class="microcopy">Edit anything after the roll.</p>
+            </div>
+
+            <div class="field-grid">
+              <label class="field">
+                <span>Name</span>
+                <input id="nameInput" type="text" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Heritage</span>
+                <input id="heritageInput" type="text" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Class</span>
+                <input id="classInput" type="text" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Background</span>
+                <input id="backgroundInput" type="text" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Alignment</span>
+                <input id="alignmentInput" type="text" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Homeland</span>
+                <input id="homelandInput" type="text" autocomplete="off">
+              </label>
+              <label class="field field-wide">
+                <span>Hook</span>
+                <input id="hookInput" type="text" autocomplete="off">
+              </label>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">SIWDCCh</p>
+                <h2>Stat Rolls</h2>
+              </div>
+              <p id="rollSummary" class="microcopy"></p>
+            </div>
+            <div id="statsGrid" class="stats-grid"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Kit and Keepsakes</p>
+                <h2>Loadout</h2>
+              </div>
+              <p class="microcopy">Armor, weapons, magic, and the odd useful thing.</p>
+            </div>
+
+            <div class="gear-grid">
+              <label class="field">
+                <span>Armor and Wards</span>
+                <textarea id="armorInput"></textarea>
+              </label>
+              <label class="field">
+                <span>Weapons and Tools</span>
+                <textarea id="weaponsInput"></textarea>
+              </label>
+              <label class="field">
+                <span>Magic Items</span>
+                <textarea id="magicInput"></textarea>
+              </label>
+              <label class="field">
+                <span>Pack and Notes</span>
+                <textarea id="notesInput"></textarea>
+              </label>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -14,6 +14,7 @@ import urllib.error
 import base64
 import io
 from pathlib import Path
+from socketserver import ThreadingMixIn
 
 PORT = 8080
 OLLAMA_PORT = 11434
@@ -209,8 +210,9 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             self._json_response(500, {'error': str(e), 'trace': traceback.format_exc()})
 
 
-class ReuseTCPServer(socketserver.TCPServer):
+class ReuseTCPServer(ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
+    daemon_threads = True
 
     def server_bind(self):
         self.socket.setsockopt(socketserver.socket.SOL_SOCKET, socketserver.socket.SO_REUSEADDR, 1)

@@ -111,5 +111,6 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=8022,
-        share=False
+        share=False,
+        favicon_path="/srv/containers/edq/media/favicons/justdubit.svg"
     )

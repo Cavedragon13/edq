@@ -2,13 +2,13 @@
         const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
 
-        // Load saved theme preference, default to dark mode
+        // Body starts with class="dark-mode" in HTML (no flash of light mode).
+        // Only switch to light if the user explicitly saved that preference.
         const savedTheme = localStorage.getItem('dragonsight-theme');
         if (savedTheme === 'light') {
-            // Only use light mode if explicitly chosen
+            body.classList.remove('dark-mode');
             themeToggle.textContent = '🌙';
         } else {
-            // Default to dark mode
             body.classList.add('dark-mode');
             themeToggle.textContent = '☀️';
             if (!savedTheme) {
@@ -157,7 +157,15 @@
         }
 
         // Drag & Drop
-        dropZone.addEventListener('click', () => fileInput.click());
+        let filePickerOpen = false;
+        dropZone.addEventListener('click', (e) => {
+            if (e.target === analyzeBtn || e.target.closest('button')) return;
+            if (filePickerOpen) return;
+            filePickerOpen = true;
+            setTimeout(() => { fileInput.click(); }, 0);
+        });
+        fileInput.addEventListener('focus', () => { filePickerOpen = false; });
+        window.addEventListener('focus', () => { filePickerOpen = false; });
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('drag-over');

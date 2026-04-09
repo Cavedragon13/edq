@@ -2,11 +2,18 @@
 """
 Dragonsuite MCP Server
 
-Provides tools to manage Dragonsuite GPU services:
-- List all services and their status
-- Start/stop services
-- Monitor VRAM usage
-- View service logs
+Tools for managing Dragonsuite services. All service definitions
+are read live from config/dragonsuite.json — no hardcoded lists.
+
+Tools:
+  dragonsuite_status     - All services + live port check + VRAM
+  dragonsuite_vram       - GPU VRAM details
+  dragonsuite_start      - Start a service (logs to /tmp/dragonsuite_logs/<id>.log)
+  dragonsuite_stop       - Stop a service using its stop_command
+  dragonsuite_logs       - Tail a service log (only if started via this server)
+  dragonsuite_check_port - Check what process (if any) is on an arbitrary port
+  dragonsuite_kill_port  - Kill whatever is on a port (for orphaned processes)
+  dragonsuite_processes  - Show all GPU/Python processes and their ports
 """
 
 import asyncio
@@ -20,212 +27,124 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
-# Configuration
 BASE_DIR = Path("/srv/containers/edq")
 CONFIG_FILE = BASE_DIR / "config" / "dragonsuite.json"
-
-# Service definitions with their systemd unit names and ports
-SERVICES = {
-    "dragonsuite": {
-        "name": "Dragonsuite Dashboard",
-        "port": 8100,
-        "systemd": "dragonsuite.service",
-        "gpu": False,
-    },
-    "dragonflux": {
-        "name": "DragonFlux Klein",
-        "port": 8001,
-        "launcher": "scripts/start_flux2_klein.sh",
-        "gpu": True,
-        "vram": "~10GB",
-    },
-    "wan2gp": {
-        "name": "Wan2GP Video",
-        "port": 8002,
-        "launcher": "scripts/start_wan2gp.sh",
-        "gpu": True,
-        "vram": "~12GB",
-    },
-    "fish-speech": {
-        "name": "Fish Speech TTS",
-        "port": 8003,
-        "launcher": "scripts/start_fish_speech.sh",
-        "gpu": True,
-        "vram": "~12GB",
-    },
-    "heartmula": {
-        "name": "HeartMuLa Music",
-        "port": 8004,
-        "launcher": "scripts/start_heartmula.sh",
-        "gpu": True,
-        "vram": "~12GB",
-    },
-    "sam2": {
-        "name": "SAM 2.1 Segmentation",
-        "port": 8005,
-        "launcher": "scripts/start_sam2.sh",
-        "gpu": True,
-        "vram": "~6GB",
-    },
-    "sadtalker": {
-        "name": "SadTalker",
-        "port": 8006,
-        "launcher": "scripts/start_sadtalker.sh",
-        "gpu": True,
-        "vram": "~4GB",
-    },
-    "hunyuan3d": {
-        "name": "Hunyuan3D-2",
-        "port": 8007,
-        "launcher": "scripts/start_hunyuan3d.sh",
-        "gpu": True,
-        "vram": "~6-16GB",
-    },
-    "matanyone": {
-        "name": "MatAnyone",
-        "port": 8008,
-        "launcher": "scripts/start_matanyone.sh",
-        "gpu": True,
-        "vram": "~9GB",
-    },
-    "qwen3-tts": {
-        "name": "Qwen3-TTS",
-        "port": 8009,
-        "launcher": "scripts/start_qwen3_tts.sh",
-        "gpu": True,
-        "vram": "~6-8GB",
-    },
-    "realesrgan": {
-        "name": "Real-ESRGAN",
-        "port": 8010,
-        "launcher": "scripts/start_realesrgan.sh",
-        "gpu": True,
-        "vram": "~4GB",
-    },
-    "zimage": {
-        "name": "Z-Image Base",
-        "port": 8011,
-        "launcher": "scripts/start_zimage.sh",
-        "gpu": True,
-        "vram": "~13-14GB",
-    },
-    "rembg": {
-        "name": "Rembg",
-        "port": 8012,
-        "launcher": "scripts/start_rembg.sh",
-        "gpu": True,
-        "vram": "~2GB",
-    },
-    "qwen-layered": {
-        "name": "Qwen-Image-Layered",
-        "port": 8013,
-        "launcher": "scripts/start_qwen_image_layered.sh",
-        "gpu": True,
-        "vram": "~14-16GB",
-    },
-    "remotion": {
-        "name": "Remotion Studio",
-        "port": 3000,
-        "systemd": "remotion-studio.service",
-        "gpu": False,
-    },
-}
+LOG_DIR = Path("/tmp/dragonsuite_logs")
 
 server = Server("dragonsuite")
 
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def load_services() -> list[dict]:
+    """Load service list from dragonsuite.json."""
+    try:
+        data = json.loads(CONFIG_FILE.read_text())
+        return data.get("services", [])
+    except Exception as e:
+        return []
+
+
+def service_ids() -> list[str]:
+    return [s["id"] for s in load_services()]
+
+
+def find_service(service_id: str) -> dict | None:
+    for svc in load_services():
+        if svc["id"] == service_id:
+            return svc
+    return None
+
+
 def check_port(port: int) -> bool:
-    """Check if a port is in use (service running)."""
+    """Return True if something is listening on the port."""
+    if not port:
+        return False
     try:
         result = subprocess.run(
             ["ss", "-tlnp", f"sport = :{port}"],
-            capture_output=True,
-            text=True,
-            timeout=5,
+            capture_output=True, text=True, timeout=5,
         )
-        return bool(result.stdout.strip().split("\n")[1:])
+        lines = result.stdout.strip().split("\n")
+        return len(lines) > 1  # header + at least one data line
     except Exception:
         return False
 
 
-def get_vram_usage() -> dict:
-    """Get current VRAM usage from nvidia-smi."""
+def process_on_port(port: int) -> str | None:
+    """Return process name listening on port, or None."""
     try:
         result = subprocess.run(
-            [
-                "nvidia-smi",
-                "--query-gpu=memory.used,memory.total,memory.free,utilization.gpu",
-                "--format=csv,noheader,nounits",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=10,
+            ["ss", "-tlnp", f"sport = :{port}"],
+            capture_output=True, text=True, timeout=5,
+        )
+        match = re.search(r'users:\(\("([^"]+)"', result.stdout)
+        return match.group(1) if match else None
+    except Exception:
+        return None
+
+
+def get_vram() -> dict:
+    try:
+        result = subprocess.run(
+            ["nvidia-smi",
+             "--query-gpu=memory.used,memory.total,memory.free,utilization.gpu",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10,
         )
         if result.returncode == 0:
             parts = result.stdout.strip().split(",")
+            used, total, free, util = [int(p.strip()) for p in parts]
             return {
-                "used_mb": int(parts[0].strip()),
-                "total_mb": int(parts[1].strip()),
-                "free_mb": int(parts[2].strip()),
-                "gpu_util_percent": int(parts[3].strip()),
-                "used_percent": round(int(parts[0].strip()) / int(parts[1].strip()) * 100, 1),
+                "used_mb": used, "total_mb": total, "free_mb": free,
+                "gpu_util_percent": util,
+                "used_percent": round(used / total * 100, 1),
             }
     except Exception as e:
         return {"error": str(e)}
     return {"error": "nvidia-smi failed"}
 
 
-def get_process_on_port(port: int) -> str | None:
-    """Get the process name using a specific port."""
-    try:
-        result = subprocess.run(
-            ["ss", "-tlnp", f"sport = :{port}"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        output = result.stdout
-        # Parse process name from ss output
-        match = re.search(r'users:\(\("([^"]+)"', output)
-        if match:
-            return match.group(1)
-    except Exception:
-        pass
-    return None
-
+# ---------------------------------------------------------------------------
+# Tool registry
+# ---------------------------------------------------------------------------
 
 @server.list_tools()
 async def list_tools() -> list[Tool]:
-    """List available Dragonsuite tools."""
+    ids = service_ids()
+    ids_with_launch = [s["id"] for s in load_services() if s.get("launch_command")]
+    ids_with_stop = [s["id"] for s in load_services() if s.get("stop_command")]
+
     return [
         Tool(
             name="dragonsuite_status",
-            description="Get status of all Dragonsuite services. Shows which are running, their ports, and VRAM requirements.",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-                "required": [],
-            },
+            description=(
+                "List all Dragonsuite services with live port status and current GPU VRAM. "
+                "Shows which are running, their ports, VRAM requirements, and categories."
+            ),
+            inputSchema={"type": "object", "properties": {}, "required": []},
         ),
         Tool(
             name="dragonsuite_vram",
-            description="Get current GPU VRAM usage. Shows used/total memory and GPU utilization.",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-                "required": [],
-            },
+            description="Show current GPU VRAM usage with a visual bar and GPU utilization %.",
+            inputSchema={"type": "object", "properties": {}, "required": []},
         ),
         Tool(
             name="dragonsuite_start",
-            description="Start a Dragonsuite service. Only one GPU service should run at a time due to VRAM limits.",
+            description=(
+                "Start a Dragonsuite service using its configured launch_command. "
+                "Output is logged to /tmp/dragonsuite_logs/<id>.log. "
+                "For GPU services, warns if VRAM is already heavily used."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
                     "service": {
                         "type": "string",
-                        "description": "Service ID to start (e.g., 'dragonflux', 'wan2gp', 'fish-speech')",
-                        "enum": list(SERVICES.keys()),
+                        "description": "Service ID to start",
+                        "enum": ids_with_launch,
                     }
                 },
                 "required": ["service"],
@@ -233,14 +152,14 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="dragonsuite_stop",
-            description="Stop a running Dragonsuite service.",
+            description="Stop a running Dragonsuite service using its configured stop_command.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "service": {
                         "type": "string",
                         "description": "Service ID to stop",
-                        "enum": list(SERVICES.keys()),
+                        "enum": ids_with_stop,
                     }
                 },
                 "required": ["service"],
@@ -248,188 +167,347 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="dragonsuite_logs",
-            description="Get recent logs from a service (last 50 lines).",
+            description=(
+                "Tail a service's log file. Only available for services started via "
+                "dragonsuite_start (logs written to /tmp/dragonsuite_logs/<id>.log). "
+                "Returns an error if the service was started externally."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
                     "service": {
                         "type": "string",
-                        "description": "Service ID to get logs for",
-                        "enum": list(SERVICES.keys()),
+                        "description": "Service ID",
+                        "enum": ids,
                     },
                     "lines": {
                         "type": "integer",
-                        "description": "Number of log lines to retrieve (default: 50)",
-                        "default": 50,
+                        "description": "Number of lines to return (default: 80)",
+                        "default": 80,
                     },
                 },
                 "required": ["service"],
             },
         ),
+        Tool(
+            name="dragonsuite_check_port",
+            description="Check what process (if any) is listening on a specific port.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "port": {
+                        "type": "integer",
+                        "description": "Port number to inspect",
+                    }
+                },
+                "required": ["port"],
+            },
+        ),
+        Tool(
+            name="dragonsuite_kill_port",
+            description=(
+                "Kill whatever process is listening on a port. "
+                "Useful for cleaning up orphaned services that won't stop normally."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "port": {
+                        "type": "integer",
+                        "description": "Port number to free up",
+                    }
+                },
+                "required": ["port"],
+            },
+        ),
+        Tool(
+            name="dragonsuite_processes",
+            description=(
+                "Show all Python/GPU processes currently running: process name, PID, "
+                "and which port they're using (if any). Good for spotting orphaned processes."
+            ),
+            inputSchema={"type": "object", "properties": {}, "required": []},
+        ),
     ]
 
 
+# ---------------------------------------------------------------------------
+# Tool dispatch
+# ---------------------------------------------------------------------------
+
 @server.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
-    """Handle tool calls."""
 
+    # ---- status ------------------------------------------------------------
     if name == "dragonsuite_status":
-        status_list = []
-        vram = get_vram_usage()
+        services = load_services()
+        vram = get_vram()
 
-        for svc_id, svc in SERVICES.items():
-            running = check_port(svc["port"])
-            status = "running" if running else "stopped"
-            emoji = "🟢" if running else "⚪"
-            gpu_info = f" (GPU: {svc.get('vram', 'N/A')})" if svc.get("gpu") else ""
+        by_category: dict[str, list[str]] = {}
+        for svc in services:
+            cat = svc.get("category", "other")
+            port = svc.get("port")
+            always_on = svc.get("always_on", False)
 
-            status_list.append(
-                f"{emoji} {svc['name']}: {status} (port {svc['port']}){gpu_info}"
+            if always_on:
+                indicator = "🔵"
+                state = "always-on"
+            elif port and check_port(port):
+                indicator = "🟢"
+                state = "running"
+            elif port:
+                indicator = "⚪"
+                state = "stopped"
+            else:
+                # no port — check if stop_command exists (implies it's a background process)
+                indicator = "⚪"
+                state = "no-port"
+
+            vram_info = f"  {svc['vram_gb']}GB VRAM" if svc.get("vram_gb") else ""
+            port_info = f"  port {port}" if port else ""
+            line = f"  {indicator} [{svc['id']}] {svc['name']} — {state}{port_info}{vram_info}"
+            by_category.setdefault(cat, []).append(line)
+
+        lines = []
+        for cat, svc_lines in sorted(by_category.items()):
+            lines.append(f"\n{cat.upper()}")
+            lines.extend(svc_lines)
+
+        if "error" not in vram:
+            bar_len = 20
+            filled = int(vram["used_percent"] / 100 * bar_len)
+            bar = "█" * filled + "░" * (bar_len - filled)
+            lines.append(
+                f"\nGPU VRAM: [{bar}] {vram['used_percent']}%  "
+                f"({vram['used_mb']:,}/{vram['total_mb']:,} MB)  "
+                f"util {vram['gpu_util_percent']}%"
             )
 
-        vram_info = ""
-        if "error" not in vram:
-            vram_info = f"\n\nGPU VRAM: {vram['used_mb']}MB / {vram['total_mb']}MB ({vram['used_percent']}% used)"
-            vram_info += f"\nGPU Utilization: {vram['gpu_util_percent']}%"
+        return [TextContent(type="text", text="\n".join(lines))]
 
-        return [TextContent(type="text", text="\n".join(status_list) + vram_info)]
-
+    # ---- vram --------------------------------------------------------------
     elif name == "dragonsuite_vram":
-        vram = get_vram_usage()
+        vram = get_vram()
         if "error" in vram:
             return [TextContent(type="text", text=f"Error: {vram['error']}")]
 
-        bar_len = 20
+        bar_len = 30
         filled = int(vram["used_percent"] / 100 * bar_len)
         bar = "█" * filled + "░" * (bar_len - filled)
 
-        text = f"""GPU VRAM Usage
-━━━━━━━━━━━━━━━━━━━━━━━━
-Used:  {vram['used_mb']:,} MB
-Free:  {vram['free_mb']:,} MB
-Total: {vram['total_mb']:,} MB
-
-[{bar}] {vram['used_percent']}%
-
-GPU Utilization: {vram['gpu_util_percent']}%"""
-
+        text = (
+            f"GPU VRAM\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Used:  {vram['used_mb']:,} MB\n"
+            f"Free:  {vram['free_mb']:,} MB\n"
+            f"Total: {vram['total_mb']:,} MB\n\n"
+            f"[{bar}] {vram['used_percent']}%\n\n"
+            f"GPU Utilization: {vram['gpu_util_percent']}%"
+        )
         return [TextContent(type="text", text=text)]
 
+    # ---- start -------------------------------------------------------------
     elif name == "dragonsuite_start":
-        service_id = arguments.get("service")
-        if service_id not in SERVICES:
+        service_id = arguments.get("service", "")
+        svc = find_service(service_id)
+        if not svc:
             return [TextContent(type="text", text=f"Unknown service: {service_id}")]
 
-        svc = SERVICES[service_id]
+        launch_cmd = svc.get("launch_command")
+        if not launch_cmd:
+            return [TextContent(type="text", text=f"{svc['name']} has no launch_command configured.")]
 
-        # Check if already running
-        if check_port(svc["port"]):
-            return [TextContent(type="text", text=f"{svc['name']} is already running on port {svc['port']}")]
+        port = svc.get("port")
+        if port and check_port(port):
+            return [TextContent(type="text", text=f"{svc['name']} is already running on port {port}.")]
 
-        # For GPU services, warn about VRAM
-        if svc.get("gpu"):
-            vram = get_vram_usage()
-            if "error" not in vram and vram["used_percent"] > 50:
-                warning = f"Warning: GPU already using {vram['used_percent']}% VRAM. "
-                warning += "Consider stopping other GPU services first.\n\n"
-            else:
-                warning = ""
-        else:
-            warning = ""
+        # VRAM warning for GPU services
+        warning = ""
+        vram_needed = svc.get("vram_gb", 0)
+        if vram_needed:
+            vram = get_vram()
+            if "error" not in vram and vram["used_percent"] > 40:
+                warning = (
+                    f"⚠️  GPU is {vram['used_percent']}% full "
+                    f"({vram['used_mb']:,}/{vram['total_mb']:,} MB). "
+                    f"{svc['name']} needs ~{vram_needed}GB. "
+                    "Stop other GPU services first if this fails.\n\n"
+                )
 
-        # Start the service
-        if "systemd" in svc:
-            # Use systemctl for systemd services
-            result = subprocess.run(
-                ["systemctl", "--user", "start", svc["systemd"]],
-                capture_output=True,
-                text=True,
-            )
-            if result.returncode == 0:
-                return [TextContent(type="text", text=f"{warning}Started {svc['name']} via systemd")]
-            else:
-                return [TextContent(type="text", text=f"Failed to start: {result.stderr}")]
-        else:
-            # Use launcher script (run in background)
-            launcher = BASE_DIR / svc["launcher"]
-            if not launcher.exists():
-                return [TextContent(type="text", text=f"Launcher not found: {launcher}")]
+        # Ensure log dir exists
+        LOG_DIR.mkdir(exist_ok=True)
+        log_file = LOG_DIR / f"{service_id}.log"
 
-            # Start in background
+        # Launch with stdout+stderr → log file
+        with open(log_file, "w") as lf:
             subprocess.Popen(
-                ["bash", str(launcher)],
+                launch_cmd,
+                shell=True,
                 cwd=str(BASE_DIR),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=lf,
+                stderr=lf,
                 start_new_session=True,
             )
 
-            return [TextContent(
-                type="text",
-                text=f"{warning}Starting {svc['name']}...\nURL: http://192.168.7.226:{svc['port']}\n\nNote: May take 30-60 seconds to load models."
-            )]
+        port_info = f"\nURL: http://192.168.7.226:{port}" if port else ""
+        log_info = f"\nLog: {log_file}"
+        return [TextContent(
+            type="text",
+            text=(
+                f"{warning}Starting {svc['name']}...{port_info}{log_info}\n"
+                "Models may take 30–120 seconds to load."
+            )
+        )]
 
+    # ---- stop --------------------------------------------------------------
     elif name == "dragonsuite_stop":
-        service_id = arguments.get("service")
-        if service_id not in SERVICES:
+        service_id = arguments.get("service", "")
+        svc = find_service(service_id)
+        if not svc:
             return [TextContent(type="text", text=f"Unknown service: {service_id}")]
 
-        svc = SERVICES[service_id]
+        stop_cmd = svc.get("stop_command")
+        if not stop_cmd:
+            return [TextContent(type="text", text=f"{svc['name']} has no stop_command configured.")]
 
-        if not check_port(svc["port"]):
-            return [TextContent(type="text", text=f"{svc['name']} is not running")]
+        port = svc.get("port")
+        if port and not check_port(port):
+            return [TextContent(type="text", text=f"{svc['name']} does not appear to be running (port {port} is free).")]
 
-        if "systemd" in svc:
-            result = subprocess.run(
-                ["systemctl", "--user", "stop", svc["systemd"]],
-                capture_output=True,
-                text=True,
-            )
-            if result.returncode == 0:
-                return [TextContent(type="text", text=f"Stopped {svc['name']}")]
-            else:
-                return [TextContent(type="text", text=f"Failed to stop: {result.stderr}")]
-        else:
-            # Kill process on port
-            proc_name = get_process_on_port(svc["port"])
-            subprocess.run(
-                ["pkill", "-f", f":{svc['port']}"],
-                capture_output=True,
-            )
-            # Also try killing by launcher script name
-            if "launcher" in svc:
-                script_name = Path(svc["launcher"]).stem
-                subprocess.run(["pkill", "-f", script_name], capture_output=True)
+        result = subprocess.run(stop_cmd, shell=True, capture_output=True, text=True, cwd=str(BASE_DIR))
+        msg = f"Stopped {svc['name']}."
+        if result.returncode != 0 and result.stderr.strip():
+            msg += f"\nstderr: {result.stderr.strip()}"
+        return [TextContent(type="text", text=msg)]
 
-            return [TextContent(type="text", text=f"Stopped {svc['name']} (was: {proc_name or 'unknown'})")]
-
+    # ---- logs --------------------------------------------------------------
     elif name == "dragonsuite_logs":
-        service_id = arguments.get("service")
-        lines = arguments.get("lines", 50)
-
-        if service_id not in SERVICES:
+        service_id = arguments.get("service", "")
+        lines = int(arguments.get("lines", 80))
+        svc = find_service(service_id)
+        if not svc:
             return [TextContent(type="text", text=f"Unknown service: {service_id}")]
 
-        svc = SERVICES[service_id]
-
-        if "systemd" in svc:
-            result = subprocess.run(
-                ["journalctl", "--user", "-u", svc["systemd"], "-n", str(lines), "--no-pager"],
-                capture_output=True,
-                text=True,
-            )
-            return [TextContent(type="text", text=result.stdout or result.stderr or "No logs found")]
-        else:
+        log_file = LOG_DIR / f"{service_id}.log"
+        if not log_file.exists():
             return [TextContent(
                 type="text",
-                text=f"Logs for non-systemd services not yet implemented. Service {svc['name']} uses launcher script."
+                text=(
+                    f"No log file found at {log_file}.\n"
+                    "Logs are only captured when a service is started via dragonsuite_start. "
+                    "If you started this service from a terminal, logs went to that terminal's stdout."
+                )
             )]
+
+        result = subprocess.run(
+            ["tail", "-n", str(lines), str(log_file)],
+            capture_output=True, text=True,
+        )
+        content = result.stdout or "(empty log)"
+        return [TextContent(type="text", text=f"=== {svc['name']} — last {lines} lines ===\n{content}")]
+
+    # ---- check_port --------------------------------------------------------
+    elif name == "dragonsuite_check_port":
+        port = int(arguments.get("port", 0))
+        if not port:
+            return [TextContent(type="text", text="Invalid port number.")]
+
+        result = subprocess.run(
+            ["ss", "-tlnp", f"sport = :{port}"],
+            capture_output=True, text=True, timeout=5,
+        )
+        lines = result.stdout.strip().split("\n")
+
+        if len(lines) <= 1:
+            # Check if anything matches via lsof as a fallback
+            lsof = subprocess.run(
+                ["lsof", "-i", f":{port}", "-n", "-P"],
+                capture_output=True, text=True,
+            )
+            if lsof.stdout.strip():
+                return [TextContent(type="text", text=f"Port {port} (lsof):\n{lsof.stdout.strip()}")]
+            return [TextContent(type="text", text=f"Port {port}: nothing listening.")]
+
+        # Find matching service in config
+        svc_match = next((s for s in load_services() if s.get("port") == port), None)
+        svc_label = f" → {svc_match['name']}" if svc_match else ""
+
+        proc = process_on_port(port)
+        proc_label = f"  process: {proc}" if proc else ""
+        return [TextContent(
+            type="text",
+            text=f"Port {port}: OCCUPIED{svc_label}{proc_label}\n\n{result.stdout.strip()}"
+        )]
+
+    # ---- kill_port ---------------------------------------------------------
+    elif name == "dragonsuite_kill_port":
+        port = int(arguments.get("port", 0))
+        if not port:
+            return [TextContent(type="text", text="Invalid port number.")]
+
+        if not check_port(port):
+            return [TextContent(type="text", text=f"Port {port} is already free.")]
+
+        proc = process_on_port(port)
+
+        # fuser is the cleanest way to kill by port
+        result = subprocess.run(
+            ["fuser", "-k", f"{port}/tcp"],
+            capture_output=True, text=True,
+        )
+        # brief pause then verify
+        import time
+        time.sleep(1)
+        still_up = check_port(port)
+        status = "still occupied ⚠️" if still_up else "now free ✓"
+        return [TextContent(
+            type="text",
+            text=f"Killed {proc or 'process'} on port {port} — {status}"
+        )]
+
+    # ---- processes ---------------------------------------------------------
+    elif name == "dragonsuite_processes":
+        # Get all listening ports
+        ss_result = subprocess.run(
+            ["ss", "-tlnp"],
+            capture_output=True, text=True,
+        )
+
+        # Get python/GPU processes
+        ps_result = subprocess.run(
+            ["ps", "aux", "--sort=-pid"],
+            capture_output=True, text=True,
+        )
+
+        # Filter for relevant processes
+        py_lines = []
+        for line in ps_result.stdout.split("\n"):
+            lower = line.lower()
+            if any(k in lower for k in ["python", "gradio", "uvicorn", "node", "ollama", "vllm"]):
+                # Trim overly long lines
+                py_lines.append(line[:140])
+
+        # Also show GPU compute processes via nvidia-smi
+        gpu_result = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=pid,used_memory,process_name",
+             "--format=csv,noheader"],
+            capture_output=True, text=True, timeout=10,
+        )
+
+        output = "=== Listening ports ===\n" + ss_result.stdout.strip()
+        if py_lines:
+            output += "\n\n=== Python/Node/Ollama processes ===\n" + "\n".join(py_lines[:40])
+        if gpu_result.returncode == 0 and gpu_result.stdout.strip():
+            output += "\n\n=== GPU compute processes ===\n" + gpu_result.stdout.strip()
+        else:
+            output += "\n\n=== GPU compute processes ===\n(none)"
+
+        return [TextContent(type="text", text=output)]
 
     return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
 
 async def main():
-    """Run the MCP server."""
     async with stdio_server() as (read_stream, write_stream):
         await server.run(read_stream, write_stream, server.create_initialization_options())
 

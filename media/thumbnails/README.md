@@ -92,7 +92,8 @@ After adding a thumbnail:
 
 | Service | File | Status |
 |---------|------|--------|
-| (none yet) | - | Emojis in use |
+| `mule-game` | `mule-game.png` | Active |
+| `dnd-generator` | `dnd-generator.png` | Active |
 
 *Add entries here as you create thumbnails*
 

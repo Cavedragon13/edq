@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Dungeon Generator thumbnail">
+  <defs>
+    <linearGradient id="bg" x1="12%" y1="10%" x2="88%" y2="100%">
+      <stop offset="0%" stop-color="#17353b"/>
+      <stop offset="55%" stop-color="#273249"/>
+      <stop offset="100%" stop-color="#4d315e"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#f1d39a"/>
+      <stop offset="100%" stop-color="#c89643"/>
+    </linearGradient>
+    <linearGradient id="cloak" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#284734"/>
+      <stop offset="100%" stop-color="#3f6f57"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <circle cx="29" cy="31" r="18" fill="rgba(255,255,255,0.08)"/>
+  <circle cx="98" cy="26" r="12" fill="rgba(200,150,67,0.16)"/>
+
+  <path d="M64 13L98 28L104 71C104 91 86 105 64 115C42 105 24 91 24 71L30 28Z" fill="rgba(12,18,22,0.45)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  <path d="M64 18L93 31L98 69C98 86 83 98 64 108C45 98 30 86 30 69L35 31Z" fill="rgba(255,248,235,0.06)"/>
+
+  <text x="64" y="36" text-anchor="middle" font-size="13" font-family="Georgia, serif" fill="url(#gold)">d20</text>
+
+  <path d="M41 94C45 79 53 72 64 72C75 72 83 79 87 94L81 107H47Z" fill="url(#cloak)"/>
+  <path d="M48 66C48 52 55 43 64 43C73 43 80 52 80 66C80 76 73 84 64 84C55 84 48 76 48 66Z" fill="#f0c9a4"/>
+  <path d="M47 55C49 44 56 38 64 38C72 38 79 44 81 55C74 50 69 49 64 49C59 49 54 50 47 55Z" fill="#7b5d39"/>
+  <path d="M53 64C55 62 58 61 61 61" fill="none" stroke="#6d4d2b" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M67 61C70 61 73 62 75 64" fill="none" stroke="#6d4d2b" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="57" cy="68" r="2.7" fill="#3d5e30"/>
+  <circle cx="71" cy="68" r="2.7" fill="#3d5e30"/>
+  <path d="M64 69C62 73 62 76 63 79" fill="none" stroke="#c69470" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M58 82C61 84 67 84 70 82" fill="none" stroke="#6d4d2b" stroke-width="2" stroke-linecap="round"/>
+
+  <path d="M46 44C40 37 38 28 43 20C43 28 47 35 52 41Z" fill="url(#gold)"/>
+  <path d="M82 44C88 37 90 28 85 20C85 28 81 35 76 41Z" fill="url(#gold)"/>
+
+  <path d="M25 101C43 94 52 92 64 92C76 92 85 94 103 101" stroke="rgba(255,255,255,0.18)" stroke-width="1.5" fill="none"/>
+  <rect x="12" y="12" width="104" height="104" rx="20" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+</svg>
