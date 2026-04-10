@@ -72,6 +72,8 @@ This is a personal AI development environment focused on video generation, visio
 | 8041  | AI Toolkit            | On-demand (GPU)    | LoRA trainer for FLUX — upload images, caption, train   |
 | 8042  | Voxtral TTS           | On-demand (GPU)    | Mistral Voxtral-4B-TTS-2603, 20 voices, 9 languages     |
 | 8043  | Gemma 4 E4B           | On-demand          | Chat UI over local Ollama, 128K ctx, multimodal         |
+| 8045  | OmniVoice             | On-demand (GPU)    | Zero-shot TTS + Voice Cloning, 600+ languages           |
+| 8046  | Dragonweyr            | On-demand          | Polymarket scout + Claude AI analysis + CLOB execution  |
 | 8888  | Jupyter (reserved)    | Future             | -                                                       |
 | 11434 | Ollama API            | Always-on (snap)   | -                                                       |
 

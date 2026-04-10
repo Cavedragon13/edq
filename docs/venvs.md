@@ -39,6 +39,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_matanyone2         | `/srv/containers/edq/venv_matanyone2`             | ~8GB   | `start_matanyone2.sh`         | MatAnyone 2 human video matting (port 8038)                |
 | venv_voxtral            | `/srv/containers/edq/venv_voxtral`                | ~8GB   | `start_voxtral.sh`            | Voxtral TTS (Mistral Voxtral-4B-TTS-2603, port 8042)       |
 | venv_streetview         | `/srv/containers/edq/venv_streetview`             | ~200MB | (fetch-only fallback)         | Lightweight fetch-only venv — superseded by venv_flux2     |
+| venv_dragonweyr         | `/srv/containers/edq/venv_dragonweyr`             | ~300MB | `start_dragonweyr.sh`         | Polymarket scout + Claude proxy + CLOB execution port 8046 |
 
 ## MCP Server Venvs
 

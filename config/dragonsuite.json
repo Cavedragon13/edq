@@ -3,7 +3,7 @@
     {
       "id": "gemma4",
       "name": "Gemma 4 E4B",
-      "description": "Google Gemma 4 — 9.6GB, 128K ctx, multimodal (text + image + audio)",
+      "description": "Google Gemma 4 \u2014 9.6GB, 128K ctx, multimodal (text + image + audio)",
       "category": "llm",
       "port": 8043,
       "path": "/",
@@ -21,7 +21,7 @@
     {
       "id": "mercury2",
       "name": "Mercury2 Diffusion Chat",
-      "description": "Inception Labs diffusion LLM — watch tokens crystallize from noise",
+      "description": "Inception Labs diffusion LLM \u2014 watch tokens crystallize from noise",
       "category": "llm",
       "port": 8036,
       "path": "/",
@@ -108,7 +108,7 @@
     {
       "id": "dragonsheet",
       "name": "DragonSheet",
-      "description": "Sheet generation + auto-slice — prompt → grid → N individual assets",
+      "description": "Sheet generation + auto-slice \u2014 prompt \u2192 grid \u2192 N individual assets",
       "category": "segmentation",
       "port": 8044,
       "path": "/",
@@ -198,7 +198,7 @@
     {
       "id": "topaz-labs",
       "name": "Topaz Labs AI",
-      "description": "Cloud AI Enhancement — use via Claude MCP (ask Claude to enhance an image)",
+      "description": "Cloud AI Enhancement \u2014 use via Claude MCP (ask Claude to enhance an image)",
       "category": "image",
       "port": null,
       "path": null,
@@ -251,7 +251,7 @@
     {
       "id": "wan-1b",
       "name": "Wan2.1 T2V 1.3B",
-      "description": "Fast standalone text-to-video · 8GB VRAM · diffusers",
+      "description": "Fast standalone text-to-video \u00b7 8GB VRAM \u00b7 diffusers",
       "category": "video",
       "port": 8016,
       "path": null,
@@ -269,7 +269,7 @@
     {
       "id": "ltxvideo",
       "name": "LTX-Video 0.9.7",
-      "description": "Fast T2V + I2V · 7-step distilled · 3-pass upscale",
+      "description": "Fast T2V + I2V \u00b7 7-step distilled \u00b7 3-pass upscale",
       "category": "video",
       "port": 8028,
       "path": null,
@@ -395,7 +395,7 @@
     {
       "id": "foundation-1",
       "name": "Foundation-1",
-      "description": "BPM + Key-aware loop generator — WAV + MIDI output for DAW use",
+      "description": "BPM + Key-aware loop generator \u2014 WAV + MIDI output for DAW use",
       "category": "audio",
       "port": 8039,
       "path": null,
@@ -430,7 +430,7 @@
     {
       "id": "dragonsong",
       "name": "Dragonsong",
-      "description": "Lyria RealTime Music — live prompting, blend, layer muting",
+      "description": "Lyria RealTime Music \u2014 live prompting, blend, layer muting",
       "category": "audio",
       "port": 8029,
       "path": "/",
@@ -614,7 +614,7 @@
     {
       "id": "pihole",
       "name": "Pi-hole",
-      "description": "Network-wide ad blocking + DNS — admin dashboard (minidragon)",
+      "description": "Network-wide ad blocking + DNS \u2014 admin dashboard (minidragon)",
       "category": "smart-home",
       "port": null,
       "url": "http://192.168.7.114/admin",
@@ -702,7 +702,7 @@
     {
       "id": "audio-tools",
       "name": "Dragon Audio Workstation",
-      "description": "Enhance · Stem separation · Dereverb · Transcribe · Waveform editor",
+      "description": "Enhance \u00b7 Stem separation \u00b7 Dereverb \u00b7 Transcribe \u00b7 Waveform editor",
       "category": "audio",
       "port": 8026,
       "path": "/",
@@ -720,7 +720,7 @@
     {
       "id": "concert-shirt",
       "name": "Concert Shirt",
-      "description": "Upload tickets → AI extracts concerts → custom print-on-demand shirt",
+      "description": "Upload tickets \u2192 AI extracts concerts \u2192 custom print-on-demand shirt",
       "category": "automation",
       "port": 8033,
       "path": "/",
@@ -737,7 +737,7 @@
     {
       "id": "ollama",
       "name": "Ollama",
-      "description": "Local LLM inference — deepseek-r1, qwen3, llama3.2, qwen3-vl",
+      "description": "Local LLM inference \u2014 deepseek-r1, qwen3, llama3.2, qwen3-vl",
       "category": "llm",
       "port": 11434,
       "path": "/",
@@ -755,7 +755,7 @@
     {
       "id": "lm-studio",
       "name": "LM Studio",
-      "description": "OpenAI-compatible local inference — start from LM Studio app",
+      "description": "OpenAI-compatible local inference \u2014 start from LM Studio app",
       "category": "llm",
       "port": 1234,
       "path": "/",
@@ -771,7 +771,7 @@
     {
       "id": "dragonclawd",
       "name": "Dragonclawd",
-      "description": "Personal AI agent — Telegram bot for service control & AI pipelines",
+      "description": "Personal AI agent \u2014 Telegram bot for service control & AI pipelines",
       "category": "automation",
       "port": null,
       "path": null,
@@ -789,7 +789,7 @@
     {
       "id": "the-movies",
       "name": "The Movies",
-      "description": "AI film studio sim — cast, budget, and watch Veo-generated short films",
+      "description": "AI film studio sim \u2014 cast, budget, and watch Veo-generated short films",
       "category": "game",
       "port": 8035,
       "path": "/",
@@ -807,7 +807,7 @@
     {
       "id": "tada-tts",
       "name": "TADA TTS",
-      "description": "Hume AI generative TTS — voice cloning with 1:1 token alignment",
+      "description": "Hume AI generative TTS \u2014 voice cloning with 1:1 token alignment",
       "category": "audio",
       "port": 8037,
       "path": null,
@@ -825,7 +825,7 @@
     {
       "id": "matanyone2",
       "name": "MatAnyone 2",
-      "description": "Human video matting — interactive click-to-select alpha matte extraction",
+      "description": "Human video matting \u2014 interactive click-to-select alpha matte extraction",
       "category": "segmentation",
       "port": 8038,
       "path": null,
@@ -844,7 +844,7 @@
     {
       "id": "linkding",
       "name": "Linkding",
-      "description": "Cross-browser bookmark manager — centralized sync for Chrome, Safari, Edge",
+      "description": "Cross-browser bookmark manager \u2014 centralized sync for Chrome, Safari, Edge",
       "category": "utility",
       "port": 8039,
       "path": "/",
@@ -863,7 +863,7 @@
     {
       "id": "ai-toolkit",
       "name": "AI Toolkit",
-      "description": "LoRA trainer for FLUX — upload images, auto-caption, train",
+      "description": "LoRA trainer for FLUX \u2014 upload images, auto-caption, train",
       "port": 8041,
       "category": "image",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_ai_toolkit.sh",
@@ -872,7 +872,7 @@
     {
       "id": "voxtral-tts",
       "name": "Voxtral TTS",
-      "description": "Mistral Voxtral-4B-TTS-2603 — 20 voices, 9 languages, 24kHz",
+      "description": "Mistral Voxtral-4B-TTS-2603 \u2014 20 voices, 9 languages, 24kHz",
       "port": 8042,
       "category": "audio",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_voxtral.sh",
@@ -895,6 +895,24 @@
         "600+ Languages"
       ],
       "stop_command": "pkill -f \"omnivoice-demo.*--port 8045\" || pkill -f \"python.*omnivoice.*demo\" || true"
+    },
+    {
+      "id": "dragonweyr",
+      "name": "Dragonweyr",
+      "description": "Polymarket Scout + AI Probability Engine + Paper/Live Trading",
+      "category": "automation",
+      "port": 8046,
+      "path": "/",
+      "icon": "&#129518;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonweyr.sh",
+      "project_path": "/srv/containers/edq/projects/dragonweyr",
+      "features": [
+        "Market Scout",
+        "Claude Analysis",
+        "Paper Ledger",
+        "Live Execution"
+      ],
+      "stop_command": "pkill -f 'dragonweyr/server.py' || true"
     }
   ],
   "categories": {
