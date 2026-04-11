@@ -188,17 +188,29 @@ def evict_other_models(keep: str):
     """Unload models not currently needed to free VRAM. keep = 'base'|'turbo'|'control'"""
     global pipe_base, pipe_turbo, pipe_control
     import gc
+
+    def _evict_pipe(pipe):
+        """Safely evict a pipeline that may have sequential CPU offload hooks."""
+        try:
+            pipe.remove_all_hooks()
+        except Exception:
+            pass
+        try:
+            pipe.to("cpu")
+        except Exception:
+            pass
+
     if keep != "base" and pipe_base is not None:
         print(f"[VRAM] Evicting Base model to free VRAM for {keep}...")
-        pipe_base.to("cpu")
+        _evict_pipe(pipe_base)
         pipe_base = None
     if keep != "turbo" and pipe_turbo is not None:
         print(f"[VRAM] Evicting Turbo model to free VRAM for {keep}...")
-        pipe_turbo.to("cpu") if hasattr(pipe_turbo, 'to') else None
+        _evict_pipe(pipe_turbo)
         pipe_turbo = None
     if keep != "control" and pipe_control is not None:
         print(f"[VRAM] Evicting ControlNet model to free VRAM for {keep}...")
-        pipe_control.to("cpu") if hasattr(pipe_control, 'to') else None
+        _evict_pipe(pipe_control)
         pipe_control = None
     gc.collect()
     if torch.cuda.is_available():
@@ -226,11 +238,11 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
         try:
             from diffusers import ZImagePipeline
             pipe_base = ZImagePipeline.from_pretrained(MODEL_ID_BASE, torch_dtype=dtype)
-            pipe_base.enable_model_cpu_offload()
+            pipe_base.enable_sequential_cpu_offload()
             if hasattr(pipe_base, 'vae'):
                 pipe_base.vae.enable_slicing()
                 pipe_base.vae.enable_tiling()
-            print("Z-Image Base loaded with model CPU offload + VAE optimizations")
+            print("Z-Image Base loaded with sequential CPU offload + VAE optimizations")
             current_model = "Base"
             return pipe_base
         except Exception as e:
@@ -247,11 +259,11 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
         try:
             from diffusers import ZImagePipeline
             pipe_turbo = ZImagePipeline.from_pretrained(MODEL_ID_TURBO, torch_dtype=dtype)
-            pipe_turbo.enable_model_cpu_offload()
+            pipe_turbo.enable_sequential_cpu_offload()
             if hasattr(pipe_turbo, 'vae'):
                 pipe_turbo.vae.enable_slicing()
                 pipe_turbo.vae.enable_tiling()
-            print("Z-Image Turbo loaded with model CPU offload + VAE optimizations")
+            print("Z-Image Turbo loaded with sequential CPU offload + VAE optimizations")
             current_model = "Turbo"
             return pipe_turbo
         except Exception as e:
@@ -324,7 +336,7 @@ def load_control_pipeline():
             transformer=transformer,
             scheduler=scheduler,
         )
-        pipe_control.enable_model_cpu_offload()
+        pipe_control.enable_sequential_cpu_offload()
 
         print("Z-Image ControlNet pipeline ready")
         current_model = "Control"

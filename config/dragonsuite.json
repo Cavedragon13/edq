@@ -106,25 +106,6 @@
       "stop_command": "pkill -f \"blender.*background.*blender_mcp_startup\" || true"
     },
     {
-      "id": "dragonsheet",
-      "name": "DragonSheet",
-      "description": "Sheet generation + auto-slice \u2014 prompt \u2192 grid \u2192 N individual assets",
-      "category": "segmentation",
-      "port": 8044,
-      "path": "/",
-      "icon": "&#129689;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonsheet.sh",
-      "project_path": "projects/dragonsheet",
-      "features": [
-        "Sheet Gen",
-        "Auto-Slice",
-        "SAM2 Extract",
-        "ZIP Export"
-      ],
-      "stop_command": "pkill -f 'dragonsheet_server' || true",
-      "vram_gb": 0
-    },
-    {
       "id": "dragonflux-klein",
       "name": "DragonFlux Klein",
       "description": "Image Generation + LoRA Support",
@@ -913,6 +894,24 @@
         "Live Execution"
       ],
       "stop_command": "pkill -f 'dragonweyr/server.py' || true"
+    },
+    {
+      "id": "kalshi",
+      "name": "Dragonweyr \u2014 Kalshi",
+      "description": "Kalshi market scout + Claude AI probability engine + live order execution",
+      "category": "automation",
+      "port": 8047,
+      "path": "/",
+      "icon": "&#128200;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_kalshi.sh",
+      "project_path": "/srv/containers/edq/projects/kalshi",
+      "features": [
+        "Market Scout",
+        "Claude Analysis",
+        "Paper Ledger",
+        "Live Execution"
+      ],
+      "stop_command": "pkill -f 'kalshi/server.py' || true"
     }
   ],
   "categories": {

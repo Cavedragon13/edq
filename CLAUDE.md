@@ -74,6 +74,7 @@ This is a personal AI development environment focused on video generation, visio
 | 8043  | Gemma 4 E4B           | On-demand          | Chat UI over local Ollama, 128K ctx, multimodal         |
 | 8045  | OmniVoice             | On-demand (GPU)    | Zero-shot TTS + Voice Cloning, 600+ languages           |
 | 8046  | Dragonweyr            | On-demand          | Polymarket scout + Claude AI analysis + CLOB execution  |
+| 8047  | Dragonweyr-Kalshi     | On-demand          | Kalshi scout + Claude AI analysis + order execution     |
 | 8888  | Jupyter (reserved)    | Future             | -                                                       |
 | 11434 | Ollama API            | Always-on (snap)   | -                                                       |
 

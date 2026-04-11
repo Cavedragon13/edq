@@ -538,7 +538,5 @@ if __name__ == "__main__":
         server_port=8001,
         share=False,
         favicon_path="/srv/containers/edq/media/favicons/dragonflux.svg",
-        theme=gr.themes.Soft(primary_hue="violet", secondary_hue="gray"),
         css=custom_css,
-        head=f'<link rel="icon" href="data:image/svg+xml,{DRAGON_FAVICON.replace("#", "%23").replace(" ", "").replace(chr(10), "")}">'
     )

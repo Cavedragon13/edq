@@ -7,7 +7,6 @@ Centralized tracking of Python virtual environments in this workspace.
 | Name                    | Path                                              | Size   | Used By                       | Purpose                                                    |
 | ----------------------- | ------------------------------------------------- | ------ | ----------------------------- | ---------------------------------------------------------- |
 | venv_dragonsuite        | `/srv/containers/edq/venv_dragonsuite`            | ~53MB  | `dragonsuite_server.py`       | Dashboard backend (FastAPI)                                |
-| venv_dragonsheet        | `/srv/containers/edq/venv_dragonsheet`            | ~200MB | `start_dragonsheet.sh`        | DragonSheet (port 8044) — FastAPI, Pillow, google-genai    |
 | venv_concert_shirt      | `/srv/containers/edq/venv_concert_shirt`          | ~50MB  | `start_concert_shirt.sh`      | Concert History T-Shirt Generator (port 8030)              |
 | venv_florence2          | `/srv/containers/edq/venv_florence2`              | ~7GB   | `start_dragonsight.sh`        | Florence2 vision model service                             |
 | venv_flux2              | `/srv/containers/edq/venv_flux2`                  | ~7GB   | `start_flux2_klein.sh`        | DragonFlux Klein + Street View Studio (shared GPU stack)   |
@@ -40,6 +39,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_voxtral            | `/srv/containers/edq/venv_voxtral`                | ~8GB   | `start_voxtral.sh`            | Voxtral TTS (Mistral Voxtral-4B-TTS-2603, port 8042)       |
 | venv_streetview         | `/srv/containers/edq/venv_streetview`             | ~200MB | (fetch-only fallback)         | Lightweight fetch-only venv — superseded by venv_flux2     |
 | venv_dragonweyr         | `/srv/containers/edq/venv_dragonweyr`             | ~300MB | `start_dragonweyr.sh`         | Polymarket scout + Claude proxy + CLOB execution port 8046 |
+| venv_kalshi             | `/srv/containers/edq/venv_kalshi`                 | ~300MB | `start_kalshi.sh`             | Kalshi scout + Claude proxy + RSA-auth order exec (8047)   |
 
 ## MCP Server Venvs
 
