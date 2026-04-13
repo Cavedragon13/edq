@@ -35,6 +35,7 @@ import sys, json
 path = sys.argv[1]
 last_text = ""
 code_written = False
+in_last_turn = False  # True once we hit the last user message
 COMPLETION_KEYWORDS = [
     "ready", "done", "complete", "should work", "all set", "finished",
     "working now", "up and running", "good to go", "successfully",
@@ -42,41 +43,50 @@ COMPLETION_KEYWORDS = [
 ]
 CODE_EXTENSIONS = ('.py', '.ts', '.tsx', '.js', '.jsx', '.sh', '.html', '.css', '.json')
 
+# Load all lines, then walk backwards to find the last user message boundary
+lines = []
 with open(path) as f:
     for line in f:
         try:
-            obj = json.loads(line)
+            lines.append(json.loads(line))
         except Exception:
             continue
 
-        # Track last assistant text
-        if obj.get("type") == "assistant":
-            content = obj.get("message", {}).get("content", [])
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "text":
-                    last_text = block["text"]
-                elif isinstance(block, str):
-                    last_text = block
+# Find index of the last user message
+last_user_idx = -1
+for i in range(len(lines) - 1, -1, -1):
+    if lines[i].get("type") == "user":
+        last_user_idx = i
+        break
 
-        # Detect Write/Edit tool use on code files
-        if obj.get("type") == "tool_use" or (
-            obj.get("type") == "assistant" and
-            isinstance(obj.get("message", {}).get("content"), list)
-        ):
-            msg_content = obj.get("message", {}).get("content", [])
-            if isinstance(msg_content, list):
-                for block in msg_content:
-                    if isinstance(block, dict) and block.get("type") == "tool_use":
-                        tool = block.get("name", "")
-                        if tool in ("Write", "Edit"):
-                            fp = block.get("input", {}).get("file_path", "")
-                            if any(fp.endswith(ext) for ext in CODE_EXTENSIONS):
-                                code_written = True
+# Extract last assistant text (anywhere in session — completion language check)
+for obj in lines:
+    if obj.get("type") == "assistant":
+        content = obj.get("message", {}).get("content", [])
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "text":
+                last_text = block["text"]
+            elif isinstance(block, str):
+                last_text = block
+
+# Check code_written only in the last assistant turn (after last user message)
+for obj in lines[last_user_idx + 1:]:
+    if obj.get("type") == "assistant":
+        msg_content = obj.get("message", {}).get("content", [])
+        if isinstance(msg_content, list):
+            for block in msg_content:
+                if isinstance(block, dict) and block.get("type") == "tool_use":
+                    tool = block.get("name", "")
+                    if tool in ("Write", "Edit"):
+                        fp = block.get("input", {}).get("file_path", "")
+                        if any(fp.endswith(ext) for ext in CODE_EXTENSIONS):
+                            code_written = True
 
 last_lower = last_text.lower()[:1500]
 has_completion = any(kw in last_lower for kw in COMPLETION_KEYWORDS)
 
-if not (has_completion or code_written):
+# Require BOTH: code was written this turn AND completion language detected
+if not (has_completion and code_written):
     sys.exit(0)
 
 GATE = (
@@ -96,11 +106,9 @@ GATE = (
 )
 
 output = {
-    "systemMessage": "⛔ SHIP GATE active — see checklist injected into context.",
-    "hookSpecificOutput": {
-        "hookEventName": "Stop",
-        "additionalContext": GATE
-    }
+    "decision": "block",
+    "reason": GATE,
+    "systemMessage": "⛔ SHIP GATE active — see checklist in context."
 }
 print(json.dumps(output))
 PYEOF

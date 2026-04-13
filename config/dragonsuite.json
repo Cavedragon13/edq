@@ -392,21 +392,22 @@
     },
     {
       "id": "ace-step",
-      "name": "ACE-Step 1.5",
-      "description": "Ultra-Fast Music Gen + LoRA Training + Cover/Repaint",
+      "name": "ACE-Step 1.5 XL",
+      "description": "Official XL (4B DiT) music generation + LoRA training + cover/repaint",
       "category": "audio",
       "port": 8021,
       "path": null,
       "icon": "&#127911;",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_ace_step.sh",
-      "project_path": "/srv/containers/edq/projects/ACE-Step-1.5",
+      "project_path": "/srv/containers/edq/projects/ACE-Step-1.5-xl",
       "features": [
-        "<10s/song",
+        "XL 4B DiT",
+        "Higher Quality",
         "LoRA Train",
         "Cover/Edit"
       ],
       "stop_command": "pkill -f \"acestep\" || true",
-      "vram_gb": 4
+      "vram_gb": 12
     },
     {
       "id": "dragonsong",
