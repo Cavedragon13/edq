@@ -16,7 +16,8 @@ echo "🚀 Starting $SERVICE_NAME..."
 if pgrep -f "acestep" > /dev/null; then
     echo "✓ Already running on port $PORT"
 else
-    nohup bash -c 'cd /srv/containers/edq/projects/ACE-Step-1.5-xl && bash ./start_gradio_ui.sh' > /tmp/ace_step_xl.log 2>&1 &
+    # CHECK_UPDATE=false disables the interactive update prompt that blocks headless/background launches
+    nohup bash -c 'cd /srv/containers/edq/projects/ACE-Step-1.5-xl && CHECK_UPDATE=false bash ./start_gradio_ui.sh' > /tmp/ace_step_xl.log 2>&1 &
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 1800; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
