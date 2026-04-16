@@ -16,7 +16,7 @@
         "Streaming",
         "Local Ollama"
       ],
-      "stop_command": "pkill -f 'gemma4_server.py' || true"
+      "stop_command": "pkill -f 'gemma4_server.py' || true; ollama stop gemma4:e4b 2>/dev/null || true"
     },
     {
       "id": "mercury2",

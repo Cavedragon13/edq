@@ -13,7 +13,7 @@ gpu_preflight "$PORT"
 set_pytorch_env
 
 echo "🚀 Starting $SERVICE_NAME..."
-if pgrep -f "acestep" > /dev/null; then
+if ss -tlnp | grep -q ":${PORT} "; then
     echo "✓ Already running on port $PORT"
 else
     # CHECK_UPDATE=false disables the interactive update prompt that blocks headless/background launches
