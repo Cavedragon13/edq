@@ -3,7 +3,7 @@
     {
       "id": "gemma4",
       "name": "Gemma 4 E4B",
-      "description": "Google Gemma 4 \u2014 9.6GB, 128K ctx, multimodal (text + image + audio)",
+      "description": "Gemma 4 E4B Obliterated \u2014 uncensored, 128K ctx, multimodal (text + image + audio)",
       "category": "llm",
       "port": 8043,
       "path": "/",
@@ -16,7 +16,7 @@
         "Streaming",
         "Local Ollama"
       ],
-      "stop_command": "pkill -f 'gemma4_server.py' || true; ollama stop gemma4:e4b 2>/dev/null || true"
+      "stop_command": "pkill -f 'gemma4_server.py' || true; ollama stop gemma4-obliterated 2>/dev/null || true"
     },
     {
       "id": "mercury2",
@@ -575,6 +575,103 @@
       "stop_command": "pkill -f 'http.server 8034' || true"
     },
     {
+      "id": "jellyfin",
+      "name": "Jellyfin",
+      "description": "Media server \u2014 movies, TV, music, photos (minidragon)",
+      "category": "media",
+      "port": 8096,
+      "url": "http://192.168.7.114:8096",
+      "always_on": true,
+      "path": null,
+      "icon": "&#127916;",
+      "launch_command": null,
+      "project_path": null,
+      "features": [
+        "Movies / TV",
+        "Music",
+        "Photos",
+        "HW Transcode"
+      ],
+      "stop_command": null
+    },
+    {
+      "id": "immich",
+      "name": "Immich",
+      "description": "Photo & video library \u2014 face recognition, timeline, albums (minidragon)",
+      "category": "media",
+      "port": 2283,
+      "url": "http://192.168.7.114:2283",
+      "always_on": true,
+      "path": null,
+      "icon": "&#128247;",
+      "launch_command": null,
+      "project_path": null,
+      "features": [
+        "Face Recognition",
+        "Timeline",
+        "Albums",
+        "External Library"
+      ],
+      "stop_command": null
+    },
+    {
+      "id": "navidrome",
+      "name": "Navidrome",
+      "description": "Music streaming server \u2014 FLAC-native, Subsonic API (minidragon)",
+      "category": "media",
+      "port": 4533,
+      "url": "http://192.168.7.114:4533",
+      "always_on": true,
+      "path": null,
+      "icon": "&#127925;",
+      "launch_command": null,
+      "project_path": null,
+      "features": [
+        "FLAC Native",
+        "Subsonic API",
+        "Mobile Apps"
+      ],
+      "stop_command": null
+    },
+    {
+      "id": "komga",
+      "name": "Komga",
+      "description": "Comics & ebooks library \u2014 CBR/CBZ/EPUB/PDF (minidragon)",
+      "category": "media",
+      "port": 25600,
+      "url": "http://192.168.7.114:25600",
+      "always_on": true,
+      "path": null,
+      "icon": "&#128214;",
+      "launch_command": null,
+      "project_path": null,
+      "features": [
+        "CBR / CBZ",
+        "EPUB / PDF",
+        "Web Reader"
+      ],
+      "stop_command": null
+    },
+    {
+      "id": "portainer",
+      "name": "Portainer",
+      "description": "Docker management UI for minidragon + udragon",
+      "category": "utility",
+      "port": 9000,
+      "url": "http://192.168.7.114:9000",
+      "always_on": true,
+      "path": null,
+      "icon": "&#128736;",
+      "launch_command": null,
+      "project_path": null,
+      "features": [
+        "Container Mgmt",
+        "Multi-Host",
+        "Compose UI"
+      ],
+      "stop_command": null
+    },
+    {
       "id": "homeassistant",
       "name": "Home Assistant",
       "description": "Smart Home Hub + Kasa + HomeKit Bridge (minidragon)",
@@ -861,6 +958,26 @@
       "stop_command": "pkill -f 'venv_voxtral/bin/vllm' || true; pkill -f 'voxtral_server.py' || true; rm -f /tmp/voxtral_backend.pid"
     },
     {
+      "id": "voxcpm2",
+      "name": "VoxCPM2",
+      "description": "2B diffusion TTS \u2014 48kHz, 30+ languages, voice design & cloning (3 modes)",
+      "category": "audio",
+      "port": 8049,
+      "path": null,
+      "icon": "&#127908;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_voxcpm2.sh",
+      "project_path": null,
+      "features": [
+        "48kHz Output",
+        "30+ Languages",
+        "Voice Design",
+        "Voice Clone",
+        "Ultimate Clone"
+      ],
+      "stop_command": "pkill -f 'voxcpm2_server.py' || true",
+      "vram_gb": 8
+    },
+    {
       "id": "omnivoice",
       "name": "OmniVoice",
       "description": "Zero-shot TTS + Voice Cloning + Voice Design across 600+ languages",
@@ -939,6 +1056,14 @@
     "game": {
       "name": "Games",
       "icon": "&#127918;"
+    },
+    "media": {
+      "name": "Media Library",
+      "icon": "&#127916;"
+    },
+    "utility": {
+      "name": "Utilities",
+      "icon": "&#128736;"
     },
     "smart-home": {
       "name": "Smart Home",

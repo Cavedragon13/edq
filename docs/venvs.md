@@ -108,3 +108,4 @@ When removing a project:
 | 2026-03-15 | Updated `venv_fish_speech` — Fish Speech v2.0.0 / Fish Audio S2-Pro (4B)                     |
 | 2026-03-15 | Added `venv_tada` for TADA TTS (Hume AI TADA-3B-ML, port 8037)                               |
 | 2026-03-15 | Added `venv_matanyone2` for MatAnyone 2 video matting CVPR 2026 (port 8038)                  |
+| 2026-04-17 | Added `venv_voxcpm2` for VoxCPM2 2B diffusion TTS — 48kHz, 30+ languages, voice design & cloning (port 8048) |

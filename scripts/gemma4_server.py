@@ -138,7 +138,7 @@ function copyResult() {
 
 PORT   = int(os.environ.get("GEMMA4_PORT", 8043))
 OLLAMA = "http://localhost:11434"
-MODEL  = "gemma4:e4b"
+MODEL  = "gemma4-obliterated"
 
 HTML = r"""<!DOCTYPE html>
 <html lang="en">

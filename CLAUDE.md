@@ -68,6 +68,12 @@ This is a personal AI development environment focused on video generation, visio
 | 8037  | TADA TTS              | On-demand (GPU)    | Hume AI voice cloning, 9 languages (TADA-3B-ML)         |
 | 8038  | MatAnyone 2           | On-demand (GPU)    | Human video matting, click-to-select, alpha output      |
 | 8039  | Linkding              | On-demand          | Cross-browser bookmark manager (Docker)                 |
+| **minidragon services (192.168.7.114)** | | | |
+| 8096  | Jellyfin              | Always-on (minidragon) | Movie/TV/music/photo server, Intel QSV transcode    |
+| 2283  | Immich                | Always-on (minidragon) | Photo/video library, face recognition, external lib |
+| 4533  | Navidrome             | Always-on (minidragon) | Music streaming, FLAC-native, Subsonic API          |
+| 25600 | Komga                 | Always-on (minidragon) | Comics/ebooks — CBR/CBZ/EPUB/PDF                    |
+| 9000  | Portainer             | Always-on (minidragon) | Docker management UI for minidragon + udragon       |
 | 8040  | DragonGlass           | On-demand          | Google Maps scout + live Street View + Gemini transform |
 | 8041  | AI Toolkit            | On-demand (GPU)    | LoRA trainer for FLUX — upload images, caption, train   |
 | 8042  | Voxtral TTS           | On-demand (GPU)    | Mistral Voxtral-4B-TTS-2603, 20 voices, 9 languages     |
@@ -75,6 +81,8 @@ This is a personal AI development environment focused on video generation, visio
 | 8045  | OmniVoice             | On-demand (GPU)    | Zero-shot TTS + Voice Cloning, 600+ languages           |
 | 8046  | Dragonweyr            | On-demand          | Polymarket scout + Claude AI analysis + CLOB execution  |
 | 8047  | Dragonweyr-Kalshi     | On-demand          | Kalshi scout + Claude AI analysis + order execution     |
+| 8048  | Trading Dashboard     | On-demand          | Paper trading dashboard (trading_dashboard.py)          |
+| 8049  | VoxCPM2               | On-demand (GPU)    | 2B diffusion TTS, 48kHz, 30+ languages, voice clone     |
 | 8888  | Jupyter (reserved)    | Future             | -                                                       |
 | 11434 | Ollama API            | Always-on (snap)   | -                                                       |
 
