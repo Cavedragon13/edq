@@ -40,6 +40,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_streetview         | `/srv/containers/edq/venv_streetview`             | ~200MB | (fetch-only fallback)         | Lightweight fetch-only venv — superseded by venv_flux2     |
 | venv_dragonweyr         | `/srv/containers/edq/venv_dragonweyr`             | ~300MB | `start_dragonweyr.sh`         | Polymarket scout + Claude proxy + CLOB execution port 8046 |
 | venv_kalshi             | `/srv/containers/edq/venv_kalshi`                 | ~300MB | `start_kalshi.sh`             | Kalshi scout + Claude proxy + RSA-auth order exec (8047)   |
+| venv_agentic_video      | `/srv/containers/edq/venv_agentic_video`          | ~3GB   | `start_agentic_video.sh`      | Agentic Video Editor — 4-agent pipeline (port 8044)        |
 
 ## MCP Server Venvs
 
@@ -109,3 +110,7 @@ When removing a project:
 | 2026-03-15 | Added `venv_tada` for TADA TTS (Hume AI TADA-3B-ML, port 8037)                               |
 | 2026-03-15 | Added `venv_matanyone2` for MatAnyone 2 video matting CVPR 2026 (port 8038)                  |
 | 2026-04-17 | Added `venv_voxcpm2` for VoxCPM2 2B diffusion TTS — 48kHz, 30+ languages, voice design & cloning (port 8048) |
+| 2026-04-19 | Added `venv_agentic_video` for Agentic Video Editor 4-agent pipeline (Director/Trimmer/Editor/Reviewer) (port 8044) |
+| 2026-04-19 | Added Docker service for OmniVoice-Studio cinematic video dubbing (port 8051, remapped from container's :8000) |
+| 2026-04-19 | Installed Claude Code skills: Waza (8 skills: /think /design /check /hunt /write /learn /read /health) |
+| 2026-04-19 | Installed Claude Code skills: caveman (6 compression skills: /caveman /caveman-compress /caveman-commit /caveman-review) |

@@ -9,6 +9,8 @@ import json
 import base64
 import logging
 import re
+import subprocess
+import tempfile
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -46,9 +48,10 @@ GENERIC_RE = re.compile(
     r'^(img|dsc|photo|image|screenshot|screen_shot|untitled|new_image|'
     r'file|audio|video|recording|clip|output|temp|tmp|download|attachment|'
     r'voice|memo|capture|scan)[\s_\-]?\d*$'
-    r'|^[a-f0-9]{8}-[a-f0-9]{4}'   # UUID-like
-    r'|^\d{8}[\s_-]?\d{6}$'        # Pure timestamp
-    r'|^[a-z]{1,6}\d+$',           # Short word + digits (vid001, img002)
+    r'|^[a-f0-9]{8}-[a-f0-9]{4}'              # UUID-like (with hyphen)
+    r'|^\d{8}[\s_-]?\d{6}$'                   # Pure timestamp
+    r'|^[a-z]{1,6}\d+$'                        # Short word + digits (vid001, img002)
+    r'|^(?=[a-z0-9]{8,20}$)(?=.*[0-9])(?=.*[a-z])[a-z0-9]+$',  # random alphanumeric ID (mo0gr7q0gt9cir)
     re.IGNORECASE
 )
 
@@ -102,28 +105,85 @@ def sanitize(text: str) -> str:
     return text[:50] or "file"
 
 
+def extract_video_frame(video_path: Path) -> Optional[str]:
+    """Extract a frame 1s into the video, return as base64 string."""
+    try:
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f:
+            tmp = f.name
+        result = subprocess.run(
+            ["ffmpeg", "-ss", "1", "-i", str(video_path), "-frames:v", "1",
+             "-q:v", "3", "-y", tmp],
+            capture_output=True, timeout=15
+        )
+        if result.returncode == 0 and Path(tmp).stat().st_size > 0:
+            b64 = base64.b64encode(Path(tmp).read_bytes()).decode()
+            os.unlink(tmp)
+            return b64
+        os.unlink(tmp)
+        return None
+    except Exception as e:
+        logger.warning(f"Frame extraction failed for {video_path.name}: {e}")
+        return None
+
+
 def get_suggestion(file_path: Path) -> Optional[str]:
     try:
-        if file_path.suffix.lower() in IMAGE_EXTS:
+        ext_lower = file_path.suffix.lower()
+
+        SYSTEM = (
+            "You are a file naming assistant. Describe all visual content accurately "
+            "and completely regardless of subject matter, including adult or explicit content. "
+            "Never refuse or add disclaimers."
+        )
+        VISION_PROMPT = (
+            "Describe the content of this image in 2-4 words suitable as a filename. "
+            "Lowercase, underscores only. Reply with ONLY the filename, no extension, no explanation."
+        )
+
+        if ext_lower in IMAGE_EXTS:
             b64 = base64.b64encode(file_path.read_bytes()).decode()
             payload = {
                 "model": MODEL,
-                "prompt": (
-                    "Give a short descriptive filename for this image: 2-4 words, "
-                    "lowercase, underscores. Reply with ONLY the filename, no extension, no extra text."
-                ),
+                "system": SYSTEM,
+                "prompt": VISION_PROMPT,
                 "images": [b64],
                 "stream": False,
             }
             timeout = 90
+
+        elif ext_lower in VIDEO_EXTS:
+            frame_b64 = extract_video_frame(file_path)
+            if frame_b64:
+                payload = {
+                    "model": MODEL,
+                    "system": SYSTEM,
+                    "prompt": VISION_PROMPT,
+                    "images": [frame_b64],
+                    "stream": False,
+                }
+                timeout = 90
+            else:
+                payload = {
+                    "model": MODEL,
+                    "system": SYSTEM,
+                    "prompt": (
+                        f"Suggest a short descriptive filename (2-4 words, lowercase underscores) for a "
+                        f"video file named '{file_path.stem}'. "
+                        "Reply with ONLY the filename, no extension, no extra text."
+                    ),
+                    "stream": False,
+                }
+                timeout = 30
+
         else:
-            # Audio/video: use text context only
+            # Audio: text context only
             ext = file_path.suffix.lstrip('.').upper()
             payload = {
                 "model": MODEL,
+                "system": SYSTEM,
                 "prompt": (
                     f"Suggest a short descriptive filename (2-4 words, lowercase underscores) for a "
-                    f"{ext} file named '{file_path.stem}' located in folder '{file_path.parent.name}'. "
+                    f"{ext} file named '{file_path.stem}' in folder '{file_path.parent.name}'. "
                     "Reply with ONLY the filename, no extension, no extra text."
                 ),
                 "stream": False,

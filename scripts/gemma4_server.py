@@ -136,9 +136,10 @@ function copyResult() {
 </body></html>
 """
 
-PORT   = int(os.environ.get("GEMMA4_PORT", 8043))
-OLLAMA = "http://localhost:11434"
-MODEL  = "gemma4-obliterated"
+PORT         = int(os.environ.get("GEMMA4_PORT", 8043))
+OLLAMA       = "http://localhost:11434"
+MODEL_TEXT   = "gemma4-obliterated"   # abliterated, text-only
+MODEL_VISION = "gemma4-vision"        # gemma4:e4b + uncensored system prompt, has mmproj
 
 HTML = r"""<!DOCTYPE html>
 <html lang="en">
@@ -177,7 +178,7 @@ nav a:hover{background:#161b22}
 .msg{max-width:80%;padding:12px 16px;border-radius:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .user{align-self:flex-end;background:#1f6feb;border-radius:12px 12px 4px 12px}
 .bot{align-self:flex-start;background:#161b22;border:1px solid #21262d;border-radius:12px 12px 12px 4px}
-.bot.streaming::after{content:"\u258b";animation:blink .7s infinite}
+.bot.streaming::after{content:"▋";animation:blink .7s infinite}
 details.thinking{align-self:flex-start;background:#0d1117;border:1px dashed #30363d;border-radius:8px;
   font-size:.8rem;color:#8b949e;padding:8px 12px;max-width:80%;white-space:pre-wrap;word-break:break-word}
 details.thinking summary{cursor:pointer;color:#58a6ff;margin-bottom:4px}
@@ -447,7 +448,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(length))
             lyrics = body.get("lyrics", "")
             payload = json.dumps({
-                "model": MODEL,
+                "model": MODEL_TEXT,
                 "messages": [
                     {"role": "system", "content": LYRICS_SYSTEM_PROMPT},
                     {"role": "user", "content": lyrics},
@@ -485,15 +486,20 @@ class Handler(http.server.BaseHTTPRequestHandler):
         messages = body.get("messages", [])
 
         # Build Ollama messages — images stay as-is (already base64 strings)
+        has_images = False
         ollama_messages = []
         for m in messages:
             om = {"role": m["role"], "content": m.get("content", "")}
             if "images" in m:
                 om["images"] = m["images"]  # list of base64 strings
+                has_images = True
             ollama_messages.append(om)
 
+        # Route: vision model when images present (GGUF has no mmproj), text model otherwise
+        model = MODEL_VISION if has_images else MODEL_TEXT
+
         payload = json.dumps({
-            "model": MODEL,
+            "model": model,
             "messages": ollama_messages,
             "stream": True
         }).encode()

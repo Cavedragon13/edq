@@ -1030,6 +1030,32 @@
         "Live Execution"
       ],
       "stop_command": "pkill -f 'kalshi/server.py' || true"
+    },
+    {
+      "id": "omnivoice-studio",
+      "name": "OmniVoice Studio",
+      "description": "Cinematic video dubbing — transcribe, translate, re-voice, mux with timeline editor",
+      "category": "audio",
+      "port": 8051,
+      "path": "/",
+      "icon": "&#127909;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_omnivoice_studio.sh",
+      "stop_command": "docker compose -f /srv/containers/edq/docker/omnivoice-studio/docker-compose.yml down || true",
+      "features": ["Video Dub", "Stem Split", "Timeline Editor", "600+ Languages"],
+      "vram_gb": 4
+    },
+    {
+      "id": "agentic-video",
+      "name": "Agentic Video Editor",
+      "description": "4-agent video ad pipeline — Director, Trim Refiner, Editor, Reviewer with Gemini + FFmpeg",
+      "category": "video",
+      "port": 8044,
+      "path": "/",
+      "icon": "&#127916;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_agentic_video.sh",
+      "stop_command": "pkill -f 'agentic_video_gradio' || true",
+      "features": ["4-Agent Pipeline", "Gemini 2.5", "FFmpeg", "Quality Scoring"],
+      "vram_gb": 6
     }
   ],
   "categories": {
