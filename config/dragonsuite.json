@@ -978,24 +978,6 @@
       "vram_gb": 8
     },
     {
-      "id": "omnivoice",
-      "name": "OmniVoice",
-      "description": "Zero-shot TTS + Voice Cloning + Voice Design across 600+ languages",
-      "category": "audio",
-      "port": 8045,
-      "path": "/",
-      "icon": "&#127908;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_omnivoice.sh",
-      "project_path": "/srv/containers/edq/projects/OmniVoice",
-      "features": [
-        "TTS",
-        "Voice Clone",
-        "Voice Design",
-        "600+ Languages"
-      ],
-      "stop_command": "pkill -f \"omnivoice-demo.*--port 8045\" || pkill -f \"python.*omnivoice.*demo\" || true"
-    },
-    {
       "id": "dragonweyr",
       "name": "Dragonweyr",
       "description": "Polymarket Scout + AI Probability Engine + Paper/Live Trading",
@@ -1040,7 +1022,7 @@
       "path": "/",
       "icon": "&#127909;",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_omnivoice_studio.sh",
-      "stop_command": "docker compose -f /srv/containers/edq/docker/omnivoice-studio/docker-compose.yml down || true",
+      "stop_command": "pkill -f 'uvicorn backend.main:app.*--port 8051' || true",
       "features": ["Video Dub", "Stem Split", "Timeline Editor", "600+ Languages"],
       "vram_gb": 4
     },
@@ -1056,6 +1038,19 @@
       "stop_command": "pkill -f 'agentic_video_gradio' || true",
       "features": ["4-Agent Pipeline", "Gemini 2.5", "FFmpeg", "Quality Scoring"],
       "vram_gb": 6
+    },
+    {
+      "id": "port-whisperer",
+      "name": "Port Whisperer",
+      "description": "CLI port monitor — list, kill, log-tail by port/PID/range, framework detection, Docker mapping",
+      "category": "utility",
+      "port": null,
+      "path": null,
+      "icon": "&#128433;",
+      "launch_command": "ports --all",
+      "project_path": null,
+      "features": ["Port List", "Process Kill", "Log Tail", "Docker Map", "Framework Detect"],
+      "stop_command": null
     }
   ],
   "categories": {

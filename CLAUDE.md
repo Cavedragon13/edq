@@ -79,7 +79,7 @@ This is a personal AI development environment focused on video generation, visio
 | 8042  | Voxtral TTS           | On-demand (GPU)    | Mistral Voxtral-4B-TTS-2603, 20 voices, 9 languages     |
 | 8043  | Gemma 4 E4B           | On-demand          | Chat UI over local Ollama, 128K ctx, multimodal         |
 | 8044  | Agentic Video Editor  | On-demand (GPU)    | 4-agent pipeline — Director, Trim, Editor, Reviewer     |
-| 8045  | OmniVoice             | On-demand (GPU)    | Zero-shot TTS + Voice Cloning, 600+ languages           |
+| 8045  | _(retired)_           | —                  | Superseded by OmniVoice Studio (8051)                   |
 | 8046  | Dragonweyr            | On-demand          | Polymarket scout + Claude AI analysis + CLOB execution  |
 | 8051  | OmniVoice Studio      | On-demand (GPU)    | Cinematic dubbing — transcribe, translate, re-voice     |
 | 8047  | Dragonweyr-Kalshi     | On-demand          | Kalshi scout + Claude AI analysis + order execution     |

@@ -47,11 +47,12 @@ fi
 
 export GOOGLE_API_KEY
 export HF_HUB_DISABLE_TELEMETRY=1
+export PORT
 
 echo "🚀 Starting $SERVICE_NAME (Gradio wrapper)..."
 
 # Create a minimal Gradio wrapper that calls ave edit
-python << 'GRADIO_WRAPPER'
+python << "GRADIO_WRAPPER"
 import gradio as gr
 import subprocess
 import os
@@ -135,7 +136,8 @@ with gr.Blocks(title="Agentic Video Editor", theme=gr.themes.Soft()) as iface:
 
     gr.Markdown(f"**Output folder:** `{OUTPUT_BASE}`")
 
-iface.launch(server_name="0.0.0.0", server_port=PORT, share=False)
+port = int(os.environ.get('PORT', 8044))
+iface.launch(server_name="0.0.0.0", server_port=port, share=False)
 GRADIO_WRAPPER
 
 echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
