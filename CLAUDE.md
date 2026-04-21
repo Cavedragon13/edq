@@ -85,6 +85,7 @@ This is a personal AI development environment focused on video generation, visio
 | 8047  | Dragonweyr-Kalshi     | On-demand          | Kalshi scout + Claude AI analysis + order execution     |
 | 8048  | Trading Dashboard     | On-demand          | Paper trading dashboard (trading_dashboard.py)          |
 | 8049  | VoxCPM2               | On-demand (GPU)    | 2B diffusion TTS, 48kHz, 30+ languages, voice clone     |
+| 8050  | Unsloth Studio        | On-demand (GPU)    | LLM fine-tuning - LoRA/QLoRA/RL, dataset creator        |
 | 8888  | Jupyter (reserved)    | Future             | -                                                       |
 | 11434 | Ollama API            | Always-on (snap)   | -                                                       |
 

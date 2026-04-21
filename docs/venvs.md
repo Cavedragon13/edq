@@ -41,6 +41,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_dragonweyr         | `/srv/containers/edq/venv_dragonweyr`             | ~300MB | `start_dragonweyr.sh`         | Polymarket scout + Claude proxy + CLOB execution port 8046 |
 | venv_kalshi             | `/srv/containers/edq/venv_kalshi`                 | ~300MB | `start_kalshi.sh`             | Kalshi scout + Claude proxy + RSA-auth order exec (8047)   |
 | venv_agentic_video      | `/srv/containers/edq/venv_agentic_video`          | ~3GB   | `start_agentic_video.sh`      | Agentic Video Editor — 4-agent pipeline (port 8044)        |
+| venv_unsloth_studio     | `/srv/containers/edq/venv_unsloth_studio`         | ~8GB   | `start_unsloth_studio.sh`     | Unsloth Studio — LoRA/QLoRA/RL LLM fine-tuning (port 8050) |
 
 ## MCP Server Venvs
 

@@ -978,6 +978,27 @@
       "vram_gb": 8
     },
     {
+      "id": "unsloth-studio",
+      "name": "Unsloth Studio",
+      "description": "LLM fine-tuning web UI — LoRA, QLoRA, full fine-tune, RL; dataset creation from PDF/CSV/JSON; model comparison arena",
+      "category": "ai",
+      "port": 8050,
+      "path": "/",
+      "icon": "&#129454;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_unsloth_studio.sh",
+      "project_path": null,
+      "features": [
+        "LoRA / QLoRA",
+        "Full Fine-tune",
+        "RL Training",
+        "Dataset Creator",
+        "Model Arena",
+        "GGUF Export"
+      ],
+      "stop_command": "pkill -f 'unsloth studio run' || true",
+      "vram_gb": 8
+    },
+    {
       "id": "dragonweyr",
       "name": "Dragonweyr",
       "description": "Polymarket Scout + AI Probability Engine + Paper/Live Trading",
