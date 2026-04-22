@@ -41,11 +41,20 @@ if [ -f "/srv/containers/edq/.env" ]; then
         echo "DragonArt Studio requires a Google API key for Gemini models."
     fi
     if [ -z "$OPENAI_KEY" ]; then
-        echo "NOTE: OPENAI_API_KEY not found - OpenAI models will not be available."
+        echo "NOTE: OPENAI_API_KEY not found - gpt-image-2 will not be available."
     fi
 else
     echo "WARNING: /srv/containers/edq/.env not found"
 fi
+
+# Check server-side SDK availability (server handles missing SDKs with 503 errors)
+echo "Checking server-side SDK dependencies..."
+python3 -c "import openai" 2>/dev/null \
+    && echo "  openai SDK: present" \
+    || echo "  WARNING: openai SDK not found - gpt-image-2 will return 503 until installed"
+python3 -c "from google import genai" 2>/dev/null \
+    && echo "  google-genai SDK: present" \
+    || echo "  WARNING: google-genai SDK not found - Gemini proxy will return 503 until installed"
 
 # Build if dist doesn't exist or is older than source
 BUILD_NEEDED=false
@@ -68,15 +77,12 @@ if [ "$BUILD_NEEDED" = true ]; then
         npm install
     fi
 
-    # Create .env.local with API keys from central config
-    echo "# API keys for DragonArt Studio" > .env.local
+    # Create .env.local — only GEMINI_API_KEY goes here (used as a presence check
+    # in the browser bundle). OPENAI_API_KEY stays server-side only (proxy pattern).
+    echo "# DragonArt Studio — browser-safe config only" > .env.local
     if [ -n "$GOOGLE_KEY" ]; then
         echo "GEMINI_API_KEY=$GOOGLE_KEY" >> .env.local
         echo "Google API key configured"
-    fi
-    if [ -n "$OPENAI_KEY" ]; then
-        echo "OPENAI_API_KEY=$OPENAI_KEY" >> .env.local
-        echo "OpenAI API key configured"
     fi
 
     # Build production version

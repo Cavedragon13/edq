@@ -122,6 +122,10 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
             self._save_session()
         elif self.path == '/api/sv_capture':
             self._sv_capture()
+        elif self.path == '/api/gpt-image':
+            self._gpt_image()
+        elif self.path == '/api/gemini-image':
+            self._gemini_image()
         else:
             self._send_error(404, f"Unknown endpoint: {self.path}")
 
@@ -397,6 +401,169 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
 
         except Exception as e:
             self._send_error(500, f"Street View capture failed: {str(e)}")
+
+    def _gpt_image(self):
+        """Proxy to OpenAI gpt-image-2. Keeps OPENAI_API_KEY server-side only."""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 20 * 1024 * 1024:
+                self._send_error(413, "Request body too large (max 20MB)")
+                return
+            body = self.rfile.read(content_length)
+            data = json.loads(body.decode('utf-8'))
+
+            image_b64 = data.get('image', '')
+            prompt = data.get('prompt', '')
+            size = data.get('size', '1024x1024')
+            quality = data.get('quality', 'auto')
+            n = max(1, min(10, int(data.get('n', 1))))
+
+            if not image_b64 or not prompt:
+                self._send_error(400, "image and prompt are required")
+                return
+
+            try:
+                from openai import OpenAI, BadRequestError
+            except ImportError:
+                self._send_error(503, "OpenAI SDK not installed. Run: pip install --user openai")
+                return
+
+            import io
+            if ',' in image_b64:
+                _, encoded = image_b64.split(',', 1)
+            else:
+                encoded = image_b64
+            image_bytes = base64.b64decode(encoded)
+
+            client = OpenAI(
+                api_key=os.environ.get('OPENAI_API_KEY', ''),
+                timeout=60.0,
+            )
+
+            fallback = False
+            try:
+                result = client.images.edit(
+                    model='gpt-image-2',
+                    image=('image.png', io.BytesIO(image_bytes), 'image/png'),
+                    prompt=prompt,
+                    size=size,
+                    quality=quality,
+                    n=n,
+                )
+                images_b64 = [item.b64_json for item in result.data]
+            except BadRequestError:
+                if n > 1:
+                    fallback = True
+                    result = client.images.edit(
+                        model='gpt-image-2',
+                        image=('image.png', io.BytesIO(image_bytes), 'image/png'),
+                        prompt=prompt,
+                        size=size,
+                        quality=quality,
+                        n=1,
+                    )
+                    images_b64 = [result.data[0].b64_json]
+                else:
+                    raise
+
+            response_data = json.dumps({'images': images_b64, 'fallback': fallback}).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response_data))
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(response_data)
+            print(f"   gpt-image-2: {len(images_b64)} image(s) generated")
+
+        except Exception as e:
+            self._send_error(500, f"gpt-image-2 failed: {str(e)}")
+
+    def _gemini_image(self):
+        """Proxy to Gemini image generation. Keeps GOOGLE_API_KEY server-side only."""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 20 * 1024 * 1024:
+                self._send_error(413, "Request body too large (max 20MB)")
+                return
+            body = self.rfile.read(content_length)
+            data = json.loads(body.decode('utf-8'))
+
+            images_b64 = data.get('images', [])  # [mainImage, ...referenceImages]
+            prompt = data.get('prompt', '')
+            model = data.get('model', 'gemini-3-pro-image-preview')
+
+            if not images_b64 or not prompt:
+                self._send_error(400, "images and prompt are required")
+                return
+
+            try:
+                from google import genai
+                from google.genai import types as genai_types
+            except ImportError:
+                self._send_error(503, "google-genai SDK not installed. Run: pip install --user google-genai")
+                return
+
+            client = genai.Client(api_key=os.environ.get('GOOGLE_API_KEY', ''))
+
+            # Build parts: images first, then text prompt
+            parts = []
+            for img_b64 in images_b64:
+                if ',' in img_b64:
+                    header, encoded = img_b64.split(',', 1)
+                    mime = 'image/jpeg' if ('jpeg' in header or 'jpg' in header) else 'image/png'
+                else:
+                    encoded, mime = img_b64, 'image/png'
+                img_bytes = base64.b64decode(encoded)
+                parts.append(genai_types.Part.from_bytes(data=img_bytes, mime_type=mime))
+            parts.append(genai_types.Part.from_text(text=prompt))
+
+            safety = [
+                genai_types.SafetySetting(category='HARM_CATEGORY_HARASSMENT', threshold='BLOCK_ONLY_HIGH'),
+                genai_types.SafetySetting(category='HARM_CATEGORY_HATE_SPEECH', threshold='BLOCK_ONLY_HIGH'),
+                genai_types.SafetySetting(category='HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold='BLOCK_ONLY_HIGH'),
+                genai_types.SafetySetting(category='HARM_CATEGORY_DANGEROUS_CONTENT', threshold='BLOCK_ONLY_HIGH'),
+            ]
+
+            response = client.models.generate_content(
+                model=model,
+                contents=parts,
+                config=genai_types.GenerateContentConfig(
+                    response_modalities=['IMAGE'],
+                    safety_settings=safety,
+                ),
+            )
+
+            image_inline = None
+            try:
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, 'inline_data') and part.inline_data:
+                        image_inline = part.inline_data
+                        break
+            except (IndexError, AttributeError):
+                pass
+
+            if not image_inline:
+                try:
+                    text_err = response.candidates[0].content.parts[0].text
+                    self._send_error(422, text_err or 'Safety filter blocked image generation')
+                except Exception:
+                    self._send_error(422, 'Safety filter blocked image generation')
+                return
+
+            result_b64 = base64.b64encode(image_inline.data).decode()
+            mime_out = image_inline.mime_type
+
+            response_data = json.dumps({'image': f'data:{mime_out};base64,{result_b64}'}).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(response_data))
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(response_data)
+            print(f"   gemini-image: generated via {model}")
+
+        except Exception as e:
+            self._send_error(500, f"Gemini image failed: {str(e)}")
 
     def _send_error(self, code, message):
         """Send JSON error response with CORS headers."""

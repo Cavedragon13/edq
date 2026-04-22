@@ -174,12 +174,15 @@ bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
 
 - Image-to-image transformation with prompt control
 - 70+ edit modes: Trading cards, movie posters, magazine covers, comic art, etc.
-- Multi-model support: Gemini 3 Pro, Gemini 3 Flash, GPT-Image-1
-- Video generation: Veo 3.1, Veo 3.1 Fast, Sora-2
+- Multi-model support: Gemini 3.1 Flash, Gemini 3 Pro, GPT-Image-2 (OpenAI)
+- GPT-Image-2 extras: quality (low/medium/high/auto), size, variations (n=4), compare mode
+- Video generation: Veo 3.1 Lite / Fast (Gemini models only)
 - Session management with undo/redo history
 - Reference image support for style transfer
 - Automatic aspect ratio cropping per mode
 - Export sessions as HTML galleries
+- Session cost estimator (client-side, GPT-Image-2 only)
+- AbortController on every generate — new request cancels previous in-flight
 
 ### Key Modes
 
@@ -189,24 +192,39 @@ bash /srv/containers/edq/scripts/start_dragonart.sh  # Restart on port 8015
 - **Comic Art**: Pages, Splash panels, Covers
 - **Transformations**: Diorama, Action Figure, Puppet, Pin-up
 - **Art Styles**: Anime, Watercolor, Gothic, Illustration
+- **GPT-Image-2: Text & Brand**: Text Overlay, Logo Placement, Product Label, Billboard, Business Card, Brand Mockup
 
 ### Models Available
 
-- Gemini 3 Pro → Veo 3.1 (best quality, all 70+ modes)
-- Gemini 3 Flash → Veo 3.1 Fast (faster, good quality)
-- GPT-Image-1 → Sora-2 (OpenAI models)
+| Internal ID       | API model                        | Video         |
+| ----------------- | -------------------------------- | ------------- |
+| `gemini-31-flash` | `gemini-3.1-flash-image-preview` | Veo 3.1 Lite  |
+| `gemini-3-flash`  | `gemini-3-pro-image-preview`     | Veo 3.1 Fast  |
+| `gpt-image-2`     | `gpt-image-2` (OpenAI)           | not supported |
+
+### Proxy Architecture
+
+All external API calls go through `dragonart_server.py` — keys never reach the browser bundle:
+
+- `POST /api/gemini-image` → Google GenAI SDK (`google-genai`)
+- `POST /api/gpt-image` → OpenAI SDK (`openai>=2.x`), model `gpt-image-2`
+- Valid sizes for GPT-Image-2: any resolution with edges divisible by 16, max edge 3840px, ratio ≤ 3:1. Options: auto, 1024x1024, 1536x1024, 1024x1536, 2048x2048, 3840x2160
+- n=4 falls back to n=1 automatically on `BadRequestError`
 
 ### Technical Notes
 
 - Uses React with TypeScript strict mode
 - State management via useState + useCallback hooks
+- `callWithRetry` in `services/retryUtils.ts` — shared retry logic with exponential backoff + jitter
+- `modelDispatcher.ts` routes by model ID to the correct service
+- Vitest unit tests: `services/retryUtils.test.ts`, `services/modelDispatcher.test.ts` (15 tests)
 - All edit mode dropdowns have conditional sub-selectors (sports, genres, styles)
 - Prompts designed for fair use (no trademarked names in templates)
 
 ### Key Considerations
 
 - React + TypeScript app with strict mode enabled
-- Uses Gemini 3 Pro / Flash API (requires Google Cloud API key in `/srv/containers/edq/.env`)
+- Requires `GOOGLE_API_KEY` and `OPENAI_API_KEY` in `/srv/containers/edq/.env`
 - All state managed via React hooks (useState, useCallback, useEffect)
 - Image processing happens client-side before API calls
 - Sessions auto-save to localStorage with compression
