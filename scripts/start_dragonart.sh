@@ -47,14 +47,18 @@ else
     echo "WARNING: /srv/containers/edq/.env not found"
 fi
 
-# Check server-side SDK availability (server handles missing SDKs with 503 errors)
+# Use venv_dragonsuite Python for the server — has openai and google-genai SDKs
+PYTHON_BIN="/srv/containers/edq/venv_dragonsuite/bin/python3"
+if [ ! -f "$PYTHON_BIN" ]; then
+    echo "ERROR: venv_dragonsuite not found at $PYTHON_BIN"
+    echo "Run: python3 -m venv /srv/containers/edq/venv_dragonsuite && /srv/containers/edq/venv_dragonsuite/bin/pip install openai google-genai"
+    exit 1
+fi
 echo "Checking server-side SDK dependencies..."
-python3 -c "import openai" 2>/dev/null \
-    && echo "  openai SDK: present" \
-    || echo "  WARNING: openai SDK not found - gpt-image-2 will return 503 until installed"
-python3 -c "from google import genai" 2>/dev/null \
-    && echo "  google-genai SDK: present" \
-    || echo "  WARNING: google-genai SDK not found - Gemini proxy will return 503 until installed"
+"$PYTHON_BIN" -c "import openai; print('  openai:', __import__('openai').__version__)" 2>/dev/null \
+    || echo "  WARNING: openai not found in venv_voxtral — gpt-image-2 will return 503"
+"$PYTHON_BIN" -c "from google import genai; print('  google-genai: ok')" 2>/dev/null \
+    || echo "  WARNING: google-genai not found in venv_voxtral — Gemini proxy will return 503"
 
 # Build if dist doesn't exist or is older than source
 BUILD_NEEDED=false
@@ -106,4 +110,4 @@ fi
 # Start the server
 echo ""
 echo "Starting server..."
-python3 "$SCRIPT_DIR/dragonart_server.py"
+"$PYTHON_BIN" "$SCRIPT_DIR/dragonart_server.py"
