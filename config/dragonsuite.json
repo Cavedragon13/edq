@@ -980,7 +980,7 @@
     {
       "id": "unsloth-studio",
       "name": "Unsloth Studio",
-      "description": "LLM fine-tuning web UI — LoRA, QLoRA, full fine-tune, RL; dataset creation from PDF/CSV/JSON; model comparison arena",
+      "description": "LLM fine-tuning web UI \u2014 LoRA, QLoRA, full fine-tune, RL; dataset creation from PDF/CSV/JSON; model comparison arena",
       "category": "ai",
       "port": 8050,
       "path": "/",
@@ -1037,41 +1037,74 @@
     {
       "id": "omnivoice-studio",
       "name": "OmniVoice Studio",
-      "description": "Cinematic video dubbing — transcribe, translate, re-voice, mux with timeline editor",
+      "description": "Cinematic video dubbing \u2014 transcribe, translate, re-voice, mux with timeline editor",
       "category": "audio",
       "port": 8051,
       "path": "/",
       "icon": "&#127909;",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_omnivoice_studio.sh",
       "stop_command": "pkill -f 'uvicorn backend.main:app.*--port 8051' || true",
-      "features": ["Video Dub", "Stem Split", "Timeline Editor", "600+ Languages"],
+      "features": [
+        "Video Dub",
+        "Stem Split",
+        "Timeline Editor",
+        "600+ Languages"
+      ],
       "vram_gb": 4
     },
     {
       "id": "agentic-video",
       "name": "Agentic Video Editor",
-      "description": "4-agent video ad pipeline — Director, Trim Refiner, Editor, Reviewer with Gemini + FFmpeg",
+      "description": "4-agent video ad pipeline \u2014 Director, Trim Refiner, Editor, Reviewer with Gemini + FFmpeg",
       "category": "video",
       "port": 8044,
       "path": "/",
       "icon": "&#127916;",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_agentic_video.sh",
       "stop_command": "pkill -f 'agentic_video_gradio' || true",
-      "features": ["4-Agent Pipeline", "Gemini 2.5", "FFmpeg", "Quality Scoring"],
+      "features": [
+        "4-Agent Pipeline",
+        "Gemini 2.5",
+        "FFmpeg",
+        "Quality Scoring"
+      ],
       "vram_gb": 6
     },
     {
       "id": "port-whisperer",
       "name": "Port Whisperer",
-      "description": "CLI port monitor — list, kill, log-tail by port/PID/range, framework detection, Docker mapping",
+      "description": "CLI port monitor \u2014 list, kill, log-tail by port/PID/range, framework detection, Docker mapping",
       "category": "utility",
       "port": null,
       "path": null,
       "icon": "&#128433;",
       "launch_command": "ports --all",
       "project_path": null,
-      "features": ["Port List", "Process Kill", "Log Tail", "Docker Map", "Framework Detect"],
+      "features": [
+        "Port List",
+        "Process Kill",
+        "Log Tail",
+        "Docker Map",
+        "Framework Detect"
+      ],
       "stop_command": null
+    },
+    {
+      "id": "dl-gallery",
+      "name": "Downloads Gallery",
+      "description": "Thumbnail browser for ~/Downloads \u2014 280px grid, newest first, click to open full size",
+      "category": "utility",
+      "port": 8060,
+      "path": "/",
+      "icon": "&#128444;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_dl_gallery.sh",
+      "project_path": null,
+      "features": [
+        "Thumbnail Grid",
+        "Newest First",
+        "Full-size View"
+      ],
+      "stop_command": "pkill -f dl_gallery.py"
     }
   ],
   "categories": {
