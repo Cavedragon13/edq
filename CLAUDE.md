@@ -75,7 +75,7 @@ This is a personal AI development environment focused on video generation, visio
 | 25600 | Komga                 | Always-on (minidragon) | Comics/ebooks — CBR/CBZ/EPUB/PDF                    |
 | 9000  | Portainer             | Always-on (minidragon) | Docker management UI for minidragon + udragon       |
 | 8040  | DragonGlass           | On-demand          | Google Maps scout + live Street View + Gemini transform |
-| 8060  | Downloads Gallery     | On-demand          | Image thumbnail gallery for ~/Downloads, newest first   |
+| 8060  | Downloads Gallery     | On-demand          | Image + video gallery, slideshow, lightbox, delete      |
 | 8041  | AI Toolkit            | On-demand (GPU)    | LoRA trainer for FLUX — upload images, caption, train   |
 | 8042  | Voxtral TTS           | On-demand (GPU)    | Mistral Voxtral-4B-TTS-2603, 20 voices, 9 languages     |
 | 8043  | Gemma 4 E4B           | On-demand          | Chat UI over local Ollama, 128K ctx, multimodal         |

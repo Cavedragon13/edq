@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Downloads image gallery — lightbox + delete, port 8060."""
+"""Downloads gallery — lightbox + slideshow + video support, port 8060."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 import mimetypes
+import subprocess
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
@@ -17,12 +18,13 @@ THUMB_CACHE = Path("/tmp/dl_thumbs")
 THUMB_SIZE = (320, 320)
 PORT = 8060
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff", ".tif", ".avif"}
+VIDEO_EXTS = {".mp4", ".webm", ".mov", ".mkv", ".avi", ".m4v"}
+MEDIA_EXTS = IMAGE_EXTS | VIDEO_EXTS
 
 THUMB_CACHE.mkdir(exist_ok=True)
 
 
 def safe_path(name: str) -> Path | None:
-    """Resolve name to a path strictly inside DOWNLOADS, or return None."""
     p = (DOWNLOADS / name).resolve()
     try:
         p.relative_to(DOWNLOADS.resolve())
@@ -45,30 +47,72 @@ def make_thumb(src: Path) -> Path:
     return tp
 
 
-def image_files() -> list[Path]:
+def make_video_thumb(src: Path) -> Path | None:
+    tp = thumb_path(src)
+    if not tp.exists():
+        try:
+            result = subprocess.run(
+                [
+                    "ffmpeg", "-y", "-ss", "1", "-i", str(src),
+                    "-vframes", "1",
+                    "-vf", "scale=320:320:force_original_aspect_ratio=decrease,pad=320:320:(ow-iw)/2:(oh-ih)/2:black",
+                    str(tp),
+                ],
+                capture_output=True,
+                timeout=15,
+            )
+            if result.returncode != 0 or not tp.exists():
+                return None
+        except Exception:
+            return None
+    return tp if tp.exists() else None
+
+
+def media_files() -> list[dict]:
     files = [
         f for f in DOWNLOADS.iterdir()
-        if f.is_file() and f.suffix.lower() in IMAGE_EXTS
+        if f.is_file() and f.suffix.lower() in MEDIA_EXTS
     ]
-    return sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)
+    files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+    return [{"name": f.name, "video": f.suffix.lower() in VIDEO_EXTS} for f in files]
 
 
 def gallery_html() -> bytes:
-    files = image_files()
-    names_json = json.dumps([f.name for f in files])
+    media = media_files()
+    media_json = json.dumps(media)
+    n_img = sum(1 for m in media if not m["video"])
+    n_vid = sum(1 for m in media if m["video"])
+
+    parts = []
+    if n_img:
+        parts.append(f"{n_img} image{'s' if n_img != 1 else ''}")
+    if n_vid:
+        parts.append(f"{n_vid} video{'s' if n_vid != 1 else ''}")
+    count_text = ", ".join(parts) if parts else "No media in ~/Downloads"
 
     cards = []
-    for i, f in enumerate(files):
-        name = f.name
+    for i, m in enumerate(media):
+        name = m["name"]
         esc = name.replace("&", "&amp;").replace('"', "&quot;")
-        cards.append(
-            f'<div class="card" data-idx="{i}" onclick="openLb({i})">'
-            f'<img src="/thumb/{esc}" loading="lazy" alt="{esc}">'
-            f'<div class="label" title="{esc}">{esc}</div>'
-            f'</div>'
-        )
+        if m["video"]:
+            cards.append(
+                f'<div class="card video-card" data-idx="{i}" onclick="openLb({i})">'
+                f'<div class="thumb-wrap">'
+                f'<img src="/thumb/{esc}" loading="lazy" alt="{esc}">'
+                f'<div class="play-icon">&#9654;</div>'
+                f'</div>'
+                f'<div class="label" title="{esc}">{esc}</div>'
+                f'</div>'
+            )
+        else:
+            cards.append(
+                f'<div class="card" data-idx="{i}" onclick="openLb({i})">'
+                f'<img src="/thumb/{esc}" loading="lazy" alt="{esc}">'
+                f'<div class="label" title="{esc}">{esc}</div>'
+                f'</div>'
+            )
 
-    cards_html = "\n".join(cards) if cards else "<p class='empty'>No images in ~/Downloads</p>"
+    cards_html = "\n".join(cards) if cards else "<p class='empty'>No media in ~/Downloads</p>"
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -80,7 +124,7 @@ def gallery_html() -> bytes:
   *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{ background: #1a1a1a; color: #e0e0e0; font-family: system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }}
 
-  /* ── header ── */
+  /* header */
   header {{ display: flex; align-items: center; justify-content: space-between;
             padding: 12px 20px; background: #242424; border-bottom: 1px solid #333;
             position: sticky; top: 0; z-index: 5; gap: 12px; }}
@@ -89,21 +133,32 @@ def gallery_html() -> bytes:
   .btn {{ background: #333; border: 1px solid #444; color: #ccc; padding: 5px 13px;
           border-radius: 6px; cursor: pointer; font-size: 0.82rem; white-space: nowrap; }}
   .btn:hover {{ background: #444; }}
+  .btn-ss {{ background: #1a3a5a; border-color: #2a6a9a; color: #7ab8e8; }}
+  .btn-ss:hover {{ background: #2a4a7a; }}
+  .hidden {{ display: none !important; }}
 
-  /* ── grid ── */
+  /* grid */
   .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
            gap: 10px; padding: 14px; }}
   .card {{ background: #242424; border: 1px solid #2e2e2e; border-radius: 8px;
            overflow: hidden; cursor: pointer; transition: border-color .15s, transform .15s; }}
   .card:hover {{ border-color: #555; transform: translateY(-2px); }}
-  .card img {{ width: 100%; height: 200px; object-fit: cover; display: block; background: #1a1a1a; }}
+  .card > img {{ width: 100%; height: 200px; object-fit: cover; display: block; background: #111; }}
   .label {{ padding: 7px 10px; font-size: 0.7rem; color: #888; white-space: nowrap;
             overflow: hidden; text-overflow: ellipsis; }}
   .empty {{ padding: 60px; text-align: center; color: #444; grid-column: 1/-1; }}
 
-  /* ── lightbox ── */
+  /* video card */
+  .video-card .thumb-wrap {{ position: relative; width: 100%; height: 200px; background: #111; }}
+  .video-card .thumb-wrap img {{ width: 100%; height: 200px; object-fit: cover; display: block; }}
+  .play-icon {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                width: 48px; height: 48px; background: rgba(0,0,0,.65); border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.2rem; color: #fff; pointer-events: none; }}
+
+  /* lightbox */
   #lb {{ position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 100;
-         display: flex; align-items: center; justify-content: center; gap: 0; }}
+         display: flex; align-items: center; justify-content: center; }}
   #lb.hidden {{ display: none; }}
 
   #lb-prev, #lb-next {{ flex-shrink: 0; background: rgba(255,255,255,.07);
@@ -114,17 +169,24 @@ def gallery_html() -> bytes:
 
   #lb-body {{ display: flex; flex-direction: column; align-items: center;
               max-width: calc(100vw - 120px); max-height: 100vh; overflow: hidden; }}
-  #lb-img {{ max-width: 100%; max-height: calc(100vh - 80px); object-fit: contain;
-             display: block; }}
+  #lb-img {{ max-width: 100%; max-height: calc(100vh - 80px); object-fit: contain; display: block; }}
+  #lb-vid {{ max-width: 100%; max-height: calc(100vh - 80px); display: none; background: #000; outline: none; }}
 
   #lb-bar {{ width: 100%; display: flex; align-items: center; justify-content: space-between;
-             padding: 10px 16px; gap: 12px; background: #1a1a1a; min-height: 52px; flex-shrink: 0; }}
+             padding: 10px 16px; gap: 8px; background: #1a1a1a; min-height: 52px; flex-shrink: 0; }}
   #lb-name {{ font-size: 0.78rem; color: #888; overflow: hidden; text-overflow: ellipsis;
-              white-space: nowrap; flex: 1; }}
+              white-space: nowrap; flex: 1; min-width: 0; }}
   #lb-counter {{ font-size: 0.78rem; color: #555; white-space: nowrap; }}
-  #lb-del {{ background: #5a1a1a; border: 1px solid #8b2020; color: #f87171;
-             padding: 5px 13px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; white-space: nowrap; }}
+  .lb-btn {{ background: #333; border: 1px solid #444; color: #ccc; padding: 5px 11px;
+             border-radius: 6px; cursor: pointer; font-size: 0.82rem; white-space: nowrap; }}
+  .lb-btn:hover {{ background: #444; }}
+  #lb-del {{ background: #5a1a1a; border-color: #8b2020; color: #f87171; }}
   #lb-del:hover {{ background: #7a2020; }}
+  #lb-ss-pause {{ background: #1a3a5a; border-color: #2a6a9a; color: #7ab8e8; }}
+  #lb-ss-pause:hover {{ background: #2a4a7a; }}
+
+  /* slideshow progress bar */
+  #ss-bar {{ position: fixed; bottom: 0; left: 0; height: 3px; background: #4a9af8; width: 0; z-index: 110; }}
 
   #lb-close {{ position: fixed; top: 14px; right: 18px; background: rgba(255,255,255,.1);
                border: none; color: #ccc; font-size: 1.4rem; cursor: pointer; z-index: 110;
@@ -135,103 +197,205 @@ def gallery_html() -> bytes:
 <body>
 
 <header>
-  <h1>📁 Downloads Gallery</h1>
-  <span class="meta" id="hdr-meta">{len(files)} image{"s" if len(files) != 1 else ""}</span>
-  <button class="btn" onclick="location.reload()">↻ Refresh</button>
+  <h1>&#128193; Downloads Gallery</h1>
+  <span class="meta" id="hdr-meta">{count_text}</span>
+  <button class="btn btn-ss" id="ss-btn" onclick="toggleSlideshow()">&#9654; Slideshow</button>
+  <button class="btn" onclick="location.reload()">&#8635; Refresh</button>
 </header>
 
 <div class="grid" id="grid">
 {cards_html}
 </div>
 
-<!-- Lightbox -->
 <div id="lb" class="hidden">
-  <button id="lb-close" onclick="closeLb()">✕</button>
-  <button id="lb-prev" onclick="navigate(-1)">‹</button>
+  <button id="lb-close" onclick="closeLb()">&#10005;</button>
+  <button id="lb-prev" onclick="navigate(-1)">&#8249;</button>
   <div id="lb-body">
     <img id="lb-img" src="" alt="">
+    <video id="lb-vid" controls preload="metadata"></video>
     <div id="lb-bar">
       <span id="lb-name"></span>
       <span id="lb-counter"></span>
-      <button id="lb-del" onclick="deleteImage()">🗑 Delete</button>
+      <button id="lb-ss-pause" class="lb-btn hidden" onclick="toggleSsPause()">&#9646;&#9646; Pause</button>
+      <button id="lb-del" class="lb-btn" onclick="deleteMedia()">&#128465; Delete</button>
     </div>
   </div>
-  <button id="lb-next" onclick="navigate(1)">›</button>
+  <button id="lb-next" onclick="navigate(1)">&#8250;</button>
 </div>
+<div id="ss-bar"></div>
 
 <script>
-  let images = {names_json};
+  const mediaItems = {media_json};
   let cur = 0;
+  let ssActive = false;
+  let ssPaused = false;
+  let ssTimer = null;
+  const SS_IMG_MS = 4000;
+  const SS_VID_MAX_MS = 60000;
 
-  const lb     = document.getElementById('lb');
-  const lbImg  = document.getElementById('lb-img');
-  const lbName = document.getElementById('lb-name');
-  const lbCtr  = document.getElementById('lb-counter');
-  const lbPrev = document.getElementById('lb-prev');
-  const lbNext = document.getElementById('lb-next');
+  const lb        = document.getElementById('lb');
+  const lbImg     = document.getElementById('lb-img');
+  const lbVid     = document.getElementById('lb-vid');
+  const lbName    = document.getElementById('lb-name');
+  const lbCtr     = document.getElementById('lb-counter');
+  const lbPrev    = document.getElementById('lb-prev');
+  const lbNext    = document.getElementById('lb-next');
+  const lbSsPause = document.getElementById('lb-ss-pause');
+  const ssBtn     = document.getElementById('ss-btn');
+  const ssBar     = document.getElementById('ss-bar');
 
   function openLb(idx) {{
     cur = idx;
     lb.classList.remove('hidden');
-    render();
     document.body.style.overflow = 'hidden';
+    render();
   }}
 
   function closeLb() {{
+    stopSlideshow();
+    lbVid.pause();
+    lbVid.src = '';
     lb.classList.add('hidden');
     document.body.style.overflow = '';
   }}
 
   function render() {{
-    const name = images[cur];
-    lbImg.src = '/img/' + encodeURIComponent(name);
-    lbName.textContent = name;
-    lbCtr.textContent = (cur + 1) + ' / ' + images.length;
+    const item = mediaItems[cur];
+    lbVid.removeEventListener('ended', onVidEnded);
+    clearSsTimer();
+
+    if (item.video) {{
+      lbImg.style.display = 'none';
+      lbImg.src = '';
+      lbVid.pause();
+      lbVid.style.display = 'block';
+      lbVid.poster = '/thumb/' + encodeURIComponent(item.name);
+      lbVid.src = '/img/' + encodeURIComponent(item.name);
+      lbVid.load();
+      lbVid.play().catch(function() {{}});
+    }} else {{
+      lbVid.pause();
+      lbVid.src = '';
+      lbVid.style.display = 'none';
+      lbImg.style.display = 'block';
+      lbImg.src = '/img/' + encodeURIComponent(item.name);
+    }}
+
+    lbName.textContent = item.name;
+    lbCtr.textContent = (cur + 1) + ' / ' + mediaItems.length;
     lbPrev.disabled = cur === 0;
-    lbNext.disabled = cur === images.length - 1;
+    lbNext.disabled = cur === mediaItems.length - 1;
+
+    if (ssActive && !ssPaused) scheduleNext(item.video);
   }}
 
   function navigate(dir) {{
     const next = cur + dir;
-    if (next >= 0 && next < images.length) openLb(next);
+    if (next >= 0 && next < mediaItems.length) openLb(next);
   }}
 
-  async function deleteImage() {{
-    const name = images[cur];
-    if (!confirm('Delete ' + name + '?')) return;
+  /* ── slideshow ── */
+  function toggleSlideshow() {{
+    if (ssActive) stopSlideshow();
+    else {{
+      ssActive = true;
+      ssPaused = false;
+      ssBtn.textContent = '■ Stop';
+      lbSsPause.classList.remove('hidden');
+      lbSsPause.textContent = '⏸ Pause';
+      if (lb.classList.contains('hidden')) openLb(0);
+      else render();
+    }}
+  }}
 
-    const res = await fetch('/delete/' + encodeURIComponent(name), {{ method: 'POST' }});
+  function stopSlideshow() {{
+    if (!ssActive) return;
+    ssActive = false;
+    ssPaused = false;
+    clearSsTimer();
+    ssBtn.textContent = '▶ Slideshow';
+    lbSsPause.classList.add('hidden');
+  }}
+
+  function toggleSsPause() {{
+    if (!ssActive) return;
+    if (ssPaused) {{
+      ssPaused = false;
+      lbSsPause.textContent = '⏸ Pause';
+      if (mediaItems[cur].video) lbVid.play().catch(function() {{}});
+      scheduleNext(mediaItems[cur].video);
+    }} else {{
+      ssPaused = true;
+      lbSsPause.textContent = '▶ Resume';
+      clearSsTimer();
+      lbVid.pause();
+    }}
+  }}
+
+  function clearSsTimer() {{
+    if (ssTimer) {{ clearTimeout(ssTimer); ssTimer = null; }}
+    lbVid.removeEventListener('ended', onVidEnded);
+    ssBar.style.transition = 'none';
+    ssBar.style.width = '0';
+  }}
+
+  function scheduleNext(isVideo) {{
+    const ms = isVideo ? SS_VID_MAX_MS : SS_IMG_MS;
+    if (isVideo) lbVid.addEventListener('ended', onVidEnded, {{once: true}});
+    ssTimer = setTimeout(advanceSs, ms);
+    requestAnimationFrame(function() {{
+      ssBar.style.transition = 'width ' + ms + 'ms linear';
+      ssBar.style.width = '100%';
+    }});
+  }}
+
+  function onVidEnded() {{
+    clearSsTimer();
+    advanceSs();
+  }}
+
+  function advanceSs() {{
+    ssTimer = null;
+    if (!ssActive || ssPaused) return;
+    openLb((cur + 1) % mediaItems.length);
+  }}
+
+  /* ── delete ── */
+  async function deleteMedia() {{
+    const item = mediaItems[cur];
+    if (!confirm('Delete ' + item.name + '?')) return;
+    const res = await fetch('/delete/' + encodeURIComponent(item.name), {{method: 'POST'}});
     if (!res.ok) {{ alert('Delete failed'); return; }}
 
-    // remove card from grid
     const card = document.querySelector('.card[data-idx="' + cur + '"]');
     if (card) card.remove();
-
-    // remove from list and reindex remaining cards
-    images.splice(cur, 1);
-    document.querySelectorAll('.card').forEach((c, i) => {{
+    mediaItems.splice(cur, 1);
+    document.querySelectorAll('.card').forEach(function(c, i) {{
       c.dataset.idx = i;
-      c.onclick = (e => (idx => () => openLb(idx))(i))();
+      c.onclick = (function(idx) {{ return function() {{ openLb(idx); }}; }})(i);
     }});
 
-    // update header count
-    document.getElementById('hdr-meta').textContent =
-      images.length + ' image' + (images.length !== 1 ? 's' : '');
+    const ni = mediaItems.filter(function(m) {{ return !m.video; }}).length;
+    const nv = mediaItems.filter(function(m) {{ return m.video; }}).length;
+    const parts = [];
+    if (ni) parts.push(ni + ' image' + (ni !== 1 ? 's' : ''));
+    if (nv) parts.push(nv + ' video' + (nv !== 1 ? 's' : ''));
+    document.getElementById('hdr-meta').textContent = parts.join(', ') || 'Empty';
 
-    if (images.length === 0) {{ closeLb(); return; }}
-    if (cur >= images.length) cur = images.length - 1;
+    if (mediaItems.length === 0) {{ closeLb(); return; }}
+    if (cur >= mediaItems.length) cur = mediaItems.length - 1;
     render();
   }}
 
-  document.addEventListener('keydown', e => {{
+  document.addEventListener('keydown', function(e) {{
     if (lb.classList.contains('hidden')) return;
     if (e.key === 'ArrowLeft')  navigate(-1);
     if (e.key === 'ArrowRight') navigate(1);
     if (e.key === 'Escape')     closeLb();
+    if (e.key === ' ' && ssActive) {{ e.preventDefault(); toggleSsPause(); }}
   }});
 
-  // close on backdrop click
-  lb.addEventListener('click', e => {{ if (e.target === lb) closeLb(); }});
+  lb.addEventListener('click', function(e) {{ if (e.target === lb) closeLb(); }});
 </script>
 </body>
 </html>""".encode()
@@ -248,6 +412,53 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def serve_file(self, src: Path):
+        """Stream a file with HTTP range request support (required for video seeking)."""
+        mime = mimetypes.guess_type(str(src))[0] or "application/octet-stream"
+        file_size = src.stat().st_size
+        range_hdr = self.headers.get("Range", "")
+
+        if range_hdr.startswith("bytes="):
+            spec = range_hdr[6:].split(",")[0].strip()
+            parts = spec.split("-")
+            start = int(parts[0]) if parts[0] else 0
+            end = int(parts[1]) if len(parts) > 1 and parts[1] else file_size - 1
+            end = min(end, file_size - 1)
+            length = end - start + 1
+            self.send_response(206)
+            self.send_header("Content-Type", mime)
+            self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+            self.send_header("Content-Length", str(length))
+            self.send_header("Accept-Ranges", "bytes")
+            self.end_headers()
+            with src.open("rb") as f:
+                f.seek(start)
+                remaining = length
+                while remaining > 0:
+                    chunk = f.read(min(65536, remaining))
+                    if not chunk:
+                        break
+                    try:
+                        self.wfile.write(chunk)
+                    except (BrokenPipeError, ConnectionResetError):
+                        break
+                    remaining -= len(chunk)
+        else:
+            self.send_response(200)
+            self.send_header("Content-Type", mime)
+            self.send_header("Content-Length", str(file_size))
+            self.send_header("Accept-Ranges", "bytes")
+            self.end_headers()
+            with src.open("rb") as f:
+                while True:
+                    chunk = f.read(65536)
+                    if not chunk:
+                        break
+                    try:
+                        self.wfile.write(chunk)
+                    except (BrokenPipeError, ConnectionResetError):
+                        break
+
     def do_GET(self):
         path = unquote(self.path).split("?")[0]
 
@@ -256,19 +467,27 @@ class Handler(BaseHTTPRequestHandler):
 
         elif path.startswith("/thumb/"):
             src = safe_path(path[7:])
-            if not src or not src.is_file() or src.suffix.lower() not in IMAGE_EXTS:
+            if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
                 self.send_error(404); return
             try:
-                self.send_bytes(make_thumb(src).read_bytes(), "image/jpeg")
+                if src.suffix.lower() in VIDEO_EXTS:
+                    tp = make_video_thumb(src)
+                    if tp is None:
+                        self.send_error(404); return
+                else:
+                    tp = make_thumb(src)
+                self.send_bytes(tp.read_bytes(), "image/jpeg")
             except Exception:
                 self.send_error(500)
 
         elif path.startswith("/img/"):
             src = safe_path(path[5:])
-            if not src or not src.is_file():
+            if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
                 self.send_error(404); return
-            mime = mimetypes.guess_type(str(src))[0] or "application/octet-stream"
-            self.send_bytes(src.read_bytes(), mime)
+            try:
+                self.serve_file(src)
+            except Exception:
+                self.send_error(500)
 
         else:
             self.send_error(404)
@@ -278,7 +497,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if path.startswith("/delete/"):
             src = safe_path(path[8:])
-            if not src or not src.is_file() or src.suffix.lower() not in IMAGE_EXTS:
+            if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
                 self.send_error(404); return
             src.unlink()
             self.send_response(200)
