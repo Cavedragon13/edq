@@ -71,47 +71,47 @@ When removing a project:
 
 ## History
 
-| Date       | Action                                                                                       |
-| ---------- | -------------------------------------------------------------------------------------------- |
-| 2026-01-20 | Deleted `venv_qwen` (477MB) - Qwen legacy removed                                            |
-| 2026-01-20 | Deleted orphan `/Wan2GP/.venv` (9.2GB) - duplicate of projects/Wan2GP                        |
-| 2026-01-20 | Deleted orphan `/Wan2GP/` (63GB total) - script uses projects/Wan2GP                         |
-| 2026-01-20 | Deleted empty `projects/wan-animate/venv` (32K)                                              |
-| 2026-01-20 | Created this registry                                                                        |
-| 2026-01-23 | Added `venv_heartmula` for HeartMuLa music generator                                         |
-| 2026-01-23 | Added `venv_sam2`, `venv_sadtalker`, `venv_hunyuan3d`, `venv_matanyone`                      |
-| 2026-01-24 | Added `venv_qwen3_tts` for Qwen3-TTS (1.7B models)                                           |
-| 2026-01-24 | Added `venv_realesrgan` for Real-ESRGAN upscaling                                            |
-| 2026-01-25 | Deleted `comfyui-wan/venv` (129GB) - ComfyUI removed from Dragonsuite                        |
-| 2026-01-29 | Added `venv_zimage` for Z-Image Base (Alibaba Tongyi 6B)                                     |
-| 2026-01-31 | Added `venv_rembg` for Rembg AI background removal                                           |
-| 2026-01-31 | Added `venv_qwen_image_layered` for Qwen-Image-Layered decomposition                         |
-| 2026-02-01 | Added MCP servers section; created `mcp-servers/dragonsuite/venv`                            |
-| 2026-02-01 | Deleted `venv_matanyone` - dependency conflicts, SAM2+Rembg cover use cases                  |
-| 2026-02-02 | Replaced `venv_sadtalker` with `venv_liveportrait` (KlingTeam, 2026)                         |
-| 2026-02-06 | Added `venv_mule_game` for M.U.L.E. web game (tribute to Dani Bunten Berry)                  |
-| 2026-02-08 | Added `venv_facefusion` for FaceFusion face swap & manipulation                              |
-| 2026-02-08 | Added `topaz-labs-mcp` MCP server for Topaz Labs API integration                             |
-| 2026-02-11 | Added ACE-Step 1.5 (uv-managed .venv) for ultra-fast music generation                        |
-| 2026-02-11 | Added Z-Image-Fun-Lora-Distill fast mode (4-step/8-step LoRAs)                               |
-| 2026-02-15 | Added `venv_soulxsinger` for SoulX-Singer zero-shot singing synthesis                        |
-| 2026-02-15 | Added `venv_deepgen` for DeepGen 1.0 multimodal image gen/edit                               |
-| 2026-02-15 | Added JustDubit .venv (uv-managed) for video dubbing with lip-sync                           |
-| 2026-02-15 | Added `venv_topaz_gradio` for Topaz Labs Gradio web UI (separate from MCP venv)              |
-| 2026-02-15 | Added `venv_dolphin_vision` for Dolphin Vision 7B uncensored VLM (port 8025)                 |
-| 2026-02-15 | Added AudioMass web audio editor - Audacity-like client-side editor (port 8027)              |
-| 2026-02-15 | Added Audio Processing Suite - exposes SoulX-Singer preprocess models standalone (port 8026) |
-| 2026-02-15 | Enhanced DragonFlux Klein - added FLUX.1-dev HD Mode as third model option                   |
-| 2026-02-18 | Added `venv_wan_1b` for Wan2.1-T2V-1.3B standalone video generation (port 8016)              |
-| 2026-02-18 | Added `venv_ltxvideo` for LTX-Video-0.9.7-distilled T2V+I2V standalone (port 8028)           |
-| 2026-03-01 | Added `venv_lavasr` for LavaSR speech enhancement + BWE upsampling to 48kHz (port 8034)      |
-| 2026-03-02 | Added `venv_the_movies` for The Movies AI film studio sim (port 8035)                        |
-| 2026-03-12 | Attempted `venv_nemotron` for Nemotron Nano 9B v2 — removed; mamba-ssm/Blackwell incompat.   |
-| 2026-03-15 | Updated `venv_fish_speech` — Fish Speech v2.0.0 / Fish Audio S2-Pro (4B)                     |
-| 2026-03-15 | Added `venv_tada` for TADA TTS (Hume AI TADA-3B-ML, port 8037)                               |
-| 2026-03-15 | Added `venv_matanyone2` for MatAnyone 2 video matting CVPR 2026 (port 8038)                  |
-| 2026-04-17 | Added `venv_voxcpm2` for VoxCPM2 2B diffusion TTS — 48kHz, 30+ languages, voice design & cloning (port 8048) |
-| 2026-04-19 | Added `venv_agentic_video` for Agentic Video Editor 4-agent pipeline (Director/Trimmer/Editor/Reviewer) (port 8044) |
-| 2026-04-19 | Added Docker service for OmniVoice-Studio cinematic video dubbing (port 8051, remapped from container's :8000) |
-| 2026-04-19 | Installed Claude Code skills: Waza (8 skills: /think /design /check /hunt /write /learn /read /health) |
+| Date       | Action                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 2026-01-20 | Deleted `venv_qwen` (477MB) - Qwen legacy removed                                                                        |
+| 2026-01-20 | Deleted orphan `/Wan2GP/.venv` (9.2GB) - duplicate of projects/Wan2GP                                                    |
+| 2026-01-20 | Deleted orphan `/Wan2GP/` (63GB total) - script uses projects/Wan2GP                                                     |
+| 2026-01-20 | Deleted empty `projects/wan-animate/venv` (32K)                                                                          |
+| 2026-01-20 | Created this registry                                                                                                    |
+| 2026-01-23 | Added `venv_heartmula` for HeartMuLa music generator                                                                     |
+| 2026-01-23 | Added `venv_sam2`, `venv_sadtalker`, `venv_hunyuan3d`, `venv_matanyone`                                                  |
+| 2026-01-24 | Added `venv_qwen3_tts` for Qwen3-TTS (1.7B models)                                                                       |
+| 2026-01-24 | Added `venv_realesrgan` for Real-ESRGAN upscaling                                                                        |
+| 2026-01-25 | Deleted `comfyui-wan/venv` (129GB) - ComfyUI removed from Dragonsuite                                                    |
+| 2026-01-29 | Added `venv_zimage` for Z-Image Base (Alibaba Tongyi 6B)                                                                 |
+| 2026-01-31 | Added `venv_rembg` for Rembg AI background removal                                                                       |
+| 2026-01-31 | Added `venv_qwen_image_layered` for Qwen-Image-Layered decomposition                                                     |
+| 2026-02-01 | Added MCP servers section; created `mcp-servers/dragonsuite/venv`                                                        |
+| 2026-02-01 | Deleted `venv_matanyone` - dependency conflicts, SAM2+Rembg cover use cases                                              |
+| 2026-02-02 | Replaced `venv_sadtalker` with `venv_liveportrait` (KlingTeam, 2026)                                                     |
+| 2026-02-06 | Added `venv_mule_game` for M.U.L.E. web game (tribute to Dani Bunten Berry)                                              |
+| 2026-02-08 | Added `venv_facefusion` for FaceFusion face swap & manipulation                                                          |
+| 2026-02-08 | Added `topaz-labs-mcp` MCP server for Topaz Labs API integration                                                         |
+| 2026-02-11 | Added ACE-Step 1.5 (uv-managed .venv) for ultra-fast music generation                                                    |
+| 2026-02-11 | Added Z-Image-Fun-Lora-Distill fast mode (4-step/8-step LoRAs)                                                           |
+| 2026-02-15 | Added `venv_soulxsinger` for SoulX-Singer zero-shot singing synthesis                                                    |
+| 2026-02-15 | Added `venv_deepgen` for DeepGen 1.0 multimodal image gen/edit                                                           |
+| 2026-02-15 | Added JustDubit .venv (uv-managed) for video dubbing with lip-sync                                                       |
+| 2026-02-15 | Added `venv_topaz_gradio` for Topaz Labs Gradio web UI (separate from MCP venv)                                          |
+| 2026-02-15 | Added `venv_dolphin_vision` for Dolphin Vision 7B uncensored VLM (port 8025)                                             |
+| 2026-02-15 | Added AudioMass web audio editor - Audacity-like client-side editor (port 8027)                                          |
+| 2026-02-15 | Added Audio Processing Suite - exposes SoulX-Singer preprocess models standalone (port 8026)                             |
+| 2026-02-15 | Enhanced DragonFlux Klein - added FLUX.1-dev HD Mode as third model option                                               |
+| 2026-02-18 | Added `venv_wan_1b` for Wan2.1-T2V-1.3B standalone video generation (port 8016)                                          |
+| 2026-02-18 | Added `venv_ltxvideo` for LTX-Video-0.9.7-distilled T2V+I2V standalone (port 8028)                                       |
+| 2026-03-01 | Added `venv_lavasr` for LavaSR speech enhancement + BWE upsampling to 48kHz (port 8034)                                  |
+| 2026-03-02 | Added `venv_the_movies` for The Movies AI film studio sim (port 8035)                                                    |
+| 2026-03-12 | Attempted `venv_nemotron` for Nemotron Nano 9B v2 — removed; mamba-ssm/Blackwell incompat.                               |
+| 2026-03-15 | Updated `venv_fish_speech` — Fish Speech v2.0.0 / Fish Audio S2-Pro (4B)                                                 |
+| 2026-03-15 | Added `venv_tada` for TADA TTS (Hume AI TADA-3B-ML, port 8037)                                                           |
+| 2026-03-15 | Added `venv_matanyone2` for MatAnyone 2 video matting CVPR 2026 (port 8038)                                              |
+| 2026-04-17 | Added `venv_voxcpm2` for VoxCPM2 2B diffusion TTS — 48kHz, 30+ languages, voice design & cloning (port 8048)             |
+| 2026-04-19 | Added `venv_agentic_video` for Agentic Video Editor 4-agent pipeline (Director/Trimmer/Editor/Reviewer) (port 8044)      |
+| 2026-04-19 | Added Docker service for OmniVoice-Studio cinematic video dubbing (port 8051, remapped from container's :8000)           |
+| 2026-04-19 | Installed Claude Code skills: Waza (8 skills: /think /design /check /hunt /write /learn /read /health)                   |
 | 2026-04-19 | Installed Claude Code skills: caveman (6 compression skills: /caveman /caveman-compress /caveman-commit /caveman-review) |

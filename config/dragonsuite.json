@@ -1090,6 +1090,23 @@
       "stop_command": null
     },
     {
+      "id": "pinokio",
+      "name": "Pinokio",
+      "description": "Community AI app launcher \u2014 browse, install, and run open-source AI apps locally",
+      "category": "utility",
+      "port": 42000,
+      "path": "/",
+      "icon": "&#127800;",
+      "launch_command": "bash /srv/containers/edq/apps/pinokio-launcher.sh",
+      "project_path": null,
+      "features": [
+        "App Store",
+        "Auto-install",
+        "One-click Launch"
+      ],
+      "stop_command": "pkill -f pinokio-bin || true"
+    },
+    {
       "id": "dl-gallery",
       "name": "Downloads Gallery",
       "description": "Thumbnail browser for ~/Downloads \u2014 280px grid, newest first, click to open full size",
