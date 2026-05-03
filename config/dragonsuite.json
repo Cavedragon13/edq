@@ -39,7 +39,7 @@
       "id": "dragonsight4",
       "name": "Dragonsight 4.6",
       "description": "Vision AI + Smart Naming + Metadata + Gemma 4 Multimodal",
-      "category": "image",
+      "category": "vision",
       "port": 8080,
       "path": "/",
       "icon": "&#128009;",
@@ -287,7 +287,7 @@
       "id": "hunyuan3d",
       "name": "Hunyuan3D-2",
       "description": "Image to 3D + Texture Synthesis",
-      "category": "3d",
+      "category": "vision",
       "port": 8007,
       "path": null,
       "icon": "&#129513;",
@@ -359,7 +359,7 @@
       "id": "heartmula",
       "name": "HeartMuLa",
       "description": "Lyrics to Song + Style Tags + Sections",
-      "category": "audio",
+      "category": "music",
       "port": 8004,
       "path": null,
       "icon": "&#127925;",
@@ -377,7 +377,7 @@
       "id": "foundation-1",
       "name": "Foundation-1",
       "description": "BPM + Key-aware loop generator \u2014 WAV + MIDI output for DAW use",
-      "category": "audio",
+      "category": "music",
       "port": 8039,
       "path": null,
       "icon": "&#127926;",
@@ -394,7 +394,7 @@
       "id": "ace-step",
       "name": "ACE-Step 1.5 XL",
       "description": "Official XL (4B DiT) music generation + LoRA training + cover/repaint",
-      "category": "audio",
+      "category": "music",
       "port": 8021,
       "path": null,
       "icon": "&#127911;",
@@ -413,7 +413,7 @@
       "id": "dragonsong",
       "name": "Dragonsong",
       "description": "Lyria RealTime Music \u2014 live prompting, blend, layer muting",
-      "category": "audio",
+      "category": "music",
       "port": 8029,
       "path": "/",
       "icon": "&#127926;",
@@ -430,7 +430,7 @@
       "id": "sam2",
       "name": "SAM 2.1",
       "description": "Image + Video Segmentation + Auto Masks",
-      "category": "segmentation",
+      "category": "vision",
       "port": 8005,
       "path": null,
       "icon": "&#127919;",
@@ -448,7 +448,7 @@
       "id": "rembg",
       "name": "Rembg",
       "description": "AI Background Removal + Multiple Models",
-      "category": "segmentation",
+      "category": "vision",
       "port": 8012,
       "path": null,
       "icon": "&#9986;",
@@ -466,7 +466,7 @@
       "id": "facefusion",
       "name": "FaceFusion",
       "description": "Face Swap + Manipulation + Live Webcam",
-      "category": "segmentation",
+      "category": "vision",
       "port": 8017,
       "path": null,
       "icon": "&#128123;",
@@ -484,7 +484,7 @@
       "id": "qwen-image-layered",
       "name": "Qwen Image Layered",
       "description": "Image Layer Decomposition + PPTX Export",
-      "category": "segmentation",
+      "category": "vision",
       "port": 8013,
       "path": null,
       "icon": "&#128444;",
@@ -730,7 +730,7 @@
       "id": "soulxsinger",
       "name": "SoulX-Singer",
       "description": "Zero-Shot Singing Voice Synthesis + Voice Cloning",
-      "category": "audio",
+      "category": "music",
       "port": 8023,
       "path": null,
       "icon": "&#127908;",
@@ -764,7 +764,7 @@
       "id": "dolphin-vision",
       "name": "Dolphin Vision 7B",
       "description": "Uncensored vision-language model for unrestricted image Q&A",
-      "category": "image",
+      "category": "vision",
       "port": 8025,
       "path": "/",
       "icon": "&#128065;",
@@ -905,7 +905,7 @@
       "id": "matanyone2",
       "name": "MatAnyone 2",
       "description": "Human video matting \u2014 interactive click-to-select alpha matte extraction",
-      "category": "segmentation",
+      "category": "vision",
       "port": 8038,
       "path": null,
       "icon": "&#9986;",
@@ -981,7 +981,7 @@
       "id": "unsloth-studio",
       "name": "Unsloth Studio",
       "description": "LLM fine-tuning web UI \u2014 LoRA, QLoRA, full fine-tune, RL; dataset creation from PDF/CSV/JSON; model comparison arena",
-      "category": "ai",
+      "category": "llm",
       "port": 8050,
       "path": "/",
       "icon": "&#129454;",
@@ -1126,32 +1126,40 @@
   ],
   "categories": {
     "image": {
-      "name": "Image / Vision",
+      "name": "Image Generation",
       "icon": "&#128444;"
     },
+    "vision": {
+      "name": "Vision & 3D",
+      "icon": "&#128065;"
+    },
     "video": {
-      "name": "Video Generation",
+      "name": "Video",
       "icon": "&#127916;"
     },
-    "3d": {
-      "name": "3D Generation",
-      "icon": "&#129513;"
+    "music": {
+      "name": "Music",
+      "icon": "&#127925;"
     },
     "audio": {
-      "name": "Audio / TTS / Music",
+      "name": "Audio & Voice",
       "icon": "&#128266;"
     },
-    "segmentation": {
-      "name": "Segmentation / Matting",
-      "icon": "&#127919;"
+    "llm": {
+      "name": "LLM / Chat",
+      "icon": "&#129302;"
     },
     "game": {
       "name": "Games",
       "icon": "&#127918;"
     },
     "media": {
-      "name": "Media Library",
-      "icon": "&#127916;"
+      "name": "Media",
+      "icon": "&#127909;"
+    },
+    "automation": {
+      "name": "Automation",
+      "icon": "&#9881;"
     },
     "utility": {
       "name": "Utilities",
@@ -1160,10 +1168,6 @@
     "smart-home": {
       "name": "Smart Home",
       "icon": "&#127968;"
-    },
-    "automation": {
-      "name": "Automation / Tools",
-      "icon": "&#9881;"
     }
   }
 }
