@@ -10,11 +10,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Manrope:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:        #05090f;
-  --bg2:       #080e18;
-  --bgc:       #0b1220;
-  --bgch:      #0f1828;
-  --bge:       #162030;
+  --bg:        #080e1c;
+  --bg2:       #0b1425;
+  --bgc:       #0e1828;
+  --bgch:      #121e32;
+  --bge:       #172336;
   --bd:        rgba(34,211,238,0.08);
   --bdh:       rgba(34,211,238,0.20);
   --tx:        #d8e8f4;
@@ -125,7 +125,7 @@ body.light .hdr { background:rgba(240,246,250,.94); border-bottom-color:rgba(8,1
 .sfill.w { background:var(--warn); } .sfill.d { background:var(--err); }
 
 .ibtn {
-  width:30px; height:30px; border-radius:7px;
+  width:36px; height:36px; border-radius:7px;
   border:1px solid var(--bd); background:transparent; color:var(--tx2);
   display:flex; align-items:center; justify-content:center;
   cursor:pointer; font-size:13px; transition:all var(--tr); flex-shrink:0;
@@ -138,7 +138,7 @@ body.light .hdr { background:rgba(240,246,250,.94); border-bottom-color:rgba(8,1
 .cnav {
   position:sticky; top:58px; z-index:90;
   display:flex; gap:0; padding:0 22px;
-  background:rgba(5,9,15,.80); backdrop-filter:blur(20px);
+  background:rgba(8,14,28,.80); backdrop-filter:blur(20px);
   border-bottom:1px solid rgba(34,211,238,.07);
   overflow-x:auto; scrollbar-width:none;
   transition:background .3s;
@@ -170,7 +170,7 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 
 /* Stats cards */
 .sgrid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
   gap:14px; margin-bottom:20px;
 }
 .sc {
@@ -193,15 +193,15 @@ body.light .cnav { background:rgba(240,246,250,.80); }
   margin-bottom:10px;
 }
 .sc-lbl-type {
-  font-size:10px; font-family:'JetBrains Mono',monospace;
+  font-size:11px; font-family:'JetBrains Mono',monospace;
   text-transform:uppercase; letter-spacing:.10em;
   color:var(--sc-accent, var(--ac));
   font-weight:600;
 }
 .sc-lbl-qual {
-  font-size:9px; font-family:'JetBrains Mono',monospace;
+  font-size:10px; font-family:'JetBrains Mono',monospace;
   text-transform:uppercase; letter-spacing:.08em;
-  color:var(--tx2); opacity:0.6;
+  color:var(--tx2); opacity:0.8;
 }
 .sc-val {
   font-family:'JetBrains Mono',monospace;
@@ -339,7 +339,7 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 }
 .card-meta { flex:1; min-width:0; }
 .card-name {
-  font-family:'Chakra Petch',sans-serif; font-size:13.5px; font-weight:700;
+  font-family:'Chakra Petch',sans-serif; font-size:15px; font-weight:700;
   color:var(--tx); line-height:1.2; margin-bottom:4px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   letter-spacing:.02em;
@@ -355,7 +355,7 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 .sdot.off { background:var(--txm); }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-.card-desc { font-size:12.5px; color:var(--tx); line-height:1.55; opacity:.82; }
+.card-desc { font-size:14px; color:var(--tx); line-height:1.55; }
 .card-feats { display:flex; flex-wrap:wrap; gap:4px; }
 .feat {
   font-size:10px; font-family:'JetBrains Mono',monospace;
@@ -452,6 +452,8 @@ body.light .cnav { background:rgba(240,246,250,.80); }
 .card:nth-child(9){animation-delay:.27s} .card:nth-child(10){animation-delay:.30s}
 .card:nth-child(n+11){animation-delay:.33s}
 
+.ctab.run-tab.active { color:var(--run); border-bottom-color:var(--run); text-shadow:0 0 12px rgba(52,211,153,.4); }
+.ctab.run-tab.active .cnum { background:var(--rund); color:var(--run); }
 @media(max-width:720px){
   .hdr-stats{display:none}
   .main{padding:12px}
@@ -603,6 +605,8 @@ var CAT = {
   game:         {bg:'rgba(74,222,128,.13)',  cl:'#4ade80', bd:'rgba(74,222,128,.25)'},
   'smart-home': {bg:'rgba(249,115,22,.13)',  cl:'#f97316', bd:'rgba(249,115,22,.25)'},
   automation:   {bg:'rgba(148,163,184,.10)', cl:'#94a3b8', bd:'rgba(148,163,184,.20)'},
+  media:        {bg:'rgba(251,113,133,.13)', cl:'#fb7185', bd:'rgba(251,113,133,.25)'},
+  utility:      {bg:'rgba(99,102,241,.13)',  cl:'#818cf8', bd:'rgba(99,102,241,.25)'},
 };
 
 function catStyle(c) {
@@ -689,8 +693,10 @@ function buildNav(svcs, cats) {
   svcs.forEach(function(s){ counts[s.category] = (counts[s.category] || 0) + 1; });
   var used = Object.keys(cats).filter(function(c){ return counts[c]; });
   var nav = document.getElementById('cnav');
+  var runCount = svcs.filter(function(s){ return s.running || s.always_on; }).length;
   nav.innerHTML =
     '<button class="ctab' + (activeCat === 'all' ? ' active' : '') + '" data-cat="all">All <span class="cnum">' + counts.all + '</span></button>' +
+    '<button class="ctab run-tab' + (activeCat === 'running' ? ' active' : '') + '" data-cat="running">Running <span class="cnum">' + runCount + '</span></button>' +
     used.map(function(c){
       return '<button class="ctab' + (activeCat === c ? ' active' : '') + '" data-cat="' + c + '">' +
         cats[c].name + ' <span class="cnum">' + (counts[c] || 0) + '</span></button>';
@@ -729,6 +735,12 @@ function buildCard(s) {
   }
 
   var feats = (s.features || []).map(function(f){ return '<span class="feat">' + f + '</span>'; }).join('');
+  if (s.live_vram_gb != null) {
+    feats += '<span class="feat" style="color:var(--run);border-color:rgba(52,211,153,.25)" title="Live VRAM usage">' + s.live_vram_gb + 'GB VRAM</span>';
+  } else if (s.vram_gb) {
+    feats += '<span class="feat" style="color:var(--warn);border-color:rgba(251,191,36,.22)" title="Required VRAM (estimated)">' + s.vram_gb + 'GB VRAM</span>';
+  }
+  if (s.output_dir) { var dn = s.output_dir.split('/').pop(); feats += '<span class="feat" style="color:var(--ac);border-color:rgba(34,211,238,.2)" title="' + s.output_dir + '">' + String.fromCodePoint(0x1F4C1) + ' ' + dn + '</span>'; }
   var ico = s.thumbnail
     ? '<img class="card-thumb" src="' + s.thumbnail + '" alt="" onerror="this.nextElementSibling.style.display=\'flex\'; this.remove()"><span class="card-emoji" style="display:none">' + (s.icon || '&#x2699;') + '</span>'
     : '<span class="card-emoji">' + (s.icon || '&#x2699;') + '</span>';
@@ -753,7 +765,10 @@ function buildCard(s) {
 
 function renderGrid() {
   var grid = document.getElementById('svgrid');
-  var list = activeCat === 'all' ? services : services.filter(function(s){ return s.category === activeCat; });
+  var list = activeCat === 'all' ? services.slice() :
+             activeCat === 'running' ? services.filter(function(s){ return s.running || s.always_on; }) :
+             services.filter(function(s){ return s.category === activeCat; });
+  list.sort(function(a,b){ return ((b.running||b.always_on)?1:0) - ((a.running||a.always_on)?1:0); });
   if (!list.length) {
     grid.innerHTML = '<div style="color:var(--txm);padding:40px;text-align:center;grid-column:1/-1">No services in this category</div>';
     return;

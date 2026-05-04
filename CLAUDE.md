@@ -651,3 +651,12 @@ Key routing rules:
 - Architecture review → invoke plan-eng-review
 - Save progress, checkpoint, resume → invoke checkpoint
 - Code quality, health check → invoke health
+
+## GBrain Configuration (configured by /setup-gbrain)
+- Engine: postgres (Supabase — project zvkwushxufacojfbmppq, us-east-1)
+- Config file: ~/.gbrain/config.json (mode 0600)
+- Setup date: 2026-05-03
+- MCP registered: yes (user scope, `gbrain serve`)
+- Memory sync: artifacts-only → github.com/Cavedragon13/gstack-brain-edq
+- Current repo policy: read-write (github.com/cavedragon13/edq)
+- Cross-machine restore: copy ~/.gstack-brain-remote.txt to new machine, run gstack-brain-restore

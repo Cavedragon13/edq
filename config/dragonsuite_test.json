@@ -1104,7 +1104,7 @@
       "path": "/",
       "icon": "&#127800;",
       "launch_command": "bash /srv/containers/edq/apps/pinokio-launcher.sh",
-      "project_path": "/srv/containers/edq/projects/pinokio",
+      "project_path": null,
       "features": [
         "App Store",
         "Auto-install",

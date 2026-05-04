@@ -153,11 +153,24 @@ async def get_all_status():
     config = load_config()
     local_ip = get_local_ip()
 
+    gpu_procs = get_vram_per_process()
+
     statuses = []
     for service in config.get("services", []):
         port = service.get("port")
         always_on = service.get("always_on", False)
         is_running = True if always_on else (check_port(port) if port else False)
+
+        # Live VRAM: match GPU processes to this service via project_path
+        live_vram_gb = None
+        project_path = service.get("project_path", "")
+        if is_running and project_path and gpu_procs:
+            matched_mb = sum(
+                p["vram_mb"] for p in gpu_procs
+                if project_path in p["cmdline"]
+            )
+            if matched_mb:
+                live_vram_gb = round(matched_mb / 1024, 1)
 
         # Build URL — use explicit url field if set (for external-host services)
         url = service.get("url") or None
@@ -181,6 +194,10 @@ async def get_all_status():
             "thumbnail": service.get("thumbnail"),
             "github_url": service.get("github_url"),
             "pages_url": service.get("pages_url"),
+            "features": service.get("features", []),
+            "vram_gb": service.get("vram_gb"),
+            "live_vram_gb": live_vram_gb,
+            "output_dir": service.get("output_dir"),
         })
 
     return {
@@ -459,6 +476,37 @@ def get_vram_free_gb() -> float:
     except Exception:
         pass
     return -1
+
+
+def get_vram_per_process() -> list:
+    """Return [{pid, vram_mb, cmdline}] for all GPU-using processes via nvidia-smi."""
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=pid,used_memory",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode != 0:
+            return []
+        entries = []
+        for line in result.stdout.strip().splitlines():
+            parts = [x.strip() for x in line.split(',')]
+            if len(parts) != 2:
+                continue
+            try:
+                pid = int(parts[0])
+                vram_mb = int(parts[1])
+            except ValueError:
+                continue
+            # Get full cmdline for project_path matching
+            try:
+                cmdline = open(f"/proc/{pid}/cmdline").read().replace("\x00", " ").strip()
+            except Exception:
+                cmdline = ""
+            entries.append({"pid": pid, "vram_mb": vram_mb, "cmdline": cmdline})
+        return entries
+    except Exception:
+        return []
 
 
 def get_competing_gpu_services(config: dict, needed_gb: float) -> list[dict]:
