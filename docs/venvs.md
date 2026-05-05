@@ -18,7 +18,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_hunyuan3d          | `/srv/containers/edq/venv_hunyuan3d`              | ~10GB  | `start_hunyuan3d.sh`          | Hunyuan3D-2 image to 3D                                    |
 | venv_qwen3_tts          | `/srv/containers/edq/venv_qwen3_tts`              | ~8GB   | `start_qwen3_tts.sh`          | Qwen3-TTS (TTS, cloning, voice design)                     |
 | venv_realesrgan         | `/srv/containers/edq/venv_realesrgan`             | ~4GB   | `start_realesrgan.sh`         | Real-ESRGAN image upscaling                                |
-| venv_zimage             | `/srv/containers/edq/venv_zimage`                 | ~8GB   | `start_zimage.sh`             | Z-Image Base text-to-image (6B)                            |
+| venv_zimage             | `/srv/containers/edq/venv_zimage`                 | ~8GB   | `start_zimage.sh`             | Z-Image Base (6B) · shared with Z-Anime (port 8008)        |
 | venv_rembg              | `/srv/containers/edq/venv_rembg`                  | ~1GB   | `start_rembg.sh`              | Rembg AI background removal                                |
 | venv_qwen_image_layered | `/srv/containers/edq/venv_qwen_image_layered`     | ~10GB  | `start_qwen_image_layered.sh` | Qwen-Image-Layered decomposition                           |
 | venv_mule_game          | `/srv/containers/edq/venv_mule_game`              | ~50MB  | `start_mule_game.sh`          | M.U.L.E. web game (Gradio)                                 |
@@ -115,3 +115,4 @@ When removing a project:
 | 2026-04-19 | Added Docker service for OmniVoice-Studio cinematic video dubbing (port 8051, remapped from container's :8000)           |
 | 2026-04-19 | Installed Claude Code skills: Waza (8 skills: /think /design /check /hunt /write /learn /read /health)                   |
 | 2026-04-19 | Installed Claude Code skills: caveman (6 compression skills: /caveman /caveman-compress /caveman-commit /caveman-review) |
+| 2026-05-04 | Updated `venv_zimage` — now shared with Z-Anime (port 8008); venv_zimage entry updated in registry                       |

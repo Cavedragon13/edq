@@ -45,6 +45,7 @@ This is a personal AI development environment focused on video generation, visio
 | 8005                                    | SAM 2.1               | On-demand (GPU)        | [Vision AI](docs/services/vision-ai.md)                 |
 | 8006                                    | LivePortrait          | On-demand (GPU)        | [Vision AI](docs/services/vision-ai.md)                 |
 | 8007                                    | Hunyuan3D-2           | On-demand (GPU)        | [Utilities](docs/services/utilities.md)                 |
+| 8008                                    | Z-Anime               | On-demand (GPU)        | Anime fine-tune of Z-Image Base, 6B S3-DiT, AIO FP8     |
 | 8009                                    | Qwen3-TTS             | On-demand (GPU)        | [Audio & TTS](docs/services/audio-tts.md)               |
 | 8010                                    | Real-ESRGAN           | On-demand (GPU)        | [Image Generation](docs/services/image-generation.md)   |
 | 8011                                    | Z-Image Base          | On-demand (GPU)        | [Image Generation](docs/services/image-generation.md)   |
