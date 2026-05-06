@@ -9,14 +9,13 @@ SERVICE_NAME="Z-Anime"
 PORT=8008
 VENV="venv_zimage"
 SCRIPT="scripts/zanime_gradio.py"
-MODEL_DIR="/srv/containers/edq/models/zanime/aio"
+DIFFUSERS_DIR="/srv/containers/edq/models/zanime/diffusers"
 
 service_header "$SERVICE_NAME" "$PORT"
 
 # Fail-fast model check BEFORE gpu_preflight (cheaper to fail early)
-if [ ! -f "$MODEL_DIR/z-anime-base-aio-fp8.safetensors" ] && \
-   [ ! -f "$MODEL_DIR/z-anime-base-aio-bf16.safetensors" ]; then
-    echo "❌ Z-Anime models not found in $MODEL_DIR"
+if [ ! -f "$DIFFUSERS_DIR/model_index.json" ]; then
+    echo "❌ Z-Anime diffusers model not found at $DIFFUSERS_DIR"
     echo "   Run: bash scripts/download_zanime_models.sh"
     exit 1
 fi
