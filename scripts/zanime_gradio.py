@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
-"""Z-Anime — Anime fine-tune of Z-Image Base (SeeSee21/Z-Anime)
-6B S3-DiT, diffusers layout, sequential CPU offload, Apache 2.0
+"""Z-Anime — Anime fine-tune of Z-Image Base (SeeSee21/Z-Anime).
 
-Loads from the local diffusers subfolder (same pattern as Z-Image Base).
-AIO files in models/zanime/aio/ are ComfyUI format and not used here."""
+This dashboard app intentionally uses the repository's Diffusers layout.
+For the remote Hugging Face repo that would be:
+    ZImagePipeline.from_pretrained("SeeSee21/Z-Anime", subfolder="diffusers")
+
+The local downloader stores only that subfolder under models/zanime/diffusers,
+so the runtime loads that directory directly.
+
+The AIO safetensors are ComfyUI checkpoints. Loading an AIO file through this
+Diffusers app, or describing this app as a 4-step/8-step AIO launcher, produces
+confusing behavior and bad expectations. Keep those paths separate.
+"""
 
 import gradio as gr
 import torch
@@ -11,10 +19,13 @@ from pathlib import Path
 from datetime import datetime
 import gc
 
-DIFFUSERS_DIR = Path("/srv/containers/edq/models/zanime/diffusers")
+MODEL_ROOT    = Path("/srv/containers/edq/models/zanime")
+DIFFUSERS_DIR = MODEL_ROOT / "diffusers"
 OUTPUT_DIR    = Path.home() / "ai_generated" / "zanime"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 PORT = 8008
+MODEL_MODE = "Diffusers Base BF16"
+MODEL_NOTE = "Uses SeeSee21/Z-Anime/diffusers. AIO files are ComfyUI-only."
 
 RESOLUTIONS = {
     "Portrait / Character (832×1216)":  (832, 1216),
@@ -54,6 +65,9 @@ def get_pipe():
         local_files_only=True,
         torch_dtype=dtype,
     )
+    # Text encoder is saved with mixed BF16+FP8 weights; cast to uniform BF16
+    # before sequential CPU offload installs its hooks (which lock dtypes).
+    _pipe.text_encoder = _pipe.text_encoder.to(dtype)
     _pipe.enable_sequential_cpu_offload()
     _pipe.enable_attention_slicing()
     print("Z-Anime ready.")
@@ -80,7 +94,7 @@ def generate(prompt, negative, resolution, steps, cfg, seed):
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_path = OUTPUT_DIR / f"zanime_{ts}.png"
         img.save(out_path)
-        return str(out_path), f"✅ Saved: {out_path.name}"
+        return str(out_path), f"✅ Saved: {out_path.name}\n{MODEL_MODE} · {w}×{h} · {steps} steps · CFG {cfg}"
     except Exception as e:
         return None, f"❌ Generation failed: {e}"
 
@@ -95,13 +109,24 @@ button.secondary { background: #2d2d4e !important; color: #c4b5fd !important; }
 """
 
 with gr.Blocks(theme=gr.themes.Base(), css=DARK_CSS, title="Z-Anime") as demo:
-    gr.Markdown("# 🎌 Z-Anime\nAnime fine-tune of Z-Image Base · 6B S3-DiT · Natural language prompts")
+    gr.Markdown(
+        "# Z-Anime\n"
+        "Anime fine-tune of Z-Image Base · Diffusers Base BF16 · Natural language prompts"
+    )
     with gr.Row():
         with gr.Column(scale=1):
             prompt     = gr.Textbox(label="Prompt", lines=3,
-                                    placeholder="A young woman in a kimono, cherry blossoms, soft lighting...")
+                                    value=("A young anime girl with long silver hair and golden eyes, wearing a "
+                                           "traditional shrine maiden outfit with white haori and red hakama. "
+                                           "She stands in a sunlit bamboo forest, cherry blossoms falling softly "
+                                           "around her. Warm afternoon light filtering through the trees, detailed "
+                                           "fabric shading, expressive face, calm serene expression, high quality "
+                                           "anime illustration with fine line work."),
+                                    placeholder="Use a full natural-language scene description, not short tag lists.")
             negative   = gr.Textbox(label="Negative prompt", lines=2,
-                                    value="blurry, bad anatomy, watermark, text")
+                                    value=("blurry, low quality, worst quality, bad anatomy, malformed hands, "
+                                           "extra fingers, missing fingers, text, watermark, logo, jpeg artifacts, "
+                                           "photorealistic, 3d render"))
             resolution = gr.Dropdown(choices=list(RESOLUTIONS.keys()),
                                      value="Portrait / Character (832×1216)", label="Resolution")
             with gr.Row():
@@ -109,6 +134,7 @@ with gr.Blocks(theme=gr.themes.Base(), css=DARK_CSS, title="Z-Anime") as demo:
                 cfg   = gr.Slider(1.0, 9.0, value=4.0, step=0.5, label="CFG scale")
             seed    = gr.Number(value=42, label="Seed", precision=0)
             run_btn = gr.Button("Generate", variant="primary")
+            gr.Markdown(f"`{MODEL_MODE}`\n\n{MODEL_NOTE}")
         with gr.Column(scale=1):
             output_img = gr.Image(label="Output", type="filepath")
             status     = gr.Textbox(label="Status", interactive=False)
@@ -118,4 +144,5 @@ with gr.Blocks(theme=gr.themes.Base(), css=DARK_CSS, title="Z-Anime") as demo:
                   outputs=[output_img, status])
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=PORT, share=False)
+    demo.launch(server_name="0.0.0.0", server_port=PORT, share=False,
+                allowed_paths=[str(OUTPUT_DIR)])

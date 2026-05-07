@@ -1,12 +1,12 @@
 #!/bin/bash
 # Foundation-1 — Music Generation Model
-# Port: 8039  |  GPU  |  venv_foundation1
+# Port: 8027  |  GPU  |  venv_foundation1
 set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
 SERVICE_NAME="Foundation-1"
-PORT=8039
+PORT=8027
 VENV="venv_foundation1"
 PROJECT_DIR="/srv/containers/edq/projects/foundation-1"
 MODEL="$PROJECT_DIR/models/Foundation_1.safetensors"

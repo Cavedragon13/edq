@@ -9,12 +9,27 @@ SERVICE_NAME="Real-ESRGAN"
 PORT=8010
 VENV="venv_realesrgan"
 SCRIPT="scripts/realesrgan_server.py"
+MODELS_DIR="/srv/containers/edq/models/realesrgan"
 
 service_header "$SERVICE_NAME" "$PORT"
 gpu_preflight "$PORT"
 activate_venv "$VENV"
 pip install -q fastapi uvicorn python-multipart 2>/dev/null || true
 set_pytorch_env
+
+for model_file in \
+    RealESRGAN_x4plus.pth \
+    RealESRGAN_x4plus_anime_6B.pth \
+    RealESRGAN_x2plus.pth \
+    realesr-general-x4v3.pth \
+    GFPGANv1.3.pth
+do
+    if [ ! -s "$MODELS_DIR/$model_file" ]; then
+        echo "❌ Missing Real-ESRGAN model: $MODELS_DIR/$model_file"
+        echo "   Run: bash scripts/download_realesrgan_models.sh"
+        exit 1
+    fi
+done
 
 echo "🚀 Starting $SERVICE_NAME..."
 

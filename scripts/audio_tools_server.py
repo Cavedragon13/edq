@@ -57,6 +57,54 @@ _transcriber = None
 _lavasr      = None
 
 
+def patch_vocos_for_lavasr():
+    """Accept LavaSR's newer mel config with the installed vocos package."""
+    import inspect
+    import vocos.feature_extractors as vf
+
+    params = inspect.signature(vf.MelSpectrogramFeatures.__init__).parameters
+    if "f_min" in params:
+        return
+
+    class CompatibleMelSpectrogramFeatures(vf.FeatureExtractor):
+        def __init__(
+            self,
+            sample_rate=24000,
+            n_fft=1024,
+            hop_length=256,
+            n_mels=100,
+            padding="center",
+            f_min=0.0,
+            f_max=None,
+            norm=None,
+            mel_scale="htk",
+        ):
+            super().__init__()
+            if padding not in ["center", "same"]:
+                raise ValueError("Padding must be 'center' or 'same'.")
+            self.padding = padding
+            self.mel_spec = torchaudio.transforms.MelSpectrogram(
+                sample_rate=sample_rate,
+                n_fft=n_fft,
+                hop_length=hop_length,
+                n_mels=n_mels,
+                center=padding == "center",
+                power=1,
+                f_min=f_min,
+                f_max=f_max,
+                norm=norm,
+                mel_scale=mel_scale,
+            )
+
+        def forward(self, audio, **kwargs):
+            if self.padding == "same":
+                pad = self.mel_spec.win_length - self.mel_spec.hop_length
+                audio = torch.nn.functional.pad(audio, (pad // 2, pad // 2), mode="reflect")
+            return vf.safe_log(self.mel_spec(audio))
+
+    vf.MelSpectrogramFeatures = CompatibleMelSpectrogramFeatures
+
+
 def get_separator():
     global _separator
     if _separator is not None:
@@ -97,6 +145,7 @@ def get_lavasr():
     if _lavasr is not None:
         return _lavasr, None
     try:
+        patch_vocos_for_lavasr()
         from LavaSR.model import LavaEnhance2
         device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Loading LavaSR on {device}…")

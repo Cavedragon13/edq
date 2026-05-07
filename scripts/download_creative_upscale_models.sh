@@ -3,8 +3,8 @@
 # Safe to interrupt (Ctrl+C) and resume - downloads are resumable
 #
 # Models downloaded (~28GB total):
-#   - alimama-creative/FLUX.1-dev-Controlnet-Upscaler (~5GB)
-#   - black-forest-labs/FLUX.1-dev (~23GB)
+#   - jasperai/Flux.1-dev-Controlnet-Upscaler (~5GB)
+#   - black-forest-labs/FLUX.1-dev diffusers components (~23GB)
 #
 # Usage: bash scripts/download_creative_upscale_models.sh
 
@@ -21,7 +21,7 @@ echo "🚀 Downloading $TOOL_NAME models (~$ESTIMATED_SIZE)..."
 echo "This is safe to interrupt (Ctrl+C) and resume later."
 echo ""
 echo "Models to download:"
-echo "  1. alimama-creative/FLUX.1-dev-Controlnet-Upscaler (~5GB)"
+echo "  1. jasperai/Flux.1-dev-Controlnet-Upscaler (~5GB)"
 echo "  2. black-forest-labs/FLUX.1-dev (~23GB)"
 echo ""
 
@@ -41,7 +41,7 @@ print("📦 Downloading FLUX.1-dev-Controlnet-Upscaler (~5GB)...")
 print(f"    → {models_dir}/controlnet")
 try:
     snapshot_download(
-        repo_id="alimama-creative/FLUX.1-dev-Controlnet-Upscaler",
+        repo_id="jasperai/Flux.1-dev-Controlnet-Upscaler",
         local_dir=str(models_dir / "controlnet"),
         ignore_patterns=["*.git*", "README.md", "*.md"]
     )
@@ -51,14 +51,21 @@ except Exception as e:
     print("Partial downloads are saved - run again to resume.")
     sys.exit(1)
 
-# Download FLUX.1-dev (~23GB)
+# Download FLUX.1-dev diffusers components (~23GB)
 print("📦 Downloading FLUX.1-dev (~23GB, this takes a while)...")
 print(f"    → {models_dir}/flux_dev")
 try:
     snapshot_download(
         repo_id="black-forest-labs/FLUX.1-dev",
         local_dir=str(models_dir / "flux_dev"),
-        ignore_patterns=["*.git*", "README.md", "*.md"]
+        ignore_patterns=[
+            "*.git*",
+            "README.md",
+            "*.md",
+            # Not used by FluxControlNetPipeline.from_pretrained(local_dir).
+            # Pulling this monolith adds ~23GB and can make first install look hung.
+            "flux1-dev.safetensors",
+        ]
     )
     print("✓ FLUX.1-dev downloaded!\n")
 except Exception as e:

@@ -139,7 +139,8 @@
                 "LoRA"
             ],
             "stop_command": "pkill -f 'zimage_base_gradio.py' || true",
-            "vram_gb": 10
+            "vram_gb": 10,
+            "output_dir": "/home/edq/ai_generated/zimage"
         },
         {
             "id": "realesrgan",
@@ -157,7 +158,8 @@
                 "Anime"
             ],
             "stop_command": "pkill -f \"realesrgan_server.py\" || true",
-            "vram_gb": 4
+            "vram_gb": 4,
+            "output_dir": "/home/edq/ai_generated/realesrgan"
         },
         {
             "id": "creative-upscale",
@@ -174,7 +176,8 @@
                 "Creative AI",
                 "FLUX + CN"
             ],
-            "stop_command": "pkill -f \"creative_upscale_gradio.py\" || true"
+            "stop_command": "pkill -f \"creative_upscale_gradio.py\" || true",
+            "output_dir": "/home/edq/ai_generated/creative-upscale"
         },
         {
             "id": "topaz-labs",
@@ -245,7 +248,8 @@
                 "~8GB VRAM"
             ],
             "stop_command": "pkill -f \"wan_1b_gradio.py\" || true",
-            "vram_gb": 8
+            "vram_gb": 8,
+            "output_dir": "/home/edq/ai_generated/wan_1b"
         },
         {
             "id": "ltxvideo",
@@ -263,7 +267,8 @@
                 "7-step distilled"
             ],
             "stop_command": "pkill -f \"ltxvideo_gradio.py\" || true",
-            "vram_gb": 12
+            "vram_gb": 12,
+            "output_dir": "/home/edq/ai_generated/ltxvideo"
         },
         {
             "id": "liveportrait",
@@ -316,7 +321,8 @@
                 "Voice Design"
             ],
             "stop_command": "pkill -f 'venv_qwen3_tts.*app_local.py' || true",
-            "vram_gb": 6
+            "vram_gb": 6,
+            "output_dir": "/home/edq/ai_generated/qwen3-tts"
         },
         {
             "id": "qwen3-audiobook",
@@ -378,7 +384,7 @@
             "name": "Foundation-1",
             "description": "BPM + Key-aware loop generator \u2014 WAV + MIDI output for DAW use",
             "category": "music",
-            "port": 8039,
+            "port": 8027,
             "path": null,
             "icon": "&#127926;",
             "launch_command": "cd /srv/containers/edq && bash scripts/start_foundation1.sh",
@@ -461,7 +467,8 @@
                 "Multi-Model"
             ],
             "stop_command": "pkill -f \"rembg_server.py\" || true",
-            "vram_gb": 2
+            "vram_gb": 2,
+            "output_dir": "/home/edq/ai_generated/rembg"
         },
         {
             "id": "facefusion",
@@ -798,7 +805,8 @@
                 "ASR (EN/ZH/YUE)"
             ],
             "stop_command": "pkill -f \"audio_tools_server.py\" || true",
-            "vram_gb": 4
+            "vram_gb": 4,
+            "output_dir": "/home/edq/ai_generated/audio-tools"
         },
         {
             "id": "concert-shirt",
@@ -943,7 +951,7 @@
                 "Folder Tags",
                 "REST API"
             ],
-            "stop_command": "docker compose -f /srv/containers/edq/docker/linkding/docker-compose.yml down || true"
+            "stop_command": "docker compose -f /srv/containers/edq/docker/linkding/docker-compose.yml --env-file /srv/containers/edq/.env down || true"
         },
         {
             "id": "ai-toolkit",
@@ -981,7 +989,8 @@
                 "Ultimate Clone"
             ],
             "stop_command": "pkill -f 'voxcpm2_server.py' || true",
-            "vram_gb": 8
+            "vram_gb": 8,
+            "output_dir": "/home/edq/ai_generated/voxcpm2"
         },
         {
             "id": "unsloth-studio",
@@ -1132,7 +1141,7 @@
         {
             "id": "zanime",
             "name": "Z-Anime",
-            "description": "Anime fine-tune of Z-Image Base \u00b7 6B S3-DiT \u00b7 Base/Distill 4-step/8-step \u00b7 8GB VRAM",
+            "description": "Anime fine-tune of Z-Image Base \u00b7 Diffusers Base BF16 \u00b7 natural-language prompts",
             "category": "image",
             "port": 8008,
             "path": "/",
@@ -1142,12 +1151,13 @@
             "features": [
                 "Anime T2I",
                 "6B S3-DiT",
-                "FP8 / BF16",
-                "Distill 4-step / 8-step",
+                "Diffusers Base BF16",
+                "CFG + Negative Prompt",
                 "Natural Language Prompts"
             ],
             "stop_command": "pkill -f 'zanime_gradio.py' || true",
-            "vram_gb": 8.0
+            "vram_gb": 8.0,
+            "output_dir": "/home/edq/ai_generated/zanime"
         }
     ],
     "categories": {

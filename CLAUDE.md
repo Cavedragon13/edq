@@ -45,7 +45,7 @@ This is a personal AI development environment focused on video generation, visio
 | 8005                                    | SAM 2.1               | On-demand (GPU)        | [Vision AI](docs/services/vision-ai.md)                 |
 | 8006                                    | LivePortrait          | On-demand (GPU)        | [Vision AI](docs/services/vision-ai.md)                 |
 | 8007                                    | Hunyuan3D-2           | On-demand (GPU)        | [Utilities](docs/services/utilities.md)                 |
-| 8008                                    | Z-Anime               | On-demand (GPU)        | Anime fine-tune of Z-Image Base, 6B S3-DiT, AIO FP8     |
+| 8008                                    | Z-Anime               | On-demand (GPU)        | Anime fine-tune of Z-Image Base, 6B S3-DiT, diffusers   |
 | 8009                                    | Qwen3-TTS             | On-demand (GPU)        | [Audio & TTS](docs/services/audio-tts.md)               |
 | 8010                                    | Real-ESRGAN           | On-demand (GPU)        | [Image Generation](docs/services/image-generation.md)   |
 | 8011                                    | Z-Image Base          | On-demand (GPU)        | [Image Generation](docs/services/image-generation.md)   |
@@ -333,13 +333,16 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 
 ### Parallel Execution
 
-**Whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially.**
+**Whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially. Use agentic parallelism when it materially advances the task.**
 
 - Reading multiple files → use multiple Read tool calls in one message
 - Searching different patterns → use multiple Grep calls in parallel
 - Running independent bash commands → use multiple Bash tool calls
+- Browser/UI verification can run while reading logs or polling status
+- Local API smoke tests can run while checking service config and output folders
+- Use subagents for bounded, independent work when available and advantageous
 - **Benefits:** Faster execution, no waiting between operations
-- **Don't parallelize:** Operations with dependencies or sequential state changes
+- **Don't parallelize:** Operations with dependencies, sequential state changes, tightly coupled edits, or high conflict risk
 
 See [Development Best Practices](docs/organization-principles.md#development-best-practices) for detailed examples.
 
@@ -379,6 +382,20 @@ Common traps caught by this check:
 
 - `'That's a wrap!'` — unescaped apostrophe in single-quoted JS string → breaks entire `<script>` block
 - `f"path/{datetime.now().strftime(\"%Y%m%d\")}"` — backslash escape in f-string expression → invalid Python 3.12+
+
+### Generative Output Sanity Check Before Done (SOP — 2026-05-06)
+
+For image, video, audio, TTS, music, vision, and other generative services, "done" requires more than a successful API response or saved file.
+
+**Acceptance test:**
+
+1. Run at least one representative prompt using the default UI/API settings.
+2. Inspect the actual output file, not just the status message.
+3. Confirm the output visibly/audibly follows the prompt's core subject, style, and format.
+4. Confirm outputs save under `~/ai_generated/<service>/` with timestamps, not `/tmp`.
+5. Confirm the runtime is using the intended model format and variant.
+
+Blank, nonsensical, unrelated, wrong-format, or wrong-model outputs are not done even if the service starts and returns success. Do not mix Diffusers folders, ComfyUI/AIO checkpoints, LoRAs, GGUFs, or other packaging formats unless the launcher explicitly supports that format.
 
 ## Web Development Standards
 
@@ -553,7 +570,13 @@ Example: Conversation analysis task
 4. **Using Gradio for everything** - Switch to HTML/JS when clipboard operations or custom interactions needed
 5. **Assuming model censorship is OK** - Always offer uncensored alternatives (LM Studio + Dolphin)
 6. **Adding unrequested features** - Do exactly what's requested, offer enhancements separately
-7. **Asking the user to run terminal commands** - Use the Bash tool directly. Never say "run this command and paste the output" — just run it. The user should not be doing work that Claude Code can do. This ranks alongside RTFM as a core behavioral rule.
+7. **Asking the user to operate tools the agent can operate** - Use available tools directly: Bash, filesystem, Playwright/browser automation, MCP servers, local APIs, app connectors, and programmatic clients. Never say "run this command and paste the output" or ask the user to click/query/copy data that the agent can access. The user should not be doing work that Claude Code can do. This ranks alongside RTFM as a core behavioral rule.
+8. **Ignoring local Markdown guidance** - In this workspace, Markdown files usually encode project structure, service rules, agent instructions, or hard-learned lessons. Before changing a folder, read relevant `CLAUDE.md`, `AGENTS.md`, `SKILLS.md`, `GEMINI.md`, `QWEN.md`, `SOUL.md`, README, and docs files instead of making the user retrain the agent from scratch.
+9. **Treating casual filename casing as exact** - The user may write `memory.md` when referring to `MEMORY.md`. Resolve likely intent case-insensitively before claiming a file is missing. Exact casing matters only when creating/editing a path.
+
+### Agent Operating Principle
+
+The assistant works for the user; the user does not work for the assistant. Use available tools directly: Bash, filesystem reads/writes, Playwright/browser automation, MCP servers, app connectors, local HTTP/Gradio/OpenAI-compatible APIs, and other programmatic access. Ask permission for destructive, credential-sensitive, paid/quota-consuming, or otherwise dangerous actions. For ordinary inspection, verification, local edits, launches, UI checks, MCP reads, and API checks, do the work directly instead of asking the user to copy/paste commands, click through pages, or manually operate tools.
 
 ### Most Common Recurring Issues
 

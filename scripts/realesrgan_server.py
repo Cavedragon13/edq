@@ -48,10 +48,10 @@ MODELS = {
 }
 
 MODEL_URLS = {
-    "RealESRGAN_x4plus":           "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
-    "RealESRGAN_x4plus_anime_6B":  "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth",
-    "RealESRGAN_x2plus":           "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth",
-    "realesr-general-x4v3":        "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth",
+    "RealESRGAN_x4plus":           "/srv/containers/edq/models/realesrgan/RealESRGAN_x4plus.pth",
+    "RealESRGAN_x4plus_anime_6B":  "/srv/containers/edq/models/realesrgan/RealESRGAN_x4plus_anime_6B.pth",
+    "RealESRGAN_x2plus":           "/srv/containers/edq/models/realesrgan/RealESRGAN_x2plus.pth",
+    "realesr-general-x4v3":        "/srv/containers/edq/models/realesrgan/realesr-general-x4v3.pth",
 }
 
 upsampler     = None
@@ -105,7 +105,7 @@ def load_face_enhancer():
         return
     from gfpgan import GFPGANer
     face_enhancer = GFPGANer(
-        model_path='https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth',
+        model_path='/srv/containers/edq/models/realesrgan/GFPGANv1.3.pth',
         upscale=1, arch='clean', channel_multiplier=2, bg_upsampler=upsampler
     )
 

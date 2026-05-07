@@ -29,6 +29,12 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 MODELS_BASE = Path("/srv/containers/edq/models/creative_upscale")
 CONTROLNET_PATH = MODELS_BASE / "controlnet"
 FLUX_DEV_PATH = MODELS_BASE / "flux_dev"
+REQUIRED_MODEL_FILES = [
+    CONTROLNET_PATH / "diffusion_pytorch_model.safetensors",
+    FLUX_DEV_PATH / "model_index.json",
+    FLUX_DEV_PATH / "transformer" / "diffusion_pytorch_model.safetensors.index.json",
+    FLUX_DEV_PATH / "text_encoder_2" / "model.safetensors.index.json",
+]
 
 
 def clear_gpu_memory():
@@ -47,14 +53,22 @@ def load_pipeline():
 
     from diffusers import FluxControlNetPipeline, FluxControlNetModel
 
-    # Check if models exist locally
-    if not CONTROLNET_PATH.exists() or not FLUX_DEV_PATH.exists():
+    # Check if models exist locally and are complete.
+    missing = [path for path in REQUIRED_MODEL_FILES if not path.exists() or path.stat().st_size == 0]
+    incomplete = list(MODELS_BASE.glob("**/.cache/huggingface/download/*.incomplete"))
+    if missing or incomplete:
+        detail = ""
+        if missing:
+            detail += "\nMissing files:\n" + "\n".join(f"  {path}" for path in missing)
+        if incomplete:
+            detail += "\nIncomplete download shards are still present."
         raise FileNotFoundError(
-            "Models not found! Download first (~28GB, resumable):\n"
+            "Complete models not found! Download first (~28GB, resumable):\n"
             "  bash scripts/download_creative_upscale_models.sh\n\n"
             f"Expected locations:\n"
             f"  {CONTROLNET_PATH}\n"
             f"  {FLUX_DEV_PATH}"
+            f"{detail}"
         )
 
     print("🔄 Loading FLUX + ControlNet Tile from local models...")
@@ -63,7 +77,6 @@ def load_pipeline():
     controlnet = FluxControlNetModel.from_pretrained(
         str(CONTROLNET_PATH),
         torch_dtype=torch.bfloat16,
-        device_map="balanced",
         local_files_only=True
     )
 
@@ -72,12 +85,13 @@ def load_pipeline():
         str(FLUX_DEV_PATH),
         controlnet=controlnet,
         torch_dtype=torch.bfloat16,
-        device_map="balanced",
         local_files_only=True
     )
 
     # Memory optimizations
-    pipeline.enable_model_cpu_offload()
+    # FLUX + ControlNet is tight on a 16GB card. Sequential offload is slower
+    # than model offload, but avoids loading the full stack into VRAM at once.
+    pipeline.enable_sequential_cpu_offload()
     if hasattr(pipeline, 'vae'):
         pipeline.vae.enable_slicing()
         pipeline.vae.enable_tiling()
