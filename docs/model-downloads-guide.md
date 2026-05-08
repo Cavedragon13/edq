@@ -90,79 +90,65 @@ bash scripts/start_justdubit.sh
 
 ---
 
-### 3. DeepGen 1.0 (~10GB) - DEPENDENCY WORKAROUND
+### 3. DeepGen 1.0 diffusers (~14GB) - READY
 
-**Status:** ⚠️ Dependencies resolved, models needed, inference incomplete
+**Status:** ✅ Ready. Uses the local diffusers package, not the old xtuner/mmengine route.
 
-#### Step 1: Verify Dependencies
+#### Setup Runtime
 
 ```bash
-source /srv/containers/edq/venv_deepgen/bin/activate
-pip list | grep -E "xtuner|mmengine|transformers"
+cd /srv/containers/edq
+bash scripts/setup_deepgen_diffusers.sh
 ```
 
-Should show:
+This creates `/srv/containers/edq/venv_deepgen` and installs the pinned runtime used by the dashboard launcher:
 
-- ✅ xtuner==0.2.0
-- ✅ mmengine==0.10.6
-- ✅ bitsandbytes==0.45.0
-- ⚠️ transformers==5.1.0 (xtuner wants 4.48.0)
+- PyTorch CUDA 12.8
+- diffusers 0.38.0
+- transformers 4.57.6
+- safetensors 0.8.0rc0
+- Gradio, accelerate, qwen-vl-utils, sentencepiece, einops
 
-#### Step 2: Test with Current Versions (Recommended First)
+Do not upgrade transformers casually. DeepGen generation failed with newer transformers because the bundled Qwen2.5-VL call shape changed.
+
+#### Download Models Before First Launch
 
 ```bash
+cd /srv/containers/edq
+bash scripts/download_deepgen_models.sh
+```
+
+The launcher expects a complete local snapshot at:
+
+```text
+/srv/containers/edq/models/deepgen-1.0-diffusers
+```
+
+The download script checks required files and refuses incomplete `.incomplete` shards. The dashboard launcher is intentionally local-only, so it will fail fast instead of starting a surprise first-run model download.
+
+#### Launch
+
+```bash
+cd /srv/containers/edq
 bash scripts/start_deepgen.sh
 # Access at http://192.168.7.226:8024
 ```
 
-The UI will show if model loading works with newer transformers.
+Outputs are written to:
 
-#### Step 3: If It Fails, Downgrade Transformers
-
-```bash
-bash scripts/fix_deepgen_deps.sh
-# Choose option 2 to downgrade transformers to 4.48.0
+```text
+/home/edq/ai_generated/deepgen
 ```
-
-#### Step 4: Download Models
-
-```bash
-source /srv/containers/edq/venv_deepgen/bin/activate
-huggingface-cli download deepgenteam/DeepGen-1.0 \
-  --local-dir /srv/containers/edq/models/deepgen-1.0
-```
-
-#### Step 5: Complete Inference Pipeline
-
-The Gradio UI (v2) can load the model but needs the inference call completed.
-Reference: `/srv/containers/edq/projects/deepgen/scripts/text2image.py`
 
 ---
 
 ## Dependency Conflict Resolution
 
-### DeepGen xtuner/mmengine Workaround
+### DeepGen diffusers setup
 
-**The Problem:**
+The old xtuner/mmengine plan is retired. Use `scripts/setup_deepgen_diffusers.sh`, `scripts/download_deepgen_models.sh`, and `scripts/start_deepgen.sh`.
 
-- DeepGen's `requirements.txt` has many version conflicts
-- xtuner requires specific versions of transformers, mmengine, etc.
-- Full `pip install -r requirements.txt` fails
-
-**The Solution:**
-
-1. Install core dependencies first (PyTorch, transformers, diffusers)
-2. Install xtuner without dependencies (`--no-deps`)
-3. Install mmengine with exact version xtuner needs
-4. Install missing xtuner deps individually
-5. Test with newer transformers (5.1.0) - may work despite warning
-6. If fails, downgrade transformers to 4.48.0
-
-**Current Status:**
-✅ All dependencies installed
-⚠️ transformers version mismatch (5.1.0 vs 4.48.0 wanted)
-✅ Model can load (tested in v2 UI)
-⚠️ Inference pipeline needs completion
+The model package already includes the VLM weights, connector, transformer, and VAE, so do not separately wire `Qwen/Qwen2.5-VL-3B-Instruct` unless the upstream package changes.
 
 ---
 
@@ -172,7 +158,7 @@ Reference: `/srv/containers/edq/projects/deepgen/scripts/text2image.py`
 | ------------ | --------- | --------- | --------- |
 | SoulX-Singer | ~8GB      | ~8GB      | ~16GB     |
 | JustDubit    | ~50GB     | ~8GB      | ~58GB     |
-| DeepGen      | ~10GB     | ~6GB      | ~16GB     |
+| DeepGen      | ~14GB     | ~7GB      | ~21GB     |
 | **TOTAL**    | **~68GB** | **~22GB** | **~90GB** |
 
 ---
@@ -196,13 +182,11 @@ Reference: `/srv/containers/edq/projects/deepgen/scripts/text2image.py`
 
 ### DeepGen
 
-- [ ] Dependencies verified (xtuner, mmengine)
-- [ ] Models downloaded to `/srv/containers/edq/models/deepgen-1.0`
-- [ ] Launch successful on port 8024
-- [ ] Model loading works (check UI status)
-- [ ] If needed, transformers downgraded to 4.48.0
-- [ ] Inference pipeline completed
-- [ ] Test text-to-image generation
+- [x] Diffusers runtime installed in `/srv/containers/edq/venv_deepgen`
+- [x] Models downloaded to `/srv/containers/edq/models/deepgen-1.0-diffusers`
+- [x] Launch successful on port 8024
+- [x] Text-to-image generation tested
+- [x] Output saved under `/home/edq/ai_generated/deepgen`
 
 ---
 

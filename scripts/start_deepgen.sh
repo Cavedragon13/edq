@@ -1,44 +1,51 @@
 #!/bin/bash
 set -e
 
-echo "🎨 Starting DeepGen 1.0..."
+cd /srv/containers/edq
+source scripts/dragonsuite_lib.sh
 
+SERVICE_NAME="DeepGen 1.0"
+PORT=8024
 VENV_PATH="/srv/containers/edq/venv_deepgen"
-CHECKPOINT="/srv/containers/edq/models/deepgen-1.0/model.pt"
-MODEL_ZOO="/srv/containers/edq/projects/deepgen/model_zoo"
+MODELS_DIR="/srv/containers/edq/models/deepgen-1.0-diffusers"
+SCRIPT="scripts/deepgen_diffusers_gradio.py"
+
+service_header "$SERVICE_NAME" "$PORT"
 
 if [ ! -d "$VENV_PATH" ]; then
     echo "❌ venv_deepgen not found at $VENV_PATH"
+    echo "   Run: bash scripts/setup_deepgen_diffusers.sh"
     exit 1
 fi
 
-if [ ! -f "$CHECKPOINT" ]; then
-    echo "❌ Checkpoint not found: $CHECKPOINT"
+if [ ! -s "$MODELS_DIR/model_index.json" ] || [ ! -s "$MODELS_DIR/deepgen_pipeline.py" ] || [ ! -s "$MODELS_DIR/transformer/diffusion_pytorch_model.safetensors" ]; then
+    echo "❌ Complete DeepGen diffusers model not found at $MODELS_DIR"
+    echo "   Run: bash scripts/download_deepgen_models.sh"
     exit 1
 fi
 
-if [ ! -d "$MODEL_ZOO" ] && [ ! -L "$MODEL_ZOO" ]; then
-    echo "❌ DeepGen model_zoo not found at: $MODEL_ZOO"
-    echo ""
-    echo "   Run the download script first:"
-    echo "   bash scripts/download_deepgen_model_zoo.sh"
-    echo ""
+if find "$MODELS_DIR" -path '*/.cache/huggingface/download/*' -name '*.incomplete' -type f | grep -q .; then
+    echo "❌ DeepGen model download is incomplete at $MODELS_DIR"
+    echo "   Re-run: bash scripts/download_deepgen_models.sh"
     exit 1
 fi
 
+gpu_preflight "$PORT"
 source "$VENV_PATH/bin/activate"
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+set_pytorch_env
+mkdir -p "$HOME/ai_generated/deepgen"
 
-echo "✓ Checkpoint: $CHECKPOINT"
-echo "✓ model_zoo:  $MODEL_ZOO"
-echo ""
-echo "📍 Access at: http://192.168.7.226:8024"
-echo ""
-echo "Tabs:"
-echo "  🖼️ Text-to-Image  - Generate from prompt"
-echo "  ✏️ Image Editing  - Edit with instructions"
-echo ""
-echo "NOTE: Model loads on first generate (~30s, ~11GB VRAM)"
-echo ""
-
-python /srv/containers/edq/scripts/deepgen_gradio.py
+echo "🚀 Starting $SERVICE_NAME..."
+if pgrep -f "deepgen_diffusers_gradio.py" > /dev/null; then
+    echo "✓ Already running on port $PORT"
+else
+    nohup python "$SCRIPT" > /tmp/deepgen.log 2>&1 &
+    echo "⏳ Waiting for service..."
+    if wait_for_port "$PORT" 120; then
+        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+    else
+        echo "❌ Not up in time — check /tmp/deepgen.log"
+        tail -30 /tmp/deepgen.log
+        exit 1
+    fi
+fi

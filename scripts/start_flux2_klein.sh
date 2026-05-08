@@ -17,6 +17,18 @@ set_pytorch_env
 
 mkdir -p "$HOME/ai_generated/flux2-klein"
 mkdir -p "$HOME/models/loras/flux-klein"
+python - <<'PY'
+from huggingface_hub import snapshot_download
+
+for repo_id in [
+    "black-forest-labs/FLUX.2-klein-4B",
+    "black-forest-labs/FLUX.2-klein-9B",
+]:
+    snapshot_download(repo_id, local_files_only=True)
+
+print("✓ Local FLUX.2-klein model cache found")
+PY
+
 echo "🚀 Starting $SERVICE_NAME..."
 
 if pgrep -f "flux2_klein_gradio.py" > /dev/null; then

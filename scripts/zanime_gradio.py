@@ -108,7 +108,7 @@ button.primary { background: #7c3aed !important; border-color: #6d28d9 !importan
 button.secondary { background: #2d2d4e !important; color: #c4b5fd !important; }
 """
 
-with gr.Blocks(theme=gr.themes.Base(), css=DARK_CSS, title="Z-Anime") as demo:
+with gr.Blocks(title="Z-Anime") as demo:
     gr.Markdown(
         "# Z-Anime\n"
         "Anime fine-tune of Z-Image Base · Diffusers Base BF16 · Natural language prompts"
@@ -145,4 +145,5 @@ with gr.Blocks(theme=gr.themes.Base(), css=DARK_CSS, title="Z-Anime") as demo:
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=PORT, share=False,
-                allowed_paths=[str(OUTPUT_DIR)])
+                allowed_paths=[str(OUTPUT_DIR)],
+                theme=gr.themes.Base(), css=DARK_CSS)

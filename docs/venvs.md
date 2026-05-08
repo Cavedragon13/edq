@@ -18,14 +18,14 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_hunyuan3d          | `/srv/containers/edq/venv_hunyuan3d`              | ~10GB  | `start_hunyuan3d.sh`          | Hunyuan3D-2 image to 3D                                    |
 | venv_qwen3_tts          | `/srv/containers/edq/venv_qwen3_tts`              | ~8GB   | `start_qwen3_tts.sh`          | Qwen3-TTS (TTS, cloning, voice design)                     |
 | venv_realesrgan         | `/srv/containers/edq/venv_realesrgan`             | ~4GB   | `start_realesrgan.sh`         | Real-ESRGAN image upscaling                                |
-| venv_zimage             | `/srv/containers/edq/venv_zimage`                 | ~8GB   | `start_zimage.sh`             | Z-Image Base (6B) · shared with Z-Anime (port 8008)        |
+| venv_zimage             | `/srv/containers/edq/venv_zimage`                 | ~8GB   | `start_zimage.sh`             | Z-Image Base/Turbo + Z-Anime shared image runtime          |
 | venv_rembg              | `/srv/containers/edq/venv_rembg`                  | ~1GB   | `start_rembg.sh`              | Rembg AI background removal                                |
 | venv_qwen_image_layered | `/srv/containers/edq/venv_qwen_image_layered`     | ~10GB  | `start_qwen_image_layered.sh` | Qwen-Image-Layered decomposition                           |
 | venv_mule_game          | `/srv/containers/edq/venv_mule_game`              | ~50MB  | `start_mule_game.sh`          | M.U.L.E. web game (Gradio)                                 |
 | venv_facefusion         | `/srv/containers/edq/venv_facefusion`             | ~2GB   | `start_facefusion.sh`         | FaceFusion face swap & manipulation                        |
 | ACE-Step .venv          | `/srv/containers/edq/projects/ACE-Step-1.5/.venv` | ~5GB   | `start_ace_step.sh`           | ACE-Step 1.5 music generation (managed by uv)              |
 | venv_soulxsinger        | `/srv/containers/edq/venv_soulxsinger`            | ~8GB   | `start_soulxsinger.sh`        | SoulX-Singer zero-shot singing voice synthesis             |
-| venv_deepgen            | `/srv/containers/edq/venv_deepgen`                | ~6GB   | `start_deepgen.sh`            | DeepGen 1.0 multimodal image gen/edit (5B)                 |
+| venv_deepgen            | `/srv/containers/edq/venv_deepgen`                | ~7GB   | `start_deepgen.sh`            | DeepGen 1.0 diffusers image gen/edit (5B)                  |
 | JustDubit .venv         | `/srv/containers/edq/projects/just-dub-it/.venv`  | ~8GB   | `start_justdubit.sh`          | JustDubit video dubbing (managed by uv)                    |
 | venv_topaz_gradio       | `/srv/containers/edq/venv_topaz_gradio`           | ~300MB | `start_topaz_labs.sh`         | Topaz Labs Gradio web UI (cloud API client)                |
 | venv_dolphin_vision     | `/srv/containers/edq/venv_dolphin_vision`         | ~8GB   | `start_dolphin_vision.sh`     | Dolphin Vision 7B uncensored VLM (BunnyQwen2 architecture) |

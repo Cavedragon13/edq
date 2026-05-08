@@ -12,11 +12,11 @@ import torch
 from pathlib import Path
 import os
 import sys
-import threading
 from datetime import datetime
 from PIL import Image
 import numpy as np
 import cv2
+from huggingface_hub import hf_hub_download, snapshot_download
 
 # VideoX-Fun path for ControlNet support
 VIDEOX_FUN_PATH = Path("/srv/containers/edq/projects/VideoX-Fun")
@@ -40,7 +40,7 @@ OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/zimage"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # LoRA directory
-LORA_DIR = Path(os.path.expanduser("~/models/loras/zimage"))
+LORA_DIR = Path("/srv/containers/edq/models/loras/zimage")
 LORA_DIR.mkdir(parents=True, exist_ok=True)
 
 # ControlNet condition types
@@ -74,26 +74,18 @@ loaded_loras = []
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
-# ControlNet pre-download state
-_controlnet_weights_path = None   # set once download completes
-_controlnet_download_error = None  # set if download fails
+def get_local_snapshot(repo_id: str) -> str:
+    """Resolve an already-cached Hugging Face snapshot without network access."""
+    return snapshot_download(repo_id, local_files_only=True)
 
 
-def _prefetch_controlnet_weights():
-    """Download ControlNet weights at startup so first generation doesn't block."""
-    global _controlnet_weights_path, _controlnet_download_error
-    try:
-        from huggingface_hub import hf_hub_download
-        print(f"[ControlNet] Pre-fetching weights ({CONTROLNET_WEIGHTS_FILENAME})...")
-        path = hf_hub_download(
-            repo_id=CONTROLNET_MODEL_ID,
-            filename=CONTROLNET_WEIGHTS_FILENAME,
-        )
-        _controlnet_weights_path = path
-        print(f"[ControlNet] Weights ready: {path}")
-    except Exception as e:
-        _controlnet_download_error = str(e)
-        print(f"[ControlNet] Pre-fetch failed: {e}")
+def get_local_controlnet_weights() -> str:
+    """Resolve the already-cached ControlNet weights without network access."""
+    return hf_hub_download(
+        repo_id=CONTROLNET_MODEL_ID,
+        filename=CONTROLNET_WEIGHTS_FILENAME,
+        local_files_only=True,
+    )
 
 # Dragon favicon
 DRAGON_FAVICON = """
@@ -237,7 +229,12 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
         print("Loading Z-Image Base model...")
         try:
             from diffusers import ZImagePipeline
-            pipe_base = ZImagePipeline.from_pretrained(MODEL_ID_BASE, torch_dtype=dtype)
+            model_path = get_local_snapshot(MODEL_ID_BASE)
+            pipe_base = ZImagePipeline.from_pretrained(
+                model_path,
+                torch_dtype=dtype,
+                local_files_only=True,
+            )
             pipe_base.enable_sequential_cpu_offload()
             if hasattr(pipe_base, 'vae'):
                 pipe_base.vae.enable_slicing()
@@ -258,7 +255,12 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
         print("Loading Z-Image Turbo model...")
         try:
             from diffusers import ZImagePipeline
-            pipe_turbo = ZImagePipeline.from_pretrained(MODEL_ID_TURBO, torch_dtype=dtype)
+            model_path = get_local_snapshot(MODEL_ID_TURBO)
+            pipe_turbo = ZImagePipeline.from_pretrained(
+                model_path,
+                torch_dtype=dtype,
+                local_files_only=True,
+            )
             pipe_turbo.enable_sequential_cpu_offload()
             if hasattr(pipe_turbo, 'vae'):
                 pipe_turbo.vae.enable_slicing()
@@ -273,24 +275,14 @@ def load_pipeline(model_type: str = "Base", use_controlnet: bool = False):
 
 def load_control_pipeline():
     """Load Z-Image ControlNet pipeline via VideoX-Fun"""
-    global pipe_control, current_model, _controlnet_weights_path, _controlnet_download_error
+    global pipe_control, current_model
 
     if pipe_control is not None:
         current_model = "Control"
         return pipe_control
 
-    # Check pre-fetch state
-    if _controlnet_download_error:
-        raise RuntimeError(f"ControlNet weights download failed at startup: {_controlnet_download_error}")
-    if _controlnet_weights_path is None:
-        raise RuntimeError(
-            "ControlNet weights are still downloading in the background. "
-            "Check the server console for progress — try again in a moment."
-        )
-
     print("Loading Z-Image ControlNet pipeline (VideoX-Fun)...")
     try:
-        from huggingface_hub import snapshot_download
         from safetensors.torch import load_file
         from diffusers import FlowMatchEulerDiscreteScheduler
         from videox_fun.models.z_image_transformer2d_control import ZImageControlTransformer2DModel
@@ -298,12 +290,11 @@ def load_control_pipeline():
         from diffusers.models.autoencoders import AutoencoderKL
         from transformers import AutoTokenizer, AutoModelForCausalLM
 
-        control_weights_path = _controlnet_weights_path
+        control_weights_path = get_local_controlnet_weights()
         print(f"Control weights: {control_weights_path}")
 
-        # Get local cache path for base model
-        print("Downloading/locating Turbo base model...")
-        model_local_path = snapshot_download(MODEL_ID_TURBO)
+        print("Locating cached Turbo base model...")
+        model_local_path = get_local_snapshot(MODEL_ID_TURBO)
 
         # Load transformer with control architecture
         print("Building control transformer from base weights...")
@@ -814,9 +805,6 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
 
 
 if __name__ == "__main__":
-    # Start ControlNet weights pre-fetch in background so first generation doesn't block
-    threading.Thread(target=_prefetch_controlnet_weights, daemon=True).start()
-
     print("=" * 80)
     print("Z-Image Base + Turbo ControlNet - Alibaba Tongyi Text-to-Image Generator")
     print("=" * 80)

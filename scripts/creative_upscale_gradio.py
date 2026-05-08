@@ -176,8 +176,7 @@ def creative_upscale(
 
 # Gradio Interface
 with gr.Blocks(
-    title="Creative Upscaler - FLUX + ControlNet",
-    theme=gr.themes.Soft(primary_hue="emerald")
+    title="Creative Upscaler - FLUX + ControlNet"
 ) as demo:
 
     gr.Markdown("""
@@ -293,5 +292,6 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=8018,
         share=False,
-        show_error=True
+        show_error=True,
+        theme=gr.themes.Soft(primary_hue="emerald")
     )

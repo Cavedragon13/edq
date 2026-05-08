@@ -18,6 +18,26 @@ set_pytorch_env
 echo "🚀 Starting $SERVICE_NAME..."
 mkdir -p "$HOME/ai_generated/zimage"
 
+python - <<'PY'
+from huggingface_hub import hf_hub_download, snapshot_download
+
+required_snapshots = [
+    "Tongyi-MAI/Z-Image",
+    "Tongyi-MAI/Z-Image-Turbo",
+]
+
+for repo_id in required_snapshots:
+    snapshot_download(repo_id, local_files_only=True)
+
+hf_hub_download(
+    repo_id="alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1",
+    filename="Z-Image-Turbo-Fun-Controlnet-Union-2.1.safetensors",
+    local_files_only=True,
+)
+
+print("✓ Local Z-Image model cache found")
+PY
+
 if pgrep -f "zimage_base_gradio.py" > /dev/null; then
     echo "✓ Already running on port $PORT"
 else

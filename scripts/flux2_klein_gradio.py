@@ -11,6 +11,7 @@ from pathlib import Path
 import os
 from datetime import datetime
 from PIL import Image
+from huggingface_hub import snapshot_download
 
 # Configuration
 MODELS = {
@@ -141,7 +142,12 @@ def load_pipeline(model_variant="4b"):
             pipe = FluxPipeline.from_pretrained(model_id, torch_dtype=dtype, local_files_only=True)
         else:
             from diffusers import Flux2KleinPipeline
-            pipe = Flux2KleinPipeline.from_pretrained(model_id, torch_dtype=dtype)
+            model_path = snapshot_download(model_id, local_files_only=True)
+            pipe = Flux2KleinPipeline.from_pretrained(
+                model_path,
+                torch_dtype=dtype,
+                local_files_only=True,
+            )
 
         # Use sequential CPU offload for maximum memory savings
         pipe.enable_sequential_cpu_offload()

@@ -125,4 +125,11 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8049))
     print(f"Starting VoxCPM2 on port {port}...", flush=True)
     print(f"Output directory: {OUTPUT_DIR}", flush=True)
-    demo.launch(server_name="0.0.0.0", server_port=port, share=False, theme=gr.themes.Base())
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=port,
+        share=False,
+        theme=gr.themes.Base(),
+        allowed_paths=[OUTPUT_DIR],
+        show_error=True,
+    )

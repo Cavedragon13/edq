@@ -120,7 +120,8 @@
                 "LoRA"
             ],
             "stop_command": "pkill -f 'flux2_klein_gradio.py' || true",
-            "vram_gb": 12
+            "vram_gb": 12,
+            "output_dir": "/home/edq/ai_generated/flux2-klein"
         },
         {
             "id": "zimage-base",
@@ -340,7 +341,8 @@
                 "Voice Clone"
             ],
             "stop_command": "pkill -f 'qwen3_audiobook_gradio.py' || true",
-            "vram_gb": 6
+            "vram_gb": 6,
+            "output_dir": "/home/edq/ai_generated/qwen3-audiobook"
         },
         {
             "id": "fish-speech",
@@ -359,7 +361,8 @@
                 "Inline Emotions"
             ],
             "stop_command": "pkill -f 'fish.speech.*tools.run_webui' || pkill -f 'fish-speech.*run_webui' || true",
-            "vram_gb": 4
+            "vram_gb": 4,
+            "output_dir": "/home/edq/ai_generated/fish-speech"
         },
         {
             "id": "heartmula",
@@ -377,7 +380,8 @@
                 "Sections"
             ],
             "stop_command": "pkill -f 'venv_heartmula.*app_local.py' || true",
-            "vram_gb": 12
+            "vram_gb": 12,
+            "output_dir": "/home/edq/ai_generated/heartmula"
         },
         {
             "id": "foundation-1",
@@ -757,19 +761,23 @@
         {
             "id": "deepgen",
             "name": "DeepGen 1.0",
-            "description": "Multimodal Image Gen + Edit + Text Rendering (5B)",
+            "description": "DeepGen 1.0 diffusers \u2014 multimodal image generation/editing + text rendering",
             "category": "image",
             "port": 8024,
             "path": null,
             "icon": "&#129302;",
             "launch_command": "cd /srv/containers/edq && bash scripts/start_deepgen.sh",
-            "project_path": "/srv/containers/edq/projects/deepgen",
+            "project_path": null,
             "features": [
-                "Image Gen",
+                "T2I",
                 "Image Edit",
-                "Text Render"
+                "Text Render",
+                "Diffusers",
+                "CPU Offload"
             ],
-            "stop_command": "pkill -f \"deepgen_gradio.py\" || true"
+            "stop_command": "pkill -f \"deepgen_diffusers_gradio.py\" || true; pkill -f \"deepgen_gradio.py\" || true",
+            "vram_gb": 14,
+            "output_dir": "/home/edq/ai_generated/deepgen"
         },
         {
             "id": "dolphin-vision",
@@ -912,7 +920,8 @@
                 "Generative Prosody"
             ],
             "stop_command": "pkill -f tada_gradio.py || true",
-            "vram_gb": 6
+            "vram_gb": 6,
+            "output_dir": "/home/edq/ai_generated/tada"
         },
         {
             "id": "matanyone2",
