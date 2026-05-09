@@ -69,7 +69,7 @@ mkdir -p "$FISH_SPEECH_DIR/references"
 mkdir -p "$OUTPUT_DIR"
 
 echo "🚀 Starting $SERVICE_NAME..."
-if pgrep -f "tools.run_webui" > /dev/null; then
+if pgrep -f "tools.run_webui.*$MODEL_DIR" > /dev/null && ss -ltn "( sport = :$PORT )" | grep -q LISTEN; then
     echo "✓ Already running on port $PORT"
 else
     cd "$FISH_SPEECH_DIR"

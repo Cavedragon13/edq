@@ -68,6 +68,7 @@ def load_pipeline():
     pipeline = QwenImageLayeredPipeline.from_pretrained(
         "Qwen/Qwen-Image-Layered",
         torch_dtype=torch.bfloat16,
+        local_files_only=True,
     )
 
     # Enable sequential CPU offloading for 16GB VRAM safety

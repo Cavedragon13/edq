@@ -11,6 +11,8 @@ VENV="venv_qwen3_tts"
 
 QWEN_TTS_DIR="$DRAGONSUITE_ROOT/projects/qwen3-tts"
 OUTPUT_DIR="$HOME/ai_generated/qwen3-tts"
+export NUMBA_CACHE_DIR="/tmp/numba-qwen3-tts"
+mkdir -p "$NUMBA_CACHE_DIR"
 
 service_header "$SERVICE_NAME" "$PORT"
 gpu_preflight "$PORT"

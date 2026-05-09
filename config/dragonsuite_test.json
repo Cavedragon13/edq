@@ -249,7 +249,7 @@
     },
     {
       "id": "ltxvideo",
-      "name": "LTX-Video 0.9.7",
+      "name": "LTX-Video 0.9.8",
       "description": "Fast T2V + I2V · 7-step distilled · 3-pass upscale",
       "category": "video",
       "port": 8028,
@@ -280,8 +280,9 @@
         "Expression",
         "Animals"
       ],
-      "stop_command": "pkill -f 'venv_liveportrait.*app.py' || true",
-      "vram_gb": 6
+      "stop_command": "pkill -f 'LivePortrait.*app.py|liveportrait.*app.py' || true",
+      "vram_gb": 6,
+      "output_dir": "/home/edq/ai_generated/liveportrait"
     },
     {
       "id": "hunyuan3d",
@@ -406,7 +407,7 @@
         "LoRA Train",
         "Cover/Edit"
       ],
-      "stop_command": "pkill -f \"acestep\" || true",
+      "stop_command": "bash scripts/stop_ace_step.sh || true",
       "vram_gb": 12,
       "output_dir": "/home/edq/ai_generated/ace-step-xl"
     },
@@ -442,8 +443,9 @@
         "Video Track",
         "Auto Mask"
       ],
-      "stop_command": "pkill -f 'venv_sam2.*gradio_app.py' || true",
-      "vram_gb": 6
+      "stop_command": "pkill -f 'sam2/demo/gradio_app.py|sam2.*gradio_app' || true",
+      "vram_gb": 6,
+      "output_dir": "/home/edq/ai_generated/sam2"
     },
     {
       "id": "rembg",
@@ -498,7 +500,8 @@
         "PPTX"
       ],
       "stop_command": "pkill -f 'qwen_image_layered_gradio.py' || true",
-      "vram_gb": 8
+      "vram_gb": 8,
+      "output_dir": "/home/edq/ai_generated/qwen-layered"
     },
     {
       "id": "horse-racing",
@@ -1067,7 +1070,8 @@
       "path": "/",
       "icon": "&#127916;",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_agentic_video.sh",
-      "stop_command": "pkill -f 'agentic_video_gradio' || true",
+      "stop_command": "pkill -f 'agentic_video_gradio.py' || true",
+      "output_dir": "/home/edq/ai_generated/agentic_video",
       "features": [
         "4-Agent Pipeline",
         "Gemini 2.5",

@@ -11,6 +11,7 @@ VENV="venv_foundation1"
 PROJECT_DIR="/srv/containers/edq/projects/foundation-1"
 MODEL="$PROJECT_DIR/models/Foundation_1.safetensors"
 CONFIG="$PROJECT_DIR/models/model_config.json"
+OUTPUT_DIR="$HOME/ai_generated/foundation-1"
 
 service_header "$SERVICE_NAME" "$PORT"
 
@@ -27,8 +28,10 @@ set_pytorch_env
 export GRADIO_SERVER_PORT=$PORT
 export GRADIO_SERVER_NAME="0.0.0.0"
 
+mkdir -p "$OUTPUT_DIR"
+
 echo "🚀 Starting $SERVICE_NAME..."
-if pgrep -f "run_gradio.py" > /dev/null; then
+if pgrep -f "$PROJECT_DIR/run_gradio.py" > /dev/null && ss -ltn "( sport = :$PORT )" | grep -q LISTEN; then
     echo "✓ Already running on port $PORT"
 else
     cd "$PROJECT_DIR"

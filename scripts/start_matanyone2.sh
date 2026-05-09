@@ -10,6 +10,7 @@ PORT=8038
 VENV="venv_matanyone2"
 APP_DIR="$DRAGONSUITE_ROOT/projects/matanyone2/hugging_face"
 CHECKPOINTS_DIR="$DRAGONSUITE_ROOT/projects/matanyone2/pretrained_models"
+OUTPUT_DIR="$HOME/ai_generated/matanyone2"
 
 service_header "$SERVICE_NAME" "$PORT"
 
@@ -29,6 +30,8 @@ fi
 gpu_preflight "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
+mkdir -p "$OUTPUT_DIR"
+export MATANYONE2_OUTPUT_DIR="$OUTPUT_DIR"
 
 echo "🚀 Starting $SERVICE_NAME..."
 if pgrep -f "matanyone2/hugging_face/app.py" > /dev/null; then

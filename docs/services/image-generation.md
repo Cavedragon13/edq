@@ -38,6 +38,7 @@ bash scripts/start_flux2_klein.sh
 ### Verified Outputs
 
 - 2026-05-07: 4-step 512x512 smoke produced a clean, prompt-following brass `DRAGON` sign under `~/ai_generated/flux2-klein/`.
+- 2026-05-08: 4B 4-step 256x256 smoke generated a prompt-following Valyria portrait at `/home/edq/ai_generated/flux2-klein/20260508_160311_fantasy_portrait_of_Valyria_Ironflare_fierce_warr.png` (256x256 PNG, 124KB).
 
 ---
 
@@ -68,6 +69,8 @@ bash scripts/start_zanime.sh
 
 - Short 12-step runs may produce poor prompt following.
 - 40-step `Diffusers Base BF16` runs produced a prompt-following anime portrait with horns, red hair, bronze cheek scales, and amber eyes.
+- 2026-05-08: Dashboard start plus live Gradio API `/generate` verified with the Valyria Ironflare visual prompt. Persistent output:
+  `/home/edq/ai_generated/zanime/zanime_20260508_122100.png` (512x512 PNG, 405KB), visually matched the prompt with auburn/gold hair, scar, bronze eyes, anime style, and engraved silver armor.
 
 ---
 
@@ -131,6 +134,7 @@ bash scripts/start_zimage.sh
 
 - 2026-05-07: 256x256 Base smoke generated a brass desk sign under `~/ai_generated/zimage/`.
 - 2026-05-07: Real-ESRGAN and Creative Upscaler successfully consumed that output downstream.
+- 2026-05-08: Turbo smoke generated a prompt-following Valyria portrait at `/home/edq/ai_generated/zimage/20260508_155915_fantasy_portrait_of_Valyria_Ironflare_fierce_warr_turbo.png` (256x256 PNG, 106KB).
 - **Base model features:**
   - CFG scaling 7-10 recommended
   - Negative prompt support
@@ -142,26 +146,24 @@ bash scripts/start_zimage.sh
   - CFG fixed at 1.0 for optimal 8-step results
   - Perfect for rapid iteration and prototyping
   - ~5-10 seconds per image
-- **ControlNet Union 2.1 (Coming Soon):**
-  - Infrastructure ready but waiting for diffusers v0.37+ support
-  - `ZImageControlNetPipeline` not yet available in diffusers 0.36.0
-  - Workaround: Use [VideoX-Fun repository](https://github.com/aigc-apps/VideoX-Fun) for immediate ControlNet access
+- **ControlNet Union 2.1:**
+  - Available through the VideoX-Fun bridge when local cached weights are present
+  - Uses local-only model resolution; do not rely on first-use downloads
 - **LoRA support:**
-  - Place LoRA files in `~/models/loras/zimage/`
+  - Place LoRA files in `/srv/containers/edq/models/loras/zimage/`
   - Works with both Base and Turbo models
   - Adjust LoRA scale 0.0-2.0 (1.0 default)
-- First launch downloads Base model (~12GB) on-demand
-- Turbo model (~12GB) downloads when first used
+- Base, Turbo, and ControlNet cache checks happen before launch
 - Uses CPU offloading to fit in 16GB VRAM
 - Close other GPU services if you encounter OOM errors
-- opencv-python installed for future ControlNet preprocessing
+- opencv-python is used for ControlNet preprocessing
 
 ### Tips
 
 - **Base mode**: CFG 7-10, 30 steps, use negative prompts
 - **Turbo mode**: 8 steps (CFG fixed at 1.0), ~5-10 seconds per image
 - **Fast Mode**: Enable checkbox, use 4 or 8 steps, LoRA scale 0.7-0.8, CFG auto-set to 1.0
-- **ControlNet**: Infrastructure ready, waiting for diffusers library support
+- **ControlNet**: Turbo only; Canny, Depth, Pose, HED, and MLSD preprocessing are available
 
 ---
 
@@ -253,6 +255,8 @@ bash scripts/start_realesrgan.sh
 ### Verified Outputs
 
 - 2026-05-07: 2x API upscale converted a 256x256 Z-Image PNG into a 512x512 PNG under `~/ai_generated/realesrgan/`.
+- 2026-05-08: Chained smoke consumed Z-Anime output `/home/edq/ai_generated/zanime/zanime_20260508_122100.png` through `/api/upscale` with `RealESRGAN_x4plus_anime_6B`, saving `/home/edq/ai_generated/realesrgan/upscaled_20260508_122750_512x512_to_1024x1024.png` (1024x1024 PNG, 1.3MB).
+- Launcher now fails fast if server dependencies are missing instead of running `pip install` during service startup.
 
 ---
 
@@ -288,6 +292,7 @@ bash scripts/start_creative_upscale.sh
 ### Verified Outputs
 
 - 2026-05-07: Prompt-guided 2x upscale consumed the Z-Image brass sign and saved a 512x512 PNG under `~/ai_generated/creative-upscale/`.
+- 2026-05-08: Chained smoke used a 256x256 derivative of Z-Anime output with prompt-guided 2x upscale, saving `/home/edq/ai_generated/creative-upscale/creative_upscale_2x_20260508_155507.png` (512x512 PNG, 481KB). Output preserved the Valyria composition while sharpening armor texture, hair, and warm fantasy lighting.
 
 ---
 
@@ -299,3 +304,10 @@ bash scripts/start_creative_upscale.sh
 ### Configuration
 
 - **Venv**: `venv_rembg`
+- **Output**: `/home/edq/ai_generated/rembg/`
+
+### Verified Outputs
+
+- 2026-05-08: API smoke consumed DragonFlux Klein output and saved `/home/edq/ai_generated/rembg/rembg_20260508_160616.png` (256x256 RGBA PNG, alpha 0-255).
+- ONNX Runtime logged a missing CUDA/cuDNN provider warning, then completed successfully via fallback; treat as non-blocking unless GPU acceleration is required.
+- Launcher now sets `NUMBA_CACHE_DIR` and fails fast if server dependencies are missing instead of running `pip install` during startup.

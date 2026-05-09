@@ -594,7 +594,7 @@ async def stop_service(service_id: str):
     if not port and not stop_command:
         raise HTTPException(status_code=400, detail="Service has no port or stop command configured - cannot stop")
 
-    if port and not check_port(port):
+    if port and not check_port(port) and not stop_command:
         return {"status": "not_running", "message": f"{service['name']} is not running"}
 
     try:

@@ -621,7 +621,7 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
                 gr.Markdown("""
                 **ControlNet Union 2.1** — powered by [VideoX-Fun](https://github.com/aigc-apps/VideoX-Fun).
                 Select a condition type and upload a reference image. Works with Turbo model only.
-                Control weights download automatically on first use (~2 GB).
+                Control weights must already be present in the local Hugging Face cache; launch fails fast if required cached files are missing.
                 """)
 
                 controlnet_condition = gr.Dropdown(
@@ -747,7 +747,7 @@ with gr.Blocks(title="Z-Image Base + Turbo ControlNet") as app:
 
     **✅ Turbo (Tongyi-MAI/Z-Image-Turbo)**  8-step fast inference · CFG=1.0 · ~5–10s
 
-    **✅ ControlNet Union 2.1 (Turbo + VideoX-Fun)**  Canny · Depth · Pose · HED · MLSD · 15 control layers · weights auto-download on first use
+    **✅ ControlNet Union 2.1 (Turbo + VideoX-Fun)**  Canny · Depth · Pose · HED · MLSD · 15 control layers · local cached weights only
 
     **✅ LoRAs**  9 models available in `{LORA_DIR}` · Fast Mode uses distilled 4/8-step LoRAs
 

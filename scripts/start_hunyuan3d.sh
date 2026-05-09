@@ -32,6 +32,8 @@ echo ""
 
 mkdir -p "$OUTPUT_DIR"
 export HUNYUAN3D_OUTPUT_DIR="$OUTPUT_DIR"
+export NUMBA_CACHE_DIR="/tmp/numba_cache_hunyuan3d"
+mkdir -p "$NUMBA_CACHE_DIR"
 
 echo "🚀 Starting $SERVICE_NAME..."
 echo "   Output saves to: $OUTPUT_DIR"

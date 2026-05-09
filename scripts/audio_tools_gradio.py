@@ -335,5 +335,7 @@ if __name__ == "__main__":
         server_port=8026,
         share=False,
         theme=gr.themes.Soft(),
-        css=CUSTOM_CSS
+        css=CUSTOM_CSS,
+        allowed_paths=[str(OUTPUT_DIR)],
+        show_error=True
     )

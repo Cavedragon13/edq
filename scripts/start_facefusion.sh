@@ -16,16 +16,26 @@ set_pytorch_env
 
 export GRADIO_SERVER_NAME=0.0.0.0
 export GRADIO_SERVER_PORT=$PORT
+if python - <<'PY' | grep -q CUDAExecutionProvider
+import onnxruntime
+print(" ".join(onnxruntime.get_available_providers()))
+PY
+then
+    EXECUTION_PROVIDER="cuda"
+else
+    EXECUTION_PROVIDER="cpu"
+fi
 
 echo "🚀 Starting $SERVICE_NAME..."
+echo "   Execution provider: $EXECUTION_PROVIDER"
 
 if pgrep -f "facefusion.py" > /dev/null; then
     echo "✓ Already running on port $PORT"
 else
     cd /srv/containers/edq/projects/facefusion
     nohup python facefusion.py run \
-        --execution-providers cuda \
-        --ui-layouts webcam benchmark \
+        --execution-providers "$EXECUTION_PROVIDER" \
+        --ui-layouts default webcam \
         > /tmp/facefusion.log 2>&1 &
     if wait_for_port "$PORT" 60; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"

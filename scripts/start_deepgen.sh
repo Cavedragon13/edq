@@ -37,7 +37,22 @@ mkdir -p "$HOME/ai_generated/deepgen"
 
 echo "🚀 Starting $SERVICE_NAME..."
 if pgrep -f "deepgen_diffusers_gradio.py" > /dev/null; then
-    echo "✓ Already running on port $PORT"
+    if curl -s --max-time 2 "http://127.0.0.1:$PORT/" > /dev/null 2>&1; then
+        echo "✓ Already running on port $PORT"
+    else
+        echo "⚠️  Found stale DeepGen process without a listening port; stopping it..."
+        pkill -f "deepgen_diffusers_gradio.py" || true
+        sleep 2
+        nohup python "$SCRIPT" > /tmp/deepgen.log 2>&1 &
+        echo "⏳ Waiting for service..."
+        if wait_for_port "$PORT" 120; then
+            echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
+        else
+            echo "❌ Not up in time — check /tmp/deepgen.log"
+            tail -30 /tmp/deepgen.log
+            exit 1
+        fi
+    fi
 else
     nohup python "$SCRIPT" > /tmp/deepgen.log 2>&1 &
     echo "⏳ Waiting for service..."

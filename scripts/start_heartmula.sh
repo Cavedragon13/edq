@@ -23,7 +23,7 @@ export GRADIO_SERVER_PORT="$PORT"
 echo "🚀 Starting $SERVICE_NAME..."
 mkdir -p "$HOME/ai_generated/heartmula"
 
-if pgrep -f "app_local.py" > /dev/null; then
+if pgrep -f "$HEARTMULA_DIR/app_local.py" > /dev/null && ss -ltn "( sport = :$PORT )" | grep -q LISTEN; then
     echo "✓ Already running on port $PORT"
 else
     cd "$HEARTMULA_DIR"

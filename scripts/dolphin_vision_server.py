@@ -27,31 +27,48 @@ from PIL import Image as PILImage
 warnings.filterwarnings('ignore')
 
 MODEL_PATH = "/srv/containers/edq/models/dolphin-vision-7b"
+VISION_TOWER_PATH = "/srv/containers/edq/models/siglip-so400m-patch14-384"
 MEDIA_DIR  = Path("/srv/containers/edq/media")
 
 model     = None
 tokenizer = None
 
 
+def patch_transformers_cache_compat():
+    from transformers.cache_utils import DynamicCache
+
+    if not hasattr(DynamicCache, "seen_tokens"):
+        DynamicCache.seen_tokens = property(lambda self: self.get_seq_length())
+    if not hasattr(DynamicCache, "get_max_length"):
+        DynamicCache.get_max_length = DynamicCache.get_max_cache_shape
+
+
 def load_model():
     global model, tokenizer
     if model is not None:
         return True, "ready"
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
     import transformers
     transformers.logging.set_verbosity_error()
     transformers.logging.disable_progress_bar()
+    patch_transformers_cache_compat()
     print("Loading Dolphin Vision 7B…")
     try:
-        model = AutoModelForCausalLM.from_pretrained(
-            MODEL_PATH, torch_dtype=torch.float16,
-            device_map='auto', trust_remote_code=True, local_files_only=True
-        )
         tokenizer = AutoTokenizer.from_pretrained(
             MODEL_PATH, trust_remote_code=True, local_files_only=True
         )
-        if not getattr(model.config, 'pad_token_id', None):
-            model.config.pad_token_id = tokenizer.eos_token_id
+        config = AutoConfig.from_pretrained(
+            MODEL_PATH, trust_remote_code=True, local_files_only=True
+        )
+        if getattr(config, "pad_token_id", None) is None:
+            config.pad_token_id = tokenizer.pad_token_id or tokenizer.eos_token_id
+        if Path(VISION_TOWER_PATH).exists():
+            config.mm_vision_tower = VISION_TOWER_PATH
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_PATH, torch_dtype=torch.float16,
+            device_map='auto', trust_remote_code=True, local_files_only=True,
+            config=config
+        )
         print("Model loaded.")
         return True, "loaded"
     except Exception as e:

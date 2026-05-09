@@ -18,6 +18,7 @@ import gradio as gr
 # Output directory
 OUTPUT_DIR = Path.home() / "ai_generated" / "tada"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("NUMBA_CACHE_DIR", "/tmp/numba-tada")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 SAMPLE_RATE = 24000  # TADA native output sample rate
@@ -126,7 +127,7 @@ input, textarea, select { background: #1e1e1e !important; color: #e0e0e0 !import
 footer { display: none !important; }
 """
 
-with gr.Blocks(title="TADA TTS", css=DARK_CSS) as demo:
+with gr.Blocks(title="TADA TTS") as demo:
     gr.Markdown("# 🎙️ TADA TTS\n*Hume AI — Generative voice cloning with multilingual support*")
 
     with gr.Row():
@@ -173,4 +174,7 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=int(os.environ.get("GRADIO_SERVER_PORT", 8037)),
+        allowed_paths=[str(OUTPUT_DIR)],
+        show_error=True,
+        css=DARK_CSS,
     )

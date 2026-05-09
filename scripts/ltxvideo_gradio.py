@@ -137,7 +137,7 @@ def generate(prompt, neg_prompt, image_input, duration_label, quality_mode, seed
                 conditions=conditions,
                 prompt=prompt,
                 negative_prompt=neg_prompt,
-                width=exp_w, height=exp_h,
+                width=lo_w, height=lo_h,
                 num_frames=num_frames,
                 latents=latents,
                 denoise_strength=0.0,
@@ -147,6 +147,7 @@ def generate(prompt, neg_prompt, image_input, duration_label, quality_mode, seed
                 decode_noise_scale=0.025,
                 output_type="pil",
             ).frames[0]
+            frames = [f.resize((exp_w, exp_h)) for f in frames]
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         out_path = OUTPUT_DIR / f"ltxv_{timestamp}_s{seed_val}.mp4"
@@ -220,4 +221,5 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=8028,
         favicon_path="/srv/containers/edq/media/favicons/ltxvideo.svg",
+        allowed_paths=[str(OUTPUT_DIR)],
     )

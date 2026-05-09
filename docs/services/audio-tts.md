@@ -32,10 +32,21 @@ bash scripts/start_fish_speech.sh
 ### Key Considerations
 
 - GPU-heavy (12GB VRAM), only run one GPU service at a time
-- First launch downloads ~2GB model weights
+- OpenAudio S1-mini model weights are cached at `projects/fish-speech/checkpoints/openaudio-s1-mini/`
+- `checkpoints/s2-pro/` is also cached but OOMs on the 16GB RTX 5070 Ti during load
 - Voice cloning: place 10-30s audio samples in `projects/fish-speech/references/<voice_id>/sample.wav`
 - Emotion markers: use `(angry)`, `(excited)`, `(sad)`, etc. in text
 - Tone markers: `(whispering)`, `(shouting)`, `(in a hurry tone)`
+
+### QA Notes
+
+- 2026-05-08: Fixed S1-mini tokenizer loading for checkpoints that use `tokenizer.tiktoken` + `special_tokens.json`.
+- 2026-05-08: Fixed stale process detection in `start_fish_speech.sh`; it now requires the expected checkpoint path and a listening port.
+- 2026-05-08: Fixed persistent output handling by saving Gradio results to `~/ai_generated/fish-speech/` and launching with `allowed_paths`.
+- Current status: starts successfully on S1-mini, but generated smoke outputs were only 0.046s and did not audibly satisfy the prompt. Do not mark ready until the code/checkpoint compatibility issue is resolved.
+- Failed smoke outputs retained for debugging:
+  - `/home/edq/ai_generated/fish-speech/fish_speech_20260508_070801.wav`
+  - `/home/edq/ai_generated/fish-speech/fish_speech_20260508_070821.wav`
 
 ---
 
@@ -73,12 +84,20 @@ bash scripts/start_qwen3_tts.sh
 ### Key Considerations
 
 - GPU-heavy (~6-8GB VRAM per model), only run one GPU service at a time
-- First launch downloads ~6GB of model weights (per model type)
+- Model weights should be pre-cached; do not rely on a first-run download during a creative session
+- Requires SoX (`sox`) for the local qwen-tts import path
+- Launcher sets `NUMBA_CACHE_DIR=/tmp/numba-qwen3-tts` to avoid numba cache locator failures
 - Three modes: TTS (speakers), Voice Clone, Voice Design
 - Only one model loaded at a time for 16GB VRAM compatibility
 - Switching tabs may reload models
 - 9 predefined speakers: Aiden, Dylan, Eric, Ono_anna, Ryan, Serena, Sohee, Uncle_fu, Vivian
 - Voice design: describe age, gender, tone, emotion, accent
+
+### QA Notes
+
+- 2026-05-08: Dashboard launch and short TTS smoke passed.
+- Verified persistent output: `/home/edq/ai_generated/qwen3-tts/tts_20260508_064359.wav` (24kHz mono WAV, non-zero).
+- Gradio 6 warning cleanup: `theme` is applied in `launch()`, not the `Blocks` constructor.
 
 ### Tips
 
@@ -134,6 +153,15 @@ bash scripts/start_qwen3_audiobook.sh
 - Supports PDF, EPUB, DOCX, DOC, TXT formats
 - Text is chunked into ~1200 word segments for reliable TTS
 - Long documents may take significant time to convert
+- Current Qwen3-TTS returns filepath outputs; audiobook assembly must accept persistent file paths as well as legacy `(sample_rate, array)` audio tuples
+
+### QA Notes
+
+- 2026-05-08: TXT preview and short audiobook conversion passed through the Dashboard.
+- Verified persistent outputs:
+  - `/home/edq/ai_generated/qwen3-audiobook/audiobook_20260508_065405.mp3` (24kHz mono MP3, non-zero)
+  - `/home/edq/ai_generated/qwen3-audiobook/audiobook_20260508_065405.wav` (24kHz mono WAV, non-zero)
+- Fixed final assembly failure caused by the Qwen3-TTS filepath return shape.
 
 ### Tips
 
@@ -228,3 +256,97 @@ bash scripts/start_voxtral.sh
 - `config.json` stub must include `audio_config.speaker_id` dict (written by download script logic)
 - YAML Stage 0 `gpu_memory_utilization` set to 0.74 (default 0.8 causes CUDA graph OOM on 16GB)
 - Do NOT pass `--gpu-memory-utilization` to `vllm serve` — it overrides the per-stage YAML values
+
+---
+
+## VoxCPM2
+
+**Port:** 8049
+**Purpose:** 2B diffusion TTS with 48kHz output, voice design, and voice cloning
+
+### Launch
+
+```bash
+cd /srv/containers/edq
+bash scripts/start_voxcpm2.sh
+```
+
+**Access at:** `http://192.168.7.226:8049`
+
+### Configuration
+
+- **Script**: `scripts/voxcpm2_server.py`
+- **Launcher**: `scripts/start_voxcpm2.sh`
+- **Venv**: `venv_voxcpm2`
+- **Output**: `~/ai_generated/voxcpm2/`
+
+### Key Considerations
+
+- Gradio must launch with `allowed_paths=[OUTPUT_DIR]`; otherwise generation succeeds but the UI/client rejects the persistent file path.
+- Launcher must be executable.
+
+### QA Notes
+
+- 2026-05-07: Dashboard launch and short TTS smoke passed.
+- Verified persistent output: `/home/edq/ai_generated/voxcpm2/voxcpm2_20260507_212733.wav` (48kHz mono WAV, non-zero).
+
+---
+
+## Dragon Audio Workstation
+
+**Port:** 8026
+**Purpose:** Audio enhancement, stem separation, dereverb, transcription, and waveform tools
+
+### Launch
+
+```bash
+cd /srv/containers/edq
+bash scripts/start_audio_tools_native.sh
+```
+
+**Access at:** `http://192.168.7.226:8026`
+
+### Configuration
+
+- **Launcher**: `scripts/start_audio_tools_native.sh`
+- **Output**: `~/ai_generated/audio-tools/`
+
+### QA Notes
+
+- 2026-05-08: Dashboard launch and `/api/enhance` smoke passed using a VoxCPM2 WAV input.
+- Verified persistent output: `/home/edq/ai_generated/audio-tools/enhanced_20260508_064124.wav` (48kHz mono WAV, non-zero).
+- `/audio/<file>` supports GET; HEAD returns 405, so use GET/ranged GET for automated file availability checks.
+
+---
+
+## TADA TTS
+
+**Port:** 8037
+**Purpose:** Hume TADA generative TTS with voice cloning and token alignment
+
+### Launch
+
+```bash
+cd /srv/containers/edq
+bash scripts/start_tada.sh
+```
+
+**Access at:** `http://192.168.7.226:8037`
+
+### Configuration
+
+- **Script**: `scripts/tada_gradio.py`
+- **Launcher**: `scripts/start_tada.sh`
+- **Venv**: `venv_tada`
+- **Output**: `~/ai_generated/tada/`
+
+### Key Considerations
+
+- Launcher sets `NUMBA_CACHE_DIR=/tmp/numba-tada`.
+- Gradio must launch with `allowed_paths=[str(OUTPUT_DIR)]`; otherwise persistent outputs can be blocked by Gradio path validation.
+- `descript-audio-codec` is required for the `dac.*` imports.
+- `transformers==4.57.6` with `huggingface_hub==0.36.0` avoids the `all_tied_weights_keys` failure observed with Transformers 5.x.
+
+### Current Blocker
+
+- 2026-05-08: Runtime smoke is blocked by gated upstream access to `meta-llama/Llama-3.2-1B` (HTTP 403). Do not mark ready until the gated model is accessible or the app is reconfigured to a local/ungated model.

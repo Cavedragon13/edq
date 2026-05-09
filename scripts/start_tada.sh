@@ -33,6 +33,8 @@ set_pytorch_env
 
 export GRADIO_SERVER_NAME="0.0.0.0"
 export GRADIO_SERVER_PORT="$PORT"
+export NUMBA_CACHE_DIR="/tmp/numba-tada"
+mkdir -p "$NUMBA_CACHE_DIR"
 
 echo "🚀 Starting $SERVICE_NAME..."
 if pgrep -f "tada_gradio.py" > /dev/null; then

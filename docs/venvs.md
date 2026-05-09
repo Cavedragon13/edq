@@ -23,7 +23,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_qwen_image_layered | `/srv/containers/edq/venv_qwen_image_layered`     | ~10GB  | `start_qwen_image_layered.sh` | Qwen-Image-Layered decomposition                           |
 | venv_mule_game          | `/srv/containers/edq/venv_mule_game`              | ~50MB  | `start_mule_game.sh`          | M.U.L.E. web game (Gradio)                                 |
 | venv_facefusion         | `/srv/containers/edq/venv_facefusion`             | ~2GB   | `start_facefusion.sh`         | FaceFusion face swap & manipulation                        |
-| ACE-Step .venv          | `/srv/containers/edq/projects/ACE-Step-1.5/.venv` | ~5GB   | `start_ace_step.sh`           | ACE-Step 1.5 music generation (managed by uv)              |
+| ACE-Step .venv          | `/srv/containers/edq/projects/ACE-Step-1.5-xl/.venv` | ~5GB   | `start_ace_step.sh`           | ACE-Step 1.5 XL music generation (managed by uv)           |
 | venv_soulxsinger        | `/srv/containers/edq/venv_soulxsinger`            | ~8GB   | `start_soulxsinger.sh`        | SoulX-Singer zero-shot singing voice synthesis             |
 | venv_deepgen            | `/srv/containers/edq/venv_deepgen`                | ~7GB   | `start_deepgen.sh`            | DeepGen 1.0 diffusers image gen/edit (5B)                  |
 | JustDubit .venv         | `/srv/containers/edq/projects/just-dub-it/.venv`  | ~8GB   | `start_justdubit.sh`          | JustDubit video dubbing (managed by uv)                    |

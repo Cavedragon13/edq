@@ -183,10 +183,13 @@ def generate_audio_chunk(text: str, speaker: str, language: str, instruct: str =
             api_name="/generate_tts",
         )
 
-        # Result should be (audio_tuple, file_path)
-        if isinstance(result, tuple) and len(result) >= 1:
-            audio_data = result[0]
-            return audio_data
+        # Current Qwen3-TTS returns (gradio_temp_path, persistent_saved_path).
+        # Older builds returned (sample_rate, numpy_array). Support both.
+        if isinstance(result, tuple):
+            if len(result) >= 2 and isinstance(result[1], str) and result[1]:
+                return result[1]
+            if len(result) >= 1:
+                return result[0]
         return result
 
     except Exception as e:
@@ -256,7 +259,13 @@ def convert_to_audiobook(
             sample_rate = 24000  # Default Qwen3-TTS sample rate
 
             for seg in audio_segments:
-                if isinstance(seg, tuple) and len(seg) == 2:
+                if isinstance(seg, str) and os.path.exists(seg):
+                    audio_seg = AudioSegment.from_file(seg)
+                    if combined is None:
+                        combined = audio_seg
+                    else:
+                        combined += audio_seg
+                elif isinstance(seg, tuple) and len(seg) == 2:
                     sr, wav = seg
                     sample_rate = sr
                     # Convert numpy to AudioSegment

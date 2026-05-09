@@ -187,6 +187,7 @@ The model package already includes the VLM weights, connector, transformer, and 
 - [x] Launch successful on port 8024
 - [x] Text-to-image generation tested
 - [x] Output saved under `/home/edq/ai_generated/deepgen`
+- [x] 2026-05-08 QA: prompt-following Valyria smoke output verified at `/home/edq/ai_generated/deepgen/deepgen_20260508_122452.png`
 
 ---
 
