@@ -6,7 +6,7 @@ cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
 SERVICE_NAME="Dragon File Watcher"
-VENV="venv_dragonsuite"
+VENV="venv_file_watcher"
 SCRIPT="scripts/file_watcher.py"
 LOG="/tmp/file_watcher.log"
 
@@ -24,5 +24,5 @@ if pgrep -f "file_watcher.py" > /dev/null 2>&1; then
 fi
 
 echo "🚀 Starting $SERVICE_NAME..."
-nohup python3 "$SCRIPT" > "$LOG" 2>&1 &
+nohup python "$SCRIPT" > "$LOG" 2>&1 &
 echo "✅ $SERVICE_NAME started (PID $!) — logs at $LOG"

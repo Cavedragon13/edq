@@ -21,10 +21,10 @@ import requests
 
 OLLAMA_URL = "http://127.0.0.1:11434"
 MODEL = "gemma4:e4b"
-SCAN_INTERVAL = 3 * 60 * 60  # seconds
+SCAN_INTERVAL = int(os.getenv("DRAGON_FILE_WATCHER_INTERVAL", str(3 * 60 * 60)))  # seconds
 
-DOWNLOADS_DIR = Path.home() / "Downloads"
-AI_GENERATED_DIR = Path.home() / "ai_generated"
+DOWNLOADS_DIR = Path(os.getenv("DRAGON_FILE_WATCHER_DOWNLOADS_DIR", str(Path.home() / "Downloads")))
+AI_GENERATED_DIR = Path(os.getenv("DRAGON_FILE_WATCHER_AI_GENERATED_DIR", str(Path.home() / "ai_generated")))
 
 CACHE_DIR = Path.home() / ".cache" / "dragon-file-watcher"
 STATE_FILE = CACHE_DIR / "processed.json"
@@ -302,12 +302,17 @@ def main():
     processed = load_state()
     logger.info(f"  State:        {len(processed)} files already processed")
 
+    run_once = os.getenv("DRAGON_FILE_WATCHER_ONCE", "").lower() in {"1", "true", "yes"}
+
     while True:
         logger.info(f"⏰ Scan at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         try:
             scan_once(processed)
         except Exception as e:
             logger.error(f"Scan error: {e}", exc_info=True)
+
+        if run_once:
+            break
 
         next_run = datetime.fromtimestamp(time.time() + SCAN_INTERVAL)
         logger.info(f"💤 Next scan at {next_run.strftime('%H:%M')}")

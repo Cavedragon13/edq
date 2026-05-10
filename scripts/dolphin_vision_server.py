@@ -41,6 +41,15 @@ def patch_transformers_cache_compat():
         DynamicCache.seen_tokens = property(lambda self: self.get_seq_length())
     if not hasattr(DynamicCache, "get_max_length"):
         DynamicCache.get_max_length = DynamicCache.get_max_cache_shape
+    if not hasattr(DynamicCache, "get_usable_length"):
+        DynamicCache.get_usable_length = lambda self, new_seq_length, layer_idx=0: self.get_seq_length(layer_idx)
+    if not hasattr(DynamicCache, "__getitem__"):
+        DynamicCache.__getitem__ = lambda self, layer_idx: (
+            self.layers[layer_idx].keys,
+            self.layers[layer_idx].values,
+        )
+    if not hasattr(DynamicCache, "__len__"):
+        DynamicCache.__len__ = lambda self: len(self.layers)
 
 
 def load_model():
@@ -65,9 +74,9 @@ def load_model():
         if Path(VISION_TOWER_PATH).exists():
             config.mm_vision_tower = VISION_TOWER_PATH
         model = AutoModelForCausalLM.from_pretrained(
-            MODEL_PATH, torch_dtype=torch.float16,
+            MODEL_PATH, torch_dtype=torch.bfloat16,
             device_map='auto', trust_remote_code=True, local_files_only=True,
-            config=config
+            config=config, attn_implementation="eager"
         )
         print("Model loaded.")
         return True, "loaded"
@@ -88,12 +97,18 @@ def run_inference(image: PILImage.Image, prompt: str,
         device = next(model.parameters()).device
         input_ids = input_ids.to(device)
         image_tensor = model.process_images([image.convert('RGB')], model.config).to(dtype=model.dtype)
+        do_sample = float(temperature) >= 0.2
+        generation_kwargs = {
+            "max_new_tokens": int(max_tokens),
+            "do_sample": do_sample,
+            "use_cache": True,
+        }
+        if do_sample:
+            generation_kwargs["temperature"] = float(temperature)
         with torch.no_grad():
             out = model.generate(
                 input_ids, images=image_tensor,
-                max_new_tokens=int(max_tokens),
-                temperature=float(temperature),
-                do_sample=temperature > 0.01, use_cache=True
+                **generation_kwargs
             )[0]
         return tokenizer.decode(out[input_ids.shape[1]:], skip_special_tokens=True).strip()
     except Exception as e:

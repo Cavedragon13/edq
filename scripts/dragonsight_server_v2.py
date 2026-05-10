@@ -14,12 +14,15 @@ import urllib.error
 import base64
 import io
 from pathlib import Path
+from datetime import datetime
 from socketserver import ThreadingMixIn
 
 PORT = 8080
 OLLAMA_PORT = 11434
+DOLPHIN_PORT = 8025
 MEDIA_DIR = Path("/srv/containers/edq/media")
 HTML_FILE = MEDIA_DIR / "dragonsight4.html"
+OUTPUT_DIR = Path.home() / "ai_generated" / "dragonsight"
 
 # Florence-2 lazy state — loaded on first request
 _florence_model = None
@@ -145,6 +148,10 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             self._proxy_ollama()
         elif self.path == '/api/florence/analyze':
             self._handle_florence()
+        elif self.path == '/api/dolphin/analyze':
+            self._proxy_dolphin()
+        elif self.path == '/api/save':
+            self._save_metadata()
         else:
             self.send_error(404, f"Path {self.path} not found")
 
@@ -208,6 +215,54 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             import traceback
             self._json_response(500, {'error': str(e), 'trace': traceback.format_exc()})
+
+    def _proxy_dolphin(self):
+        body = self._read_body()
+        if not body:
+            self._json_response(400, {'error': 'No request body'})
+            return
+        try:
+            req = urllib.request.Request(
+                f'http://127.0.0.1:{DOLPHIN_PORT}/analyze',
+                data=body,
+                method='POST',
+                headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+            )
+            with urllib.request.urlopen(req, timeout=300) as resp:
+                result = resp.read()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(result))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(result)
+        except urllib.error.URLError as e:
+            self._json_response(503, {'error': f'Dolphin Vision unavailable on port {DOLPHIN_PORT}: {e}'})
+        except Exception as e:
+            self._json_response(500, {'error': f'Server error: {e}'})
+
+    def _save_metadata(self):
+        body = self._read_body()
+        if not body:
+            self._json_response(400, {'error': 'No request body'})
+            return
+        try:
+            data = json.loads(body)
+            OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+            suggested = data.get('suggested_name', '').strip()
+            original = data.get('original_name', data.get('original_filename', 'unknown')).strip()
+            base_name = Path(suggested or original).stem or 'unknown'
+            safe_name = ''.join(c if c.isalnum() or c in ('-', '_') else '_' for c in base_name).strip('_') or 'unknown'
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            output_file = OUTPUT_DIR / f"{safe_name}_{timestamp}.json"
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            self._json_response(200, {'success': True, 'file': str(output_file)})
+            print(f"   Saved: {output_file}")
+        except json.JSONDecodeError as e:
+            self._json_response(400, {'error': f'Invalid JSON: {e}'})
+        except Exception as e:
+            self._json_response(500, {'error': f'Save error: {e}'})
 
 
 class ReuseTCPServer(ThreadingMixIn, socketserver.TCPServer):
