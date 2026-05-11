@@ -1172,6 +1172,25 @@
             "stop_command": "pkill -f 'zanime_gradio.py' || true",
             "vram_gb": 8.0,
             "output_dir": "/home/edq/ai_generated/zanime"
+        },
+        {
+            "id": "hidream-o1",
+            "name": "HiDream-O1-Image-Dev",
+            "description": "Pixel-level unified T2I (8B) \u2014 text-to-image, editing, subject-driven personalization up to 1024x1024",
+            "category": "image",
+            "port": 8052,
+            "path": "/",
+            "icon": "&#127775;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_hidream_o1.sh",
+            "project_path": "/srv/containers/edq/projects/hidream-o1",
+            "features": [
+                "Text-to-image",
+                "Instruction editing",
+                "Subject-driven personalization",
+                "Prompt Refiner via Ollama"
+            ],
+            "stop_command": "pkill -f 'app.py.*hidream-o1-dev' || pkill -f 'start_hidream_o1' || true",
+            "vram_gb": 16.0
         }
     ],
     "categories": {

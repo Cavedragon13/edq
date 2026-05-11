@@ -4,24 +4,60 @@
       "command": "/srv/containers/edq/mcp-servers/dragonsuite/venv/bin/python",
       "args": ["/srv/containers/edq/mcp-servers/dragonsuite/server.py"],
       "description": "Manage Dragonsuite GPU services - start/stop services, check VRAM"
-    },
-    "vocab-translator": {
-      "command": "/srv/containers/edq/mcp-servers/vocab-translator/venv/bin/python",
-      "args": ["/srv/containers/edq/mcp-servers/vocab-translator/server.py"],
-      "description": "Translation QA pipeline: Qwen/LLaMA translators, DeepSeek critic, Ollama backend"
-    },
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"],
-      "description": "Browser automation for testing Gradio and HTML apps"
-    },
+    }
+  },
+  "_pool": {
+    "_note": "Servers here are inactive. To enable one: move it into mcpServers, restart VSCodium, resume conversation.",
     "github": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       },
-      "description": "GitHub API - repos, issues, PRs, code search"
+      "description": "GitHub API — repos, issues, PRs, code search"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"],
+      "description": "Browser automation for testing Gradio and HTML apps"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/srv/containers/edq", "/home/edq"],
+      "description": "Enhanced file system operations (Claude has native tools; enable only if those fail)"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Chain-of-thought reasoning (not needed — model handles this natively)"
+    },
+    "supabase": {
+      "command": "/srv/containers/edq/scripts/npx-node20.sh",
+      "args": ["-y", "@supabase/mcp-server-supabase", "--access-token", "${SUPABASE_ACCESS_TOKEN}"],
+      "description": "Supabase DB operations — enable for GBrain/database work"
+    },
+    "mongodb": {
+      "command": "/srv/containers/edq/scripts/npx-node20.sh",
+      "args": ["-y", "@mongodb-js/mongodb-mcp-server"],
+      "env": {
+        "MONGODB_URI": "${MONGODB_URI}"
+      },
+      "description": "MongoDB operations — enable when working with MongoDB"
+    },
+    "topaz-labs": {
+      "command": "/srv/containers/edq/mcp-servers/topaz-labs/venv/bin/python",
+      "args": ["/srv/containers/edq/mcp-servers/topaz-labs/server.py"],
+      "env": {
+        "TOPAZ_API_KEY": "${TOPAZ_API_KEY}"
+      },
+      "description": "Topaz Labs image/video enhancement — enable for enhancement jobs"
+    },
+    "stitch": {
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "${STITCH_API_KEY}"
+      },
+      "description": "Google Stitch UI design — enable for /stitch-design work"
     },
     "blender": {
       "command": "uvx",
@@ -30,45 +66,12 @@
         "BLENDER_HOST": "localhost",
         "BLENDER_PORT": "9876"
       },
-      "description": "Control Blender for 3D modeling, rendering, and scene manipulation (requires Blender running with MCP addon)"
+      "description": "Blender 3D — enable only when Blender is running with MCP addon"
     },
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/srv/containers/edq", "/home/edq"],
-      "description": "Enhanced file system operations with better permissions"
-    },
-    "sequential-thinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
-      "description": "Advanced reasoning and chain-of-thought capabilities"
-    },
-    "supabase": {
-      "command": "/srv/containers/edq/scripts/npx-node20.sh",
-      "args": ["-y", "@supabase/mcp-server-supabase", "--access-token", "${SUPABASE_ACCESS_TOKEN}"],
-      "description": "Database operations with Supabase"
-    },
-    "mongodb": {
-      "command": "/srv/containers/edq/scripts/npx-node20.sh",
-      "args": ["-y", "@mongodb-js/mongodb-mcp-server"],
-      "env": {
-        "MONGODB_URI": "${MONGODB_URI}"
-      },
-      "description": "MongoDB database operations and Atlas cluster management"
-    },
-    "topaz-labs": {
-      "command": "/srv/containers/edq/mcp-servers/topaz-labs/venv/bin/python",
-      "args": ["/srv/containers/edq/mcp-servers/topaz-labs/server.py"],
-      "env": {
-        "TOPAZ_API_KEY": "${TOPAZ_API_KEY}"
-      },
-      "description": "Topaz Labs AI image/video enhancement - upscale, denoise, restore, sharpen"
-    },
-    "stitch": {
-      "url": "https://stitch.googleapis.com/mcp",
-      "headers": {
-        "X-Goog-Api-Key": "${STITCH_API_KEY}"
-      },
-      "description": "Google Stitch — AI UI design generator"
+    "vocab-translator": {
+      "command": "/srv/containers/edq/mcp-servers/vocab-translator/venv/bin/python",
+      "args": ["/srv/containers/edq/mcp-servers/vocab-translator/server.py"],
+      "description": "Translation QA pipeline — enable for translation work"
     }
   }
 }

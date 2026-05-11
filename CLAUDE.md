@@ -84,6 +84,7 @@ This is a personal AI development environment focused on video generation, visio
 | 8045                                    | _(retired)_           | —                      | Superseded by OmniVoice Studio (8051)                   |
 | 8046                                    | Dragonweyr            | On-demand              | Polymarket scout + Claude AI analysis + CLOB execution  |
 | 8051                                    | OmniVoice Studio      | On-demand (GPU)        | Cinematic dubbing — transcribe, translate, re-voice     |
+| 8052                                    | HiDream-O1-Image-Dev  | On-demand (GPU)        | Pixel-level unified 8B — T2I, editing, personalization  |
 | 8047                                    | Dragonweyr-Kalshi     | On-demand              | Kalshi scout + Claude AI analysis + order execution     |
 | 8048                                    | Trading Dashboard     | On-demand              | Paper trading dashboard (trading_dashboard.py)          |
 | 8049                                    | VoxCPM2               | On-demand (GPU)        | 2B diffusion TTS, 48kHz, 30+ languages, voice clone     |
@@ -654,6 +655,41 @@ image_path = result[0]
 **Last Updated**: 2026-02-11
 **Services**: 20+ AI tools across vision, image, video, audio, and utilities
 **Documentation**: Reorganized into topic-specific guides (2026-02-11)
+
+## MCP Server Policy
+
+Most MCP servers are **off by default** to reduce context overhead. Only `dragonsuite` (project) and `gbrain` + `sqlite` (user) load every session.
+
+All others live in the `_pool` section of `.mcp.json` and must be explicitly enabled.
+
+### MCP inventory step (at plan time)
+
+When starting any multi-step plan, open with a one-line MCP check:
+
+> **MCP needed:** `github`, `supabase` — **active:** `dragonsuite`, `gbrain` — **action:** enable `github` + `supabase` in `.mcp.json`, restart VSCodium, resume conversation, then proceed.
+
+If all needed servers are already active, skip the note and continue.
+
+### Server → task mapping (quick reference)
+
+| Server | Enable for |
+| --- | --- |
+| `github` | GitHub repos, PRs, code search, issue tracking |
+| `playwright` | UI/browser testing, QA sessions |
+| `supabase` | GBrain DB work, Supabase queries |
+| `topaz-labs` | Image/video enhancement jobs |
+| `stitch` | `/stitch-design` UI generation |
+| `mongodb` | MongoDB cluster work |
+| `blender` | 3D modeling (requires Blender + MCP addon running) |
+| `vocab-translator` | Translation QA pipeline |
+| `filesystem` | Extended file ops (rarely — Claude has native tools) |
+| `sequential-thinking` | (probably never — model handles this natively) |
+
+### Resume workflow
+
+After enabling a server: move it from `_pool` → `mcpServers` in `.mcp.json`, restart VSCodium, use the sessions list or `/resume` to continue the conversation.
+
+Remote claude.ai servers (Gmail, Google Calendar, Canva, Invideo, Square, Stripe, Zapier) are permanently disabled — manage via Settings → Integrations on claude.ai.
 
 ## Skill routing
 
