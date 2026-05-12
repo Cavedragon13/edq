@@ -510,6 +510,22 @@ Do this thoroughly — this is the persistent record of the work. "No summary pr
 
 ---
 
+## Session Lessons (tasks/lessons.md)
+
+`tasks/lessons.md` is a running log of corrections and the preventive rules they produced.
+
+**At session start:** Read `tasks/lessons.md` and apply any rules there for the duration of the session.
+
+**During a session:** After any user correction — a "no, don't do that", a re-do, or explicit feedback — append an entry immediately:
+
+```markdown
+- YYYY-MM-DD: [what failed] → [rule going forward]
+```
+
+Don't wait for llkb. Append while the correction is fresh.
+
+---
+
 ## Standard Operating Procedures (SOPs)
 
 ### Model Downloads - CRITICAL SOP (2026-02-15)
