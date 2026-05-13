@@ -422,6 +422,16 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                 self._send_error(400, "image and prompt are required")
                 return
 
+            # gpt-image-2 has minimum pixel budget (~1MP); enforce via size
+            try:
+                w, h = map(int, size.split('x'))
+                if w * h < 1000000:  # ~1MP minimum
+                    self._send_error(400, f"Image size too small. gpt-image-2 requires at least ~1MP (e.g., 1024x1024). Got {w}x{h}={w*h:,} pixels")
+                    return
+            except (ValueError, AttributeError):
+                self._send_error(400, f"Invalid size format: {size}. Use WIDTHxHEIGHT (e.g., 1024x1024)")
+                return
+
             try:
                 from openai import OpenAI, BadRequestError
             except ImportError:
@@ -465,6 +475,9 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                     images_b64 = [result.data[0].b64_json]
                 else:
                     raise
+            # Ensure we got base64 data (gpt-image-2 returns b64_json, not url)
+            if images_b64 and not images_b64[0]:
+                raise ValueError("gpt-image-2 returned empty image data")
 
             response_data = json.dumps({'images': images_b64, 'fallback': fallback}).encode('utf-8')
             self.send_response(200)
