@@ -166,8 +166,11 @@ class BlenderMCPServer:
                                     pass
                             return None
 
-                        # Schedule execution in main thread
-                        bpy.app.timers.register(execute_wrapper, first_interval=0.0)
+                        # In the dashboard's headless background process, the startup
+                        # script keeps Blender alive and there is no UI event loop to
+                        # reliably drain app timers. Execute directly in the client
+                        # thread so MCP calls receive a response.
+                        execute_wrapper()
                     except json.JSONDecodeError:
                         # Incomplete data, wait for more
                         pass

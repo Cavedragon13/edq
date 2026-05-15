@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dragonclawd — Personal AI Agent (Telegram bot)
-# No port  |  venv_dragonsuite
+# No port  |  venv_dragonclawd
 set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
@@ -9,10 +9,7 @@ SERVICE_NAME="Dragonclawd"
 
 service_header "$SERVICE_NAME" ""
 
-activate_venv "venv_dragonsuite"
-
-# Ensure required packages are present
-pip install --quiet "python-telegram-bot[all]" anthropic gradio_client python-dotenv mcp 2>/dev/null
+activate_venv "venv_dragonclawd"
 
 # Check .env for required tokens
 source /srv/containers/edq/.env 2>/dev/null || true

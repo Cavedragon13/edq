@@ -1,5 +1,5 @@
 #!/bin/bash
-# Fish Speech TTS - OpenAudio S1-mini
+# Fish Speech TTS - S2-Pro
 # Expressive Text-to-Speech with Voice Cloning
 # Port 8003, LAN accessible
 set -e
@@ -11,53 +11,26 @@ PORT=8003
 VENV="venv_fish_speech"
 
 FISH_SPEECH_DIR="$DRAGONSUITE_ROOT/projects/fish-speech"
-MODEL_DIR="$FISH_SPEECH_DIR/checkpoints/openaudio-s1-mini"
+MODEL_DIR="$FISH_SPEECH_DIR/checkpoints/s2-pro"
 OUTPUT_DIR="$HOME/ai_generated/fish-speech"
 
 service_header "$SERVICE_NAME" "$PORT"
 
-# Check/download model weights before evicting GPU
-if [ ! -d "$MODEL_DIR" ] || [ ! -f "$MODEL_DIR/codec.pth" ]; then
-    echo "📥 Downloading OpenAudio S1-mini model weights..."
-    echo "   Model size: ~2GB"
-    echo ""
-    mkdir -p "$FISH_SPEECH_DIR/checkpoints"
-
-    # Activate venv early just for the download
-    activate_venv "$VENV"
-    pip install -q "huggingface_hub[cli]"
-
-    if ! hf download fishaudio/openaudio-s1-mini --local-dir "$MODEL_DIR" 2>&1; then
-        echo ""
-        echo "❌ Model download failed!"
-        echo ""
-        echo "The OpenAudio S1-mini model is a GATED repository."
-        echo "You need to accept the license agreement first:"
-        echo ""
-        echo "  1. Visit: https://huggingface.co/fishaudio/openaudio-s1-mini"
-        echo "  2. Log in with your HuggingFace account"
-        echo "  3. Click 'Agree and access repository'"
-        echo "  4. Run this script again"
-        echo ""
-        echo "Your HF token is already cached at ~/.cache/huggingface/token"
-        echo ""
-        rm -rf "$MODEL_DIR"
-        exit 1
-    fi
-    echo "✓ Model downloaded to $MODEL_DIR"
-    echo ""
+# Check model weights before evicting GPU. Do not download on first launch.
+if [ ! -d "$MODEL_DIR" ] || [ ! -f "$MODEL_DIR/codec.pth" ] || ! ls "$MODEL_DIR"/model-*.safetensors >/dev/null 2>&1; then
+    echo "❌ Fish Speech S2-Pro model weights are missing at $MODEL_DIR"
+    echo "   Run the model download/setup step outside the launcher, then retry."
+    exit 1
 fi
 
 gpu_preflight "$PORT"
 activate_venv "$VENV"
 
-# Check if fish-speech is installed
+# Check if fish-speech is installed. Do not install on first launch.
 if ! python -c "import fish_speech" 2>/dev/null; then
-    echo "📦 Installing Fish Speech with CUDA support..."
-    echo "   This may take a few minutes on first run..."
-    (cd "$FISH_SPEECH_DIR" && pip install --upgrade pip && pip install -e ".[cu129]")
-    echo "✓ Installation complete"
-    echo ""
+    echo "❌ fish_speech is not installed in $VENV"
+    echo "   Install project dependencies outside the launcher, then retry."
+    exit 1
 fi
 
 set_pytorch_env

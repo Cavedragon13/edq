@@ -31,6 +31,7 @@ set_pytorch_env
 
 export HIDREAM_PORT=$PORT
 export HIDREAM_HOST=0.0.0.0
+export HIDREAM_OUTPUT_DIR=/home/edq/ai_generated/hidream-o1
 # Flash-attn disabled — sm_120 (Blackwell) not supported; patched in models/pipeline.py
 export FA_VERSION=disabled
 # Prompt Agent → Ollama (OpenAI-compatible)

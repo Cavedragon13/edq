@@ -16,7 +16,7 @@
                 "Streaming",
                 "Local Ollama"
             ],
-            "stop_command": "pkill -f 'gemma4_server.py' || true; ollama stop gemma4-obliterated 2>/dev/null || true"
+            "stop_command": "pkill -f 'gemma4_server.py' || true; ollama stop gemma4-obliterated:latest 2>/dev/null || ollama stop gemma4-obliterated 2>/dev/null || true"
         },
         {
             "id": "mercury2",
@@ -1190,7 +1190,8 @@
                 "Prompt Refiner via Ollama"
             ],
             "stop_command": "pkill -f 'app.py.*hidream-o1-dev' || pkill -f 'start_hidream_o1' || true",
-            "vram_gb": 16.0
+            "vram_gb": 16.0,
+            "output_dir": "/home/edq/ai_generated/hidream-o1"
         }
     ],
     "categories": {

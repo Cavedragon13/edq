@@ -33,7 +33,7 @@ bash scripts/start_fish_speech.sh
 
 - GPU-heavy (12GB VRAM), only run one GPU service at a time
 - OpenAudio S1-mini model weights are cached at `projects/fish-speech/checkpoints/openaudio-s1-mini/`
-- `checkpoints/s2-pro/` is also cached but OOMs on the 16GB RTX 5070 Ti during load
+- `checkpoints/s2-pro/` is also cached, but treat Fish Speech S2-Pro as a hardware no-go on this 32GB RAM / 16GB RTX 5070 Ti host: a dashboard/direct startup test OOM-killed the Python loader during Llama checkpoint load.
 - Voice cloning: place 10-30s audio samples in `projects/fish-speech/references/<voice_id>/sample.wav`
 - Emotion markers: use `(angry)`, `(excited)`, `(sad)`, etc. in text
 - Tone markers: `(whispering)`, `(shouting)`, `(in a hurry tone)`
@@ -43,6 +43,7 @@ bash scripts/start_fish_speech.sh
 - 2026-05-08: Fixed S1-mini tokenizer loading for checkpoints that use `tokenizer.tiktoken` + `special_tokens.json`.
 - 2026-05-08: Fixed stale process detection in `start_fish_speech.sh`; it now requires the expected checkpoint path and a listening port.
 - 2026-05-08: Fixed persistent output handling by saving Gradio results to `~/ai_generated/fish-speech/` and launching with `allowed_paths`.
+- 2026-05-14: Fish Speech S2-Pro retest reached `Loading model from /srv/containers/edq/projects/fish-speech/checkpoints/s2-pro`, then the system later logged a global OOM kill of the Python process (~16GB RSS). Do not continue S2-Pro dashboard testing on this host without a lighter model, quantization/offload strategy, or a hard memory guard.
 - Current status: starts successfully on S1-mini, but generated smoke outputs were only 0.046s and did not audibly satisfy the prompt. Do not mark ready until the code/checkpoint compatibility issue is resolved.
 - Failed smoke outputs retained for debugging:
   - `/home/edq/ai_generated/fish-speech/fish_speech_20260508_070801.wav`

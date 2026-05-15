@@ -45,7 +45,10 @@ def _load_florence():
         dtype = torch.float16 if torch.cuda.is_available() else torch.float32
         device = "cuda" if torch.cuda.is_available() else "cpu"
         _florence_model = AutoModelForCausalLM.from_pretrained(
-            MODEL_ID, torch_dtype=dtype, trust_remote_code=True
+            MODEL_ID,
+            torch_dtype=dtype,
+            trust_remote_code=True,
+            attn_implementation="eager",
         ).to(device)
         _florence_processor = AutoProcessor.from_pretrained(MODEL_ID, trust_remote_code=True)
         print(f"Florence-2 loaded on {device}")

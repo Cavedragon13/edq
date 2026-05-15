@@ -12,8 +12,18 @@ fi
 echo "✓ Launching Blender in headless mode..."
 echo "✓ MCP addon will listen on localhost:9876"
 
+BLENDER_BIN="$(command -v blender || true)"
+if [ -z "$BLENDER_BIN" ] && [ -x /snap/bin/blender ]; then
+    BLENDER_BIN="/snap/bin/blender"
+fi
+
+if [ -z "$BLENDER_BIN" ]; then
+    echo "❌ Blender executable not found"
+    exit 1
+fi
+
 # Run Blender in background with the MCP startup script
-blender --background \
+"$BLENDER_BIN" --background \
     --python-use-system-env \
     --python /srv/containers/edq/scripts/blender_mcp_startup.py \
     > /tmp/blender_mcp.log 2>&1 &

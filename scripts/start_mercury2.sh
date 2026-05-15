@@ -1,15 +1,17 @@
 #!/bin/bash
 # Mercury2 Diffusion Chat — Start Script
-# Port: 8036  |  No GPU venv  |  Requires MERCURY2_API_KEY
+# Port: 8036  |  Dedicated venv  |  Requires MERCURY2_API_KEY
 set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
 SERVICE_NAME="Mercury2 Diffusion Chat"
 PORT=8036
+VENV="venv_mercury2"
 
 service_header "$SERVICE_NAME" "$PORT"
 clear_port "$PORT"
+activate_venv "$VENV"
 
 # Check API key
 source /srv/containers/edq/.env 2>/dev/null || true
@@ -23,7 +25,7 @@ echo "🚀 Starting $SERVICE_NAME..."
 if pgrep -f "mercury2_server.py" > /dev/null; then
     echo "✓ Already running on port $PORT"
 else
-    nohup /usr/bin/python3 scripts/mercury2_server.py > /tmp/mercury2_server.log 2>&1 &
+    nohup "$VIRTUAL_ENV/bin/python" scripts/mercury2_server.py > /tmp/mercury2_server.log 2>&1 &
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 30; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"

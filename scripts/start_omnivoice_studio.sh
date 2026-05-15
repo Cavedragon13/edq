@@ -23,6 +23,7 @@ source "$VENV_DIR/bin/activate" || { echo "❌ Failed to activate venv"; exit 1;
 mkdir -p "$OUTPUT_DIR"
 
 export HF_HUB_DISABLE_TELEMETRY=1
+export OMNIVOICE_OUTPUT_DIR="$OUTPUT_DIR"
 
 echo "🚀 Starting $SERVICE_NAME..."
 if pgrep -f "uvicorn backend.main:app.*--port $PORT" >/dev/null 2>&1; then

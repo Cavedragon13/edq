@@ -15,19 +15,26 @@ VENV_PATH="/srv/containers/edq/$VENV"
 service_header "$SERVICE_NAME" "$PORT"
 clear_port "$PORT"
 
-# Create venv if needed
 if [ ! -d "$VENV_PATH" ]; then
-    echo "📦 Creating venv at $VENV_PATH..."
-    python3 -m venv "$VENV_PATH"
+    echo "❌ Venv not found at $VENV_PATH"
+    echo "   Create it and install dependencies before launch; do not install on first run."
+    exit 1
 fi
 
-# Install / upgrade dependencies
 echo "📦 Checking dependencies..."
-"$VENV_PATH/bin/pip" install -q --upgrade \
-    google-genai \
-    fastapi \
-    uvicorn \
-    python-dotenv
+"$VENV_PATH/bin/python" - <<'PY'
+import importlib.util
+missing = [
+    name for name in ("google.genai", "fastapi", "uvicorn", "dotenv")
+    if importlib.util.find_spec(name) is None
+]
+if missing:
+    raise SystemExit(
+        "Missing dependencies in venv_the_movies: "
+        + ", ".join(missing)
+        + "\nInstall them outside the launcher, then retry."
+    )
+PY
 
 activate_venv "$VENV"
 

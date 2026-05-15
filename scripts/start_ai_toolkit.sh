@@ -36,12 +36,24 @@ else
     nohup python3 -c "
 import sys, os
 sys.path.insert(0, os.getcwd())
+import gradio.networking as networking
 from flux_train_ui import demo
+
+# Gradio 4.44 can reject 0.0.0.0 launches when its localhost self-check runs
+# in this dashboard environment. Keep the service LAN-local and avoid public
+# share tunnels by bypassing only that self-check.
+networking.url_ok = lambda url: True
+# The upstream UI exposes component schemas that Gradio 4.44's API-info
+# converter cannot parse. The dashboard only needs the browser UI, so disable
+# API schema generation for this wrapper.
+demo.get_api_info = lambda: {}
+
 demo.launch(
     server_name='0.0.0.0',
     server_port=$PORT,
     share=False,
     show_error=True,
+    show_api=False,
 )
 " > /tmp/ai_toolkit.log 2>&1 &
     if wait_for_port "$PORT" 60; then
