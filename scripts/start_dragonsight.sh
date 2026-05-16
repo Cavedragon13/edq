@@ -16,12 +16,12 @@ if ! curl -s --max-time 3 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
     systemctl start ollama 2>/dev/null || true
     sleep 4
     if curl -s --max-time 3 http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
-        echo "✓ Ollama started successfully (qwen3-vl:8b default VLM)"
+        echo "✓ Ollama started successfully (gemma4:e4b default VLM)"
     else
         echo "⚠️  Ollama not available — use Gemini or LM Studio backends in the UI"
     fi
 else
-    echo "✓ Ollama ready (qwen3-vl:8b default VLM)"
+    echo "✓ Ollama ready (gemma4:e4b default VLM)"
 fi
 
 VENV_PYTHON="/srv/containers/edq/venv_ai_toolkit/bin/python3"

@@ -32,7 +32,10 @@ bash scripts/start_dragonsight.sh
 - Clipboard paste support (Ctrl+V)
 - Parallel API calls for faster results
 - Copy buttons for all outputs
-- Metadata JSON download
+- **2x2 Grid Controls** - Backend/Model selectors on top row, Analyze/Download buttons on bottom row
+- **Text Version (Plain)** output (first section) - markdown-stripped version for APIs with character limits
+- **Download Metadata** button always visible, enabled after analysis
+- Compact output labels (single-line for Concise Description and Tags/Keywords)
 
 ### Backend URLs
 

@@ -325,15 +325,28 @@
                 <div class="control-group" id="ollamaModelGroup">
                     <span class="control-label">Model</span>
                     <select id="ollamaModel">
-                        <option value="qwen3-vl:8b" selected>Qwen3-VL 8B (Vision)</option>
+                        <option value="gemma4:e4b" selected>Gemma 4 E4B (Multimodal)</option>
+                        <option value="qwen3-vl:8b">Qwen3-VL 8B (Vision)</option>
                         <option value="llama3.2-vision:11b">Llama 3.2 Vision 11B</option>
-                        <option value="gemma4:e4b">Gemma 4 E4B (Multimodal)</option>
                     </select>
                 </div>
-                <button id="analyzeBtn" disabled>🔍 Analyze Image</button>
+                <div class="control-group">
+                    <button id="analyzeBtn" disabled>🔍 Analyze Image</button>
+                </div>
+                <div class="control-group">
+                    <button id="saveBtn" disabled>⬇️ Download Metadata</button>
+                </div>
             </div>
 
             <div id="loadingBox" class="loading hidden">⏳ Analyzing image...</div>
+
+            <div class="output-box">
+                <label>
+                    Text Version (Plain)
+                    <button class="copy-btn" data-target="textVersion">📋 Copy</button>
+                </label>
+                <textarea id="textVersion" rows="4" placeholder="Plain text version without formatting..." readonly></textarea>
+            </div>
 
             <div class="output-box">
                 <label>
@@ -348,7 +361,7 @@
                     Concise Description
                     <button class="copy-btn" data-target="conciseDesc">📋 Copy</button>
                 </label>
-                <textarea id="conciseDesc" rows="2" placeholder="One-line description..." readonly></textarea>
+                <textarea id="conciseDesc" rows="1" placeholder="One-line description..." readonly></textarea>
             </div>
 
             <div class="output-box">
@@ -356,7 +369,7 @@
                     Tags/Keywords
                     <button class="copy-btn" data-target="tags">📋 Copy</button>
                 </label>
-                <textarea id="tags" rows="2" placeholder="Comma-separated tags..." readonly></textarea>
+                <textarea id="tags" rows="1" placeholder="Comma-separated tags..." readonly></textarea>
             </div>
 
             <div class="output-box">
@@ -366,8 +379,6 @@
                 </label>
                 <textarea id="filename" rows="1" placeholder="suggested_filename.jpg" readonly></textarea>
             </div>
-
-            <button id="saveBtn" class="hidden" style="width: 100%; margin-top: 10px;">⬇️ Download Working Copy</button>
         </div>
     </div>
 

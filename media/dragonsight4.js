@@ -28,7 +28,7 @@
         const CONFIG = {
             ollama: {
                 url: '/api/ollama/chat',
-                model: 'qwen3-vl:8b'
+                model: 'gemma4:e4b'
             },
             florence: {
                 url: '/api/florence/analyze',
@@ -139,6 +139,17 @@
                 .replace(/[^\w\s-]/g, '')
                 .replace(/[-\s]+/g, '_')
                 .substring(0, 100);
+        }
+
+        function stripMarkdown(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '$1')  // Bold
+                .replace(/\*(.*?)\*/g, '$1')      // Italics
+                .replace(/#{1,6}\s?(.*?)$/gm, '$1')  // Headers
+                .replace(/^-\s+/gm, '')           // List items
+                .replace(/^\* /gm, '')            // Bullet points
+                .replace(/\n\n+/g, '\n')          // Multiple newlines to single
+                .trim();
         }
 
         // Image Handling
@@ -454,6 +465,7 @@ CRITICAL INSTRUCTIONS:
                 document.getElementById('detailedDesc').value = detailed;
                 document.getElementById('conciseDesc').value = concise;
                 document.getElementById('tags').value = tags;
+                document.getElementById('textVersion').value = stripMarkdown(detailed);
 
                 const cleanFilename = sanitizeFilename(filename);
                 const ext = currentImage.name.split('.').pop();
@@ -461,7 +473,7 @@ CRITICAL INSTRUCTIONS:
                 document.getElementById('filename').value = `${cleanFilename}_${timestamp}.${ext}`;
 
                 if (backend === 'ollama') lastOllamaModel = getOllamaModel();
-                saveBtn.classList.remove('hidden');
+                saveBtn.disabled = false;
 
                 // Auto-save metadata to server output directory
                 try {
@@ -470,6 +482,7 @@ CRITICAL INSTRUCTIONS:
                         suggested_name: document.getElementById('filename').value,
                         detailed_description: detailed,
                         concise_description: concise,
+                        text_version: stripMarkdown(detailed),
                         tags: tags,
                         analyzed_date: new Date().toISOString(),
                         backend: backendSelect.value
@@ -505,6 +518,7 @@ CRITICAL INSTRUCTIONS:
                 suggested_name: document.getElementById('filename').value,
                 detailed_description: document.getElementById('detailedDesc').value,
                 concise_description: document.getElementById('conciseDesc').value,
+                text_version: document.getElementById('textVersion').value,
                 tags: document.getElementById('tags').value,
                 analyzed_date: new Date().toISOString(),
                 backend: backendSelect.value
