@@ -189,6 +189,21 @@ For detailed technical patterns, see [Architecture Patterns Documentation](docs/
 - Memory Optimization for Large Models (16GB VRAM)
 - React State Management Pattern (Dragonart Studio)
 
+## Test Artifacts & Cleanup
+
+**Designated home for test outputs:**
+- Screenshots: `~/Pictures/Screenshots` (Claude Code takes browser screenshots here; auto-cleaned daily at 2:30am)
+- Test videos: `~/ai_generated/test-artifacts/videos/`
+- Test images/screenshots: `~/ai_generated/test-artifacts/screenshots/`
+- API responses/logs: `~/ai_generated/test-artifacts/api-responses/`
+
+**Cleanup policy:**
+- Files older than 30 days are automatically deleted daily at 2:30am via cron
+- Manual cleanup: `find ~/ai_generated/test-artifacts -type f -mtime +30 -delete`
+- Projects folder remains clean (no stray test outputs)
+
+**When capturing test output**, save to the appropriate subdirectory instead of leaving it in `/srv/containers/edq/projects` or Downloads.
+
 ## API Keys & Environment Variables
 
 **Central .env file**: `/srv/containers/edq/.env`
