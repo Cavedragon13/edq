@@ -69,6 +69,8 @@ This is a personal AI development environment focused on video generation, visio
 | 8037                                    | TADA TTS              | On-demand (GPU)        | Hume AI voice cloning, 9 languages (TADA-3B-ML)         |
 | 8038                                    | MatAnyone 2           | On-demand (GPU)        | Human video matting, click-to-select, alpha output      |
 | 8039                                    | Linkding              | On-demand              | Cross-browser bookmark manager (Docker)                 |
+| **udragon infrastructure (always-on)**  |                       |                        |                                                         |
+| 21115-21119                             | RustDesk Server       | Always-on (Docker)     | hbbs+hbbr; clients use Tailscale IP 100.100.225.124; compose at /srv/containers/edq/docker/rustdesk/ |
 | **minidragon services (192.168.7.114)** |                       |                        |                                                         |
 | 8096                                    | Jellyfin              | Always-on (minidragon) | Movie/TV/music/photo server, Intel QSV transcode        |
 | 2283                                    | Immich                | Always-on (minidragon) | Photo/video library, face recognition, external lib     |
