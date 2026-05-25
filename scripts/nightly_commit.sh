@@ -1,24 +1,48 @@
 #!/bin/bash
 # nightly_commit.sh — Auto-commit config and script changes
 # Runs nightly at 0200 local (via cron).
+# Covers three repos: edq, claude-config (~/.claude), knowledge-base.
 # Never touches models/, cache_*, *.safetensors, *.bin, *.pkl
 
 set -e
-REPO="/srv/containers/edq"
 LOG="/srv/containers/edq/logs/nightly_commit.log"
 mkdir -p "$(dirname "$LOG")"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
-cd "$REPO"
+commit_and_push() {
+    local repo="$1"
+    local label="$2"
 
-# Bail if not a git repo
-git rev-parse --git-dir > /dev/null 2>&1 || { log "Not a git repo, skipping"; exit 0; }
+    cd "$repo"
+    git rev-parse --git-dir > /dev/null 2>&1 || { log "[$label] Not a git repo, skipping"; return 0; }
 
-# Stage: tracked files that changed + known config/script paths (no models/cache)
-# Use nullglob so non-matching globs (e.g. media/*.css) expand to nothing
-# instead of passing a literal string to git (which causes git to fail the
-# entire add operation, silently dropping all staged files).
+    if git diff --cached --quiet && git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+        log "[$label] Nothing to commit"
+        return 0
+    fi
+
+    git add -u 2>/dev/null || true
+
+    if git diff --cached --quiet; then
+        log "[$label] Nothing staged"
+        return 0
+    fi
+
+    local CHANGED
+    CHANGED=$(git diff --cached --name-only | wc -l)
+    local MSG="chore: nightly auto-commit ($(date '+%Y-%m-%d'), $CHANGED file(s))"
+
+    git commit -m "$MSG" >> "$LOG" 2>&1
+    log "[$label] Committed $CHANGED file(s)"
+
+    git push origin master >> "$LOG" 2>&1 && log "[$label] Pushed to GitHub" || log "[$label] WARNING: push failed"
+}
+
+# --- edq repo ---
+cd /srv/containers/edq
+git rev-parse --git-dir > /dev/null 2>&1 || { log "[edq] Not a git repo, skipping"; exit 0; }
+
 shopt -s nullglob
 git add \
     CLAUDE.md \
@@ -35,14 +59,50 @@ git add \
     2>/dev/null || true
 shopt -u nullglob
 
-# Skip if nothing staged
 if git diff --cached --quiet; then
-    log "Nothing to commit"
-    exit 0
+    log "[edq] Nothing to commit"
+else
+    CHANGED=$(git diff --cached --name-only | wc -l)
+    MSG="chore: nightly auto-commit ($(date '+%Y-%m-%d'), $CHANGED file(s))"
+    git commit -m "$MSG" >> "$LOG" 2>&1
+    log "[edq] Committed $CHANGED file(s)"
+    git push origin master >> "$LOG" 2>&1 && log "[edq] Pushed to GitHub" || log "[edq] WARNING: push failed"
 fi
 
-CHANGED=$(git diff --cached --name-only | wc -l)
-MSG="chore: nightly auto-commit ($(date '+%Y-%m-%d'), $CHANGED file(s))"
+# --- claude-config repo (~/.claude) ---
+cd /home/edq/.claude
+git rev-parse --git-dir > /dev/null 2>&1 || { log "[claude] Not a git repo, skipping"; }
 
-git commit -m "$MSG" >> "$LOG" 2>&1
-log "Committed $CHANGED file(s): $MSG"
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    git add CLAUDE.md SKILLS.md settings.json settings.local.json plans/ 2>/dev/null || true
+    git add "projects/-srv-containers-edq/memory/" 2>/dev/null || true
+
+    if ! git diff --cached --quiet; then
+        CHANGED=$(git diff --cached --name-only | wc -l)
+        MSG="chore: nightly auto-commit ($(date '+%Y-%m-%d'), $CHANGED file(s))"
+        git commit -m "$MSG" >> "$LOG" 2>&1
+        log "[claude] Committed $CHANGED file(s)"
+        git push origin master >> "$LOG" 2>&1 && log "[claude] Pushed to GitHub" || log "[claude] WARNING: push failed"
+    else
+        log "[claude] Nothing to commit"
+    fi
+fi
+
+# --- knowledge-base repo ---
+cd /home/edq/knowledge-base
+git rev-parse --git-dir > /dev/null 2>&1 || { log "[kb] Not a git repo, skipping"; }
+
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    git add -u 2>/dev/null || true
+    git add "Daily Notes/" claude-sync/ KB/ Directions/ Projects/ Dragonsuite/ 2>/dev/null || true
+
+    if ! git diff --cached --quiet; then
+        CHANGED=$(git diff --cached --name-only | wc -l)
+        MSG="chore: nightly auto-commit ($(date '+%Y-%m-%d'), $CHANGED file(s))"
+        git commit -m "$MSG" >> "$LOG" 2>&1
+        log "[kb] Committed $CHANGED file(s)"
+        git push origin master >> "$LOG" 2>&1 && log "[kb] Pushed to GitHub" || log "[kb] WARNING: push failed"
+    else
+        log "[kb] Nothing to commit"
+    fi
+fi
