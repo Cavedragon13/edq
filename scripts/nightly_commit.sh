@@ -93,8 +93,7 @@ cd /home/edq/knowledge-base
 git rev-parse --git-dir > /dev/null 2>&1 || { log "[kb] Not a git repo, skipping"; }
 
 if git rev-parse --git-dir > /dev/null 2>&1; then
-    git add -u 2>/dev/null || true
-    git add "Daily Notes/" claude-sync/ KB/ Directions/ Projects/ Dragonsuite/ 2>/dev/null || true
+    git add -A 2>/dev/null || true
 
     if ! git diff --cached --quiet; then
         CHANGED=$(git diff --cached --name-only | wc -l)
