@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sync ~/.claude/skills/ (canonical) to all reachable machines
+# Update skills from upstream, then sync to all reachable machines.
 # Runs nightly at 02:15. Only syncs files under 1MB.
 # Machines that are offline are skipped gracefully.
 #
@@ -14,6 +14,43 @@ MACHINES="cdragon odragon adragon"
 MAX_SIZE="1m"  # rsync --max-size filter
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+# ── Step 1: Update gstack (git-based) ────────────────────────────────────────
+log "Checking gstack for updates..."
+GSTACK_DIR="$SKILLS_DIR/gstack"
+if [ -d "$GSTACK_DIR/.git" ]; then
+    GSTACK_OLD=$(cat "$GSTACK_DIR/VERSION" 2>/dev/null || echo "unknown")
+    cd "$GSTACK_DIR"
+    git fetch origin --quiet 2>&1 || true
+    LOCAL=$(git rev-parse HEAD)
+    REMOTE=$(git rev-parse origin/main)
+    if [ "$LOCAL" != "$REMOTE" ]; then
+        git reset --hard origin/main --quiet
+        ./setup >> /srv/containers/edq/logs/sync_skills_cron.log 2>&1 || true
+        GSTACK_NEW=$(cat "$GSTACK_DIR/VERSION" 2>/dev/null || echo "unknown")
+        log "  gstack updated: $GSTACK_OLD → $GSTACK_NEW"
+    else
+        log "  gstack up to date ($GSTACK_OLD)"
+    fi
+    cd - > /dev/null
+else
+    log "  gstack: not a git install, skipping"
+fi
+
+# ── Step 2: Update registry skills (npx skills) ──────────────────────────────
+log "Checking registry skills for updates..."
+export PATH="/home/edq/.nvm/versions/node/$(ls /home/edq/.nvm/versions/node/ | sort -V | tail -1)/bin:$PATH"
+if command -v npx > /dev/null 2>&1; then
+    UPDATE_OUT=$(npx skills update --global --yes 2>&1 || true)
+    UPDATED=$(echo "$UPDATE_OUT" | grep "Updated " | tail -1)
+    if [ -n "$UPDATED" ]; then
+        log "  $UPDATED"
+    else
+        log "  Registry skills up to date"
+    fi
+else
+    log "  npx not found, skipping registry update"
+fi
 
 log "Starting skills sync from udragon..."
 log "Source: $SKILLS_DIR"

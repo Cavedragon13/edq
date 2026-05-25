@@ -15,6 +15,7 @@ PRETTIER_OPTS="--write --prose-wrap preserve --print-width 120"
 # Obsidian wiki-links or other non-standard markdown
 TARGETS=(
     "/home/edq/.claude/CLAUDE.md"
+    "/home/edq/.claude/SKILLS.md"
     "/home/edq/.claude/projects/-srv-containers-edq/memory/MEMORY.md"
     /home/edq/.claude/projects/-srv-containers-edq/memory/*.md
     "/srv/containers/edq/CLAUDE.md"
