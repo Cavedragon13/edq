@@ -213,6 +213,44 @@
       "stop_command": "pkill -f \"dragonart_server.py\" || true"
     },
     {
+      "id": "coversynth-openai",
+      "name": "CoverSynth OpenAI",
+      "description": "Playlist research, sentiment analysis, prompt synthesis, and GPT Image 2 cover art",
+      "category": "image",
+      "port": 8053,
+      "path": "/",
+      "icon": "&#127925;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_coversynth_openai.sh",
+      "project_path": "/srv/containers/edq/projects/coversynth-openai",
+      "features": [
+        "Playlist Analysis",
+        "Sentiment",
+        "GPT Image 2",
+        "Refinement"
+      ],
+      "stop_command": "pkill -f coversynth-openai/server.py || true",
+      "output_dir": "/home/edq/ai_generated/coversynth-openai"
+    },
+    {
+      "id": "coversynth-json",
+      "name": "CoverSynth JSON",
+      "description": "Structured JSON prompting for playlist analysis and GPT Image 2 cover art",
+      "category": "image",
+      "port": 8054,
+      "path": "/",
+      "icon": "&#123;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_coversynth_json.sh",
+      "project_path": "/srv/containers/edq/projects/coversynth-json",
+      "features": [
+        "JSON Prompting",
+        "Validation",
+        "GPT Image 2",
+        "Refinement"
+      ],
+      "stop_command": "pkill -f coversynth-json/server.py || true",
+      "output_dir": "/home/edq/ai_generated/coversynth-json"
+    },
+    {
       "id": "wan2gp",
       "name": "WanGP2",
       "description": "Video Generation + Multiple Models",
@@ -562,7 +600,7 @@
     },
     {
       "id": "dnd-generator",
-      "name": "Dungeon Generator",
+      "name": "RPG Char Gen",
       "description": "Browser-based D&D character generator with 5d6-drop-two stats, gear sheet, portraits, and dark mode",
       "category": "game",
       "port": 8034,
@@ -574,7 +612,8 @@
       "features": [
         "5d6 Keep Best 3",
         "SIWDCCh Sheet",
-        "Portrait Generator",
+        "Portrait Forge",
+        "AI Portraits",
         "Light and Dark Modes"
       ],
       "stop_command": "pkill -f 'http.server 8034' || true"
