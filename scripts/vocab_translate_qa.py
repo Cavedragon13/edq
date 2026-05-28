@@ -21,15 +21,23 @@ import json
 import logging
 import argparse
 import requests
+import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 from datetime import datetime
 
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
+
 # Configuration
-OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
-TRANSLATOR_A = "qwen3:8b"       # Qwen family
-TRANSLATOR_B = "llama3.2:latest"  # LLaMA family
-CRITIC_MODEL = "deepseek-r1:14b"  # QA judge
+OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://127.0.0.1:11434') + '/api/generate'
+TRANSLATOR_A = os.getenv('VOCAB_TRANSLATOR_A', 'qwen3:8b')       # Qwen family
+TRANSLATOR_B = os.getenv('VOCAB_TRANSLATOR_B', 'llama3.2:latest')  # LLaMA family
+CRITIC_MODEL = os.getenv('VOCAB_CRITIC_MODEL', 'deepseek-r1:14b')  # QA judge
+
+def local_model(preferred: str) -> str:
+    return provider_models.resolve_model('ollama', 'chat', preferred=preferred).get('model') or preferred
 
 # Folder paths
 BASE_DIR = Path("/srv/containers/edq/translations")
@@ -59,7 +67,7 @@ logger = logging.getLogger(__name__)
 def call_ollama(model: str, prompt: str, temperature: float = 0.3) -> str:
     """Call Ollama API and return generated text."""
     payload = {
-        "model": model,
+        "model": local_model(model),
         "prompt": prompt,
         "temperature": temperature,
         "stream": False

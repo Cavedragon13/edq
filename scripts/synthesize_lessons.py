@@ -7,9 +7,17 @@ to combine them into actionable documentation.
 """
 
 import anthropic
+
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
 import sys
+import os
 from pathlib import Path
 from datetime import datetime
+
+def anthropic_model(task='analysis'):
+    preferred = os.environ.get('ANTHROPIC_MODEL')
+    return provider_models.resolve_model('anthropic', task, preferred=preferred).get('model') or 'claude-sonnet-4-6'
 
 def load_api_key():
     """Load Anthropic API key from .env file."""
@@ -107,7 +115,7 @@ Analyze these {len(analyses)} conversation analyses and create a comprehensive "
     try:
         print("   Sending to Claude API...")
         message = client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model=anthropic_model(),
             max_tokens=16000,
             messages=[
                 {"role": "user", "content": prompt}

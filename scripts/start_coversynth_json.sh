@@ -1,10 +1,10 @@
 #!/bin/bash
-# CoverSynth JSON - structured JSON playlist cover prompting
+# FrameForge - structured JSON image sequence prompting
 # Port: 8054
 set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
-SERVICE_NAME="CoverSynth JSON"
+SERVICE_NAME="FrameForge"
 PORT=8054
 PROJECT_DIR="$DRAGONSUITE_ROOT/projects/coversynth-json"
 SERVER="$PROJECT_DIR/server.py"

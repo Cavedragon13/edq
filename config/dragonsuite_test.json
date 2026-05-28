@@ -233,8 +233,8 @@
     },
     {
       "id": "coversynth-json",
-      "name": "CoverSynth JSON",
-      "description": "Structured JSON prompting for playlist analysis and GPT Image 2 cover art",
+      "name": "FrameForge",
+      "description": "Structured JSON image prompting for batches, series, and sequence workflows",
       "category": "image",
       "port": 8054,
       "path": "/",
@@ -245,10 +245,11 @@
         "JSON Prompting",
         "Validation",
         "GPT Image 2",
-        "Refinement"
+        "Gemini Images",
+        "Prompt Cleanup"
       ],
       "stop_command": "pkill -f coversynth-json/server.py || true",
-      "output_dir": "/home/edq/ai_generated/coversynth-json"
+      "output_dir": "/home/edq/ai_generated/frameforge"
     },
     {
       "id": "wan2gp",

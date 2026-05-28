@@ -5,8 +5,8 @@ FastAPI server handling all Gemini API calls.
 
 Port: 8035
 APIs:
-  Gemini 2.5 Flash (gemini-2.5-flash)           — logline + scene breakdown
-  Nano Banana 2   (gemini-3.1-flash-image-preview) — character portraits
+  Gemini text model resolved live                  — logline + scene breakdown
+  Gemini image model resolved live                 — character portraits
   Veo 3.1 fast    (veo-3.1-fast-generate-preview) — scene video clips (4/6/8s; generate_audio is Vertex-only)
   Lyria 3         (models/lyria-realtime-exp)   — film score (via v1alpha)
 
@@ -23,6 +23,7 @@ import os
 import time
 import uuid
 import wave
+import sys
 from pathlib import Path
 
 import uvicorn
@@ -30,6 +31,9 @@ from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
 
 load_dotenv('/srv/containers/edq/.env')
 
@@ -49,16 +53,19 @@ lyria_client = genai.Client(
     http_options={'api_version': 'v1alpha'}
 )
 
-# ── Model constants ───────────────────────────────────────────────────────────
-# gemini-2.5-flash: no -latest alias for 2.5 series (gemini-flash-latest is
-# the family-wide alias, not version-specific). Use plain ID for 2.5 Flash.
-#
-# The image/video/music models are preview/experimental and use their full
-# versioned IDs until GA graduation.
-MODEL_TEXT  = "gemini-2.5-flash"                   # Logline, scene descriptions
-MODEL_IMAGE = "gemini-3.1-flash-image-preview"     # Nano Banana 2 — character portraits
-MODEL_VIDEO = "veo-3.1-fast-generate-preview"      # Veo 3.1 fast (4/6/8s clips; generate_audio is Vertex-only)
-MODEL_MUSIC = "models/lyria-realtime-exp"           # Lyria 3 — film score
+# ── Model resolution ─────────────────────────────────────────────────────────
+# Text/image models are discovered live from the current Google key. Video/music
+# models are still preview/specialized APIs, so the resolver exposes conservative
+# fallback IDs until Google provides richer discovery metadata for them.
+def google_model(task: str, modality: str | None = None) -> str:
+    resolved = provider_models.resolve_model('google', task, modality=modality)
+    if not resolved.get('model'):
+        raise RuntimeError(f'No Google model available for {task}')
+    return resolved['model']
+
+
+def model_status():
+    return provider_models.status_payload('The Movies', providers=['google'], default_provider='google')
 
 PORT = 8035
 MEDIA_DIR = Path("/srv/containers/edq/media")
@@ -134,6 +141,11 @@ MODIFIER_MOOD = {
 async def serve_ui():
     return FileResponse(MEDIA_DIR / "the_movies_game.html")
 
+
+@app.get("/api/status")
+async def api_status():
+    return model_status()
+
 def title_slug(title: str) -> str:
     """First two words of title, lowercased, joined with underscore."""
     words = title.strip().split()[:2]
@@ -176,7 +188,7 @@ Each scene description should be vivid, visual, and suitable as a Veo video gene
 Genre tone: {req.genre}."""
 
     response = client.models.generate_content(
-        model=MODEL_TEXT,
+        model=google_model('analysis'),
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
@@ -213,7 +225,7 @@ async def generate_portrait(req: PortraitRequest):
     # gemini-3.1-flash-image-preview uses generateContent with IMAGE modality,
     # not the Imagen generate_images API.
     response = client.models.generate_content(
-        model=MODEL_IMAGE,
+        model=google_model('image_generation'),
         contents=prompt,
         config=types.GenerateContentConfig(
             response_modalities=["IMAGE"],
@@ -271,7 +283,7 @@ async def generate_score(job_id: str, genre: str, modifier: str, film_duration: 
         audio_chunks: list[bytes] = []
 
         async def collect():
-            async with lyria_client.aio.live.music.connect(model=MODEL_MUSIC) as session:
+            async with lyria_client.aio.live.music.connect(model=google_model('music_generation', modality='audio')) as session:
                 await session.set_weighted_prompts(
                     prompts=[types.WeightedPrompt(text=full_prompt, weight=1.0)]
                 )
@@ -330,7 +342,7 @@ def sync_generate_clip(description: str, genre: str, scene_label: str, output_pa
     )
 
     operation = client.models.generate_videos(
-        model=MODEL_VIDEO,
+        model=google_model('video_generation', modality='video'),
         prompt=prompt,
         config=types.GenerateVideosConfig(
             duration_seconds=8,

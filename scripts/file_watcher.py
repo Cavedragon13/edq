@@ -19,8 +19,15 @@ from typing import Optional
 
 import requests
 
-OLLAMA_URL = "http://127.0.0.1:11434"
-MODEL = "gemma4:e4b"
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
+
+OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://127.0.0.1:11434')
+DEFAULT_MODEL = os.getenv('DRAGON_FILE_WATCHER_MODEL', 'gemma4:e4b')
+
+def watcher_model():
+    return provider_models.resolve_model('ollama', 'analysis', preferred=DEFAULT_MODEL).get('model') or DEFAULT_MODEL
+
 SCAN_INTERVAL = int(os.getenv("DRAGON_FILE_WATCHER_INTERVAL", str(3 * 60 * 60)))  # seconds
 
 DOWNLOADS_DIR = Path(os.getenv("DRAGON_FILE_WATCHER_DOWNLOADS_DIR", str(Path.home() / "Downloads")))
@@ -143,7 +150,7 @@ def get_suggestion(file_path: Path) -> Optional[str]:
         if ext_lower in IMAGE_EXTS:
             b64 = base64.b64encode(file_path.read_bytes()).decode()
             payload = {
-                "model": MODEL,
+                "model": watcher_model(),
                 "system": SYSTEM,
                 "prompt": VISION_PROMPT,
                 "images": [b64],
@@ -155,7 +162,7 @@ def get_suggestion(file_path: Path) -> Optional[str]:
             frame_b64 = extract_video_frame(file_path)
             if frame_b64:
                 payload = {
-                    "model": MODEL,
+                    "model": watcher_model(),
                     "system": SYSTEM,
                     "prompt": VISION_PROMPT,
                     "images": [frame_b64],
@@ -164,7 +171,7 @@ def get_suggestion(file_path: Path) -> Optional[str]:
                 timeout = 90
             else:
                 payload = {
-                    "model": MODEL,
+                    "model": watcher_model(),
                     "system": SYSTEM,
                     "prompt": (
                         f"Suggest a short descriptive filename (2-4 words, lowercase underscores) for a "
@@ -179,7 +186,7 @@ def get_suggestion(file_path: Path) -> Optional[str]:
             # Audio: text context only
             ext = file_path.suffix.lstrip('.').upper()
             payload = {
-                "model": MODEL,
+                "model": watcher_model(),
                 "system": SYSTEM,
                 "prompt": (
                     f"Suggest a short descriptive filename (2-4 words, lowercase underscores) for a "

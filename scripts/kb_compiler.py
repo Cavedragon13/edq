@@ -19,12 +19,16 @@ import hashlib
 import html.parser
 import json
 import pathlib
+import os
 import re
 import sys
 import textwrap
 import time
 import urllib.request
 import urllib.error
+
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
 
 # ── Paths ───────────────────────────────────────────────────────────────────
 KB_BASE      = pathlib.Path.home() / "knowledge-base"
@@ -34,8 +38,12 @@ STATE_FILE   = RAW_DIR / ".state.json"
 ADD_TO_TOOLS = KB_BASE / "Add to Tools.md"
 DAILY_NOTES  = KB_BASE / "Daily Notes"
 
-OLLAMA_URL   = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "gemma4:e4b"
+OLLAMA_URL   = os.getenv('OLLAMA_URL', 'http://localhost:11434') + '/api/generate'
+DEFAULT_MODEL = os.getenv('OLLAMA_MODEL', 'gemma4:e4b')
+
+def resolve_ollama_model(preferred: str | None = None) -> str:
+    preferred = preferred or os.environ.get('OLLAMA_MODEL') or DEFAULT_MODEL
+    return provider_models.resolve_model('ollama', 'analysis', preferred=preferred).get('model') or preferred
 
 # ── State ────────────────────────────────────────────────────────────────────
 def load_state() -> dict:
@@ -316,8 +324,7 @@ def main():
                         help="Which input source to process (default: all)")
     args = parser.parse_args()
 
-    import os
-    model = args.model or os.environ.get("OLLAMA_MODEL", DEFAULT_MODEL)
+    model = resolve_ollama_model(args.model)
 
     state = load_state()
 

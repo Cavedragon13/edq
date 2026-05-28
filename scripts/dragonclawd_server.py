@@ -13,6 +13,7 @@ Setup:
 """
 
 import os
+import sys
 import json
 import glob
 import shutil
@@ -35,6 +36,9 @@ from telegram.ext import (
 )
 import anthropic
 
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
+
 # ── Environment ──────────────────────────────────────────────────────────────
 load_dotenv("/srv/containers/edq/.env")
 
@@ -42,6 +46,11 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 ALLOWED_USERS_RAW = os.getenv("TELEGRAM_ALLOWED_USERS", "")
 ALLOWED_USERS = set(uid.strip() for uid in ALLOWED_USERS_RAW.split(",") if uid.strip())
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+
+def anthropic_model(task='chat'):
+    preferred = os.environ.get('ANTHROPIC_MODEL')
+    return provider_models.resolve_model('anthropic', task, preferred=preferred).get('model') or 'claude-sonnet-4-6'
+
 
 DRAGONSUITE_API = "http://127.0.0.1:8100/api"
 OLLAMA_API = "http://127.0.0.1:11434"
@@ -753,7 +762,7 @@ async def run_agent_loop(user_message: str, user_id: str) -> tuple[str, list[Pat
         response = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: client.messages.create(
-                model="claude-sonnet-4-6",
+                model=anthropic_model(),
                 max_tokens=2048,
                 system=build_system_prompt(),
                 tools=all_tools,
@@ -1002,7 +1011,7 @@ def main():
     print("🐉 Dragonclawd starting...")
     print(f"   Allowed users: {ALLOWED_USERS if ALLOWED_USERS else 'NONE (set TELEGRAM_ALLOWED_USERS)'}")
     print(f"   Dragonsuite API: {DRAGONSUITE_API}")
-    print(f"   Model: claude-sonnet-4-6")
+    print(f"   Model: {anthropic_model()}")
     print(f"   MCP servers: {list(MCPManager.SERVER_CONFIGS.keys())}")
     print()
 

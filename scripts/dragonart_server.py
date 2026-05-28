@@ -12,9 +12,13 @@ import socketserver
 import json
 import base64
 import os
+import sys
 from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlparse, unquote
+
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
 
 # Load .env manually (dotenv not guaranteed to be installed in system Python)
 _env_path = Path('/srv/containers/edq/.env')
@@ -55,7 +59,7 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
         # Parse path, remove query string
         path = urlparse(self.path).path
 
-        if path == '/api/config':
+        if path in ('/api/config', '/api/status'):
             self._send_config()
             return
 
@@ -301,7 +305,8 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
 
     def _send_config(self):
         """Return server config including Maps API key."""
-        result = {'mapsKey': GOOGLE_API_KEY}
+        result = provider_models.status_payload('DragonArt Studio', providers=['openai', 'google'], default_provider='openai')
+        result['mapsKey'] = GOOGLE_API_KEY
         response = json.dumps(result).encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -450,10 +455,11 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                 timeout=60.0,
             )
 
+            image_model = data.get('model') if data.get('model') in provider_models.models_for('openai', 'image') else provider_models.resolve_model('openai', 'image_edit').get('model')
             fallback = False
             try:
                 result = client.images.edit(
-                    model='gpt-image-2',
+                    model=image_model,
                     image=('image.png', io.BytesIO(image_bytes), 'image/png'),
                     prompt=prompt,
                     size=size,
@@ -465,7 +471,7 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                 if n > 1:
                     fallback = True
                     result = client.images.edit(
-                        model='gpt-image-2',
+                        model=image_model,
                         image=('image.png', io.BytesIO(image_bytes), 'image/png'),
                         prompt=prompt,
                         size=size,
@@ -477,19 +483,19 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                     raise
             # Ensure we got base64 data (gpt-image-2 returns b64_json, not url)
             if images_b64 and not images_b64[0]:
-                raise ValueError("gpt-image-2 returned empty image data")
+                raise ValueError(f"{image_model} returned empty image data")
 
-            response_data = json.dumps({'images': images_b64, 'fallback': fallback}).encode('utf-8')
+            response_data = json.dumps({'images': images_b64, 'fallback': fallback, 'model': image_model}).encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Content-Length', len(response_data))
             self._send_cors_headers()
             self.end_headers()
             self.wfile.write(response_data)
-            print(f"   gpt-image-2: {len(images_b64)} image(s) generated")
+            print(f"   {image_model}: {len(images_b64)} image(s) generated")
 
         except Exception as e:
-            self._send_error(500, f"gpt-image-2 failed: {str(e)}")
+            self._send_error(500, f"OpenAI image failed: {str(e)}")
 
     def _gemini_image(self):
         """Proxy to Gemini image generation. Keeps GOOGLE_API_KEY server-side only."""
@@ -503,7 +509,7 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
 
             images_b64 = data.get('images', [])  # [mainImage, ...referenceImages]
             prompt = data.get('prompt', '')
-            model = data.get('model', 'gemini-3-pro-image-preview')
+            model = data.get('model') if data.get('model') in provider_models.models_for('google', 'image') else provider_models.resolve_model('google', 'image_generation').get('model')
 
             if not images_b64 or not prompt:
                 self._send_error(400, "images and prompt are required")
@@ -580,7 +586,8 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
 
     def _send_error(self, code, message):
         """Send JSON error response with CORS headers."""
-        response = json.dumps({'error': message}).encode('utf-8')
+        payload = provider_models.error_payload(message) if 'provider_models' in globals() else {'error': message}
+        response = json.dumps(payload).encode('utf-8')
         self.send_response(code)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Content-Length', len(response))

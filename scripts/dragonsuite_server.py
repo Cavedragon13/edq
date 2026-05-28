@@ -159,7 +159,8 @@ async def get_all_status():
     for service in config.get("services", []):
         port = service.get("port")
         always_on = service.get("always_on", False)
-        is_running = True if always_on else (check_port(port) if port else False)
+        status_host = service.get("status_host") or "127.0.0.1"
+        is_running = True if always_on else (check_port(port, status_host) if port else False)
 
         # Live VRAM: match GPU processes to this service via project_path
         live_vram_gb = None
@@ -175,7 +176,8 @@ async def get_all_status():
         # Build URL — use explicit url field if set (for external-host services)
         url = service.get("url") or None
         if not url and port:
-            url = f"http://{local_ip}:{port}"
+            url_host = service.get("url_host") or local_ip
+            url = f"http://{url_host}:{port}"
             if service.get("path"):
                 url += service["path"]
 
@@ -186,6 +188,7 @@ async def get_all_status():
             "always_on": always_on,
             "port": port,
             "url": url,
+            "status_host": status_host,
             "category": service.get("category"),
             "description": service.get("description"),
             "launch_command": service.get("launch_command"),
@@ -543,8 +546,9 @@ async def start_service(service_id: str, force: bool = False):
         raise HTTPException(status_code=400, detail="Service has no launch command configured")
 
     port = service.get("port")
-    if port and check_port(port):
-        return {"status": "already_running", "message": f"{service['name']} is already running on port {port}"}
+    status_host = service.get("status_host") or "127.0.0.1"
+    if port and check_port(port, status_host):
+        return {"status": "already_running", "message": f"{service['name']} is already running on {status_host}:{port}"}
 
     # VRAM pre-check for GPU services
     vram_needed = service.get("vram_gb", 0)
@@ -594,7 +598,8 @@ async def stop_service(service_id: str):
     if not port and not stop_command:
         raise HTTPException(status_code=400, detail="Service has no port or stop command configured - cannot stop")
 
-    if port and not check_port(port) and not stop_command:
+    status_host = service.get("status_host") or "127.0.0.1"
+    if port and not check_port(port, status_host) and not stop_command:
         return {"status": "not_running", "message": f"{service['name']} is not running"}
 
     try:

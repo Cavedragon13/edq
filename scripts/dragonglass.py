@@ -24,6 +24,9 @@ import google.genai as genai
 from google.genai import types
 import uvicorn
 
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
+
 load_dotenv("/srv/containers/edq/.env")
 GOOGLE_API_KEY = os.getenv("STREET_VIEW_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
@@ -32,7 +35,9 @@ if not GOOGLE_API_KEY:
     sys.exit(1)
 
 _genai_client = genai.Client(api_key=GOOGLE_API_KEY)
-GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image-preview"
+
+def gemini_image_model():
+    return provider_models.resolve_model('google', 'image_edit', modality='image').get('model') or 'gemini-3.1-flash-image-preview'
 
 OUTPUT_DIR = Path.home() / "ai_generated" / "dragonglass"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -152,7 +157,7 @@ async def transform(req: TransformRequest):
 
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(None, lambda: _genai_client.models.generate_content(
-                model=GEMINI_IMAGE_MODEL,
+                model=gemini_image_model(),
                 contents=[
                     types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
                     req.prompt,
@@ -192,7 +197,10 @@ async def transform(req: TransformRequest):
 
 @app.get("/api/status")
 async def status():
-    return {"model": GEMINI_IMAGE_MODEL, "output_dir": str(OUTPUT_DIR)}
+    payload = provider_models.status_payload('DragonGlass', providers=['google'], default_provider='google')
+    payload['output_dir'] = str(OUTPUT_DIR)
+    payload['active_image_model'] = gemini_image_model()
+    return payload
 
 
 if __name__ == "__main__":

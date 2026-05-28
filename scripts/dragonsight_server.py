@@ -17,8 +17,12 @@ import json
 import urllib.request
 import urllib.error
 import os
+import sys
 from pathlib import Path
 from datetime import datetime
+
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
 
 # Load .env for API keys
 _env_path = Path("/srv/containers/edq/.env")
@@ -33,7 +37,8 @@ PORT = 8080
 OLLAMA_PORT = 11434
 LMSTUDIO_PORT = 1234
 DOLPHIN_PORT = 8025
-GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
+def gemini_model():
+    return provider_models.resolve_model('google', 'analysis').get('model') or 'gemini-3.5-flash'
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
 MEDIA_DIR = Path("/srv/containers/edq/media")
 HTML_FILE = MEDIA_DIR / "dragonsight4.html"
@@ -353,7 +358,7 @@ class DragonsightHandler(http.server.BaseHTTPRequestHandler):
             # Build Gemini REST API request
             gemini_url = (
                 f'https://generativelanguage.googleapis.com/v1beta/models/'
-                f'{GEMINI_MODEL}:generateContent?key={GOOGLE_API_KEY}'
+                f'{gemini_model()}:generateContent?key={GOOGLE_API_KEY}'
             )
             gemini_body = json.dumps({
                 'contents': [{

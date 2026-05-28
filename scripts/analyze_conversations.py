@@ -18,6 +18,13 @@ from datetime import datetime
 from typing import List, Dict
 import anthropic
 
+sys.path.insert(0, '/srv/containers/edq')
+from scripts import provider_models
+
+def anthropic_model(task='analysis'):
+    preferred = os.environ.get('ANTHROPIC_MODEL')
+    return provider_models.resolve_model('anthropic', task, preferred=preferred).get('model') or 'claude-sonnet-4-6'
+
 def load_api_key():
     """Load Anthropic API key from .env file."""
     env_file = Path('/srv/containers/edq/.env')
@@ -84,7 +91,7 @@ Format your response as markdown with clear sections.
 
     try:
         message = client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model=anthropic_model(),
             max_tokens=4096,
             messages=[
                 {"role": "user", "content": analysis_prompt}
@@ -145,7 +152,7 @@ Use markdown with clear headings. Each lesson should have:
 
     try:
         message = client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model=anthropic_model(),
             max_tokens=16000,
             messages=[
                 {"role": "user", "content": synthesis_prompt}
