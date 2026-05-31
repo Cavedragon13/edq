@@ -38,6 +38,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_matanyone2         | `/srv/containers/edq/venv_matanyone2`             | ~8GB   | `start_matanyone2.sh`         | MatAnyone 2 human video matting (port 8038)                |
 | venv_voxtral            | `/srv/containers/edq/venv_voxtral`                | ~8GB   | `start_voxtral.sh`            | Voxtral TTS (Mistral Voxtral-4B-TTS-2603, port 8042)       |
 | venv_hidream_o1         | `/srv/containers/edq/venv_hidream_o1`             | ~16GB  | `start_hidream_o1.sh`         | HiDream-O1-Image-Dev pixel-level T2I 8B (port 8052)        |
+| venv_deep_cut_generator | `/srv/containers/edq/venv_deep_cut_generator`     | ~100MB | `start_deep_cut_generator.sh` | Deep Cut Generator typography POD asset renderer (port 8055) |
 | venv_streetview         | `/srv/containers/edq/venv_streetview`             | ~200MB | (fetch-only fallback)         | Lightweight fetch-only venv — superseded by venv_flux2     |
 | venv_dragonweyr         | `/srv/containers/edq/venv_dragonweyr`             | ~300MB | `start_dragonweyr.sh`         | Polymarket scout + Claude proxy + CLOB execution port 8046 |
 | venv_kalshi             | `/srv/containers/edq/venv_kalshi`                 | ~300MB | `start_kalshi.sh`             | Kalshi scout + Claude proxy + RSA-auth order exec (8047)   |
@@ -115,6 +116,7 @@ When removing a project:
 | 2026-04-19 | Added `venv_agentic_video` for Agentic Video Editor 4-agent pipeline (Director/Trimmer/Editor/Reviewer) (port 8044)      |
 | 2026-04-19 | Added Docker service for OmniVoice-Studio cinematic video dubbing (port 8051, remapped from container's :8000)           |
 | 2026-05-10 | Added `venv_hidream_o1` for HiDream-O1-Image-Dev pixel-level unified T2I 8B, no VAE, flash-attn disabled (port 8052)     |
+| 2026-05-30 | Added `venv_deep_cut_generator` for Deep Cut Generator typography POD assets (port 8055)                                |
 | 2026-04-19 | Installed Claude Code skills: Waza (8 skills: /think /design /check /hunt /write /learn /read /health)                   |
 | 2026-04-19 | Installed Claude Code skills: caveman (6 compression skills: /caveman /caveman-compress /caveman-commit /caveman-review) |
 | 2026-05-04 | Updated `venv_zimage` — now shared with Z-Anime (port 8008); venv_zimage entry updated in registry                       |

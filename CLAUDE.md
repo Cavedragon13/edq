@@ -2,6 +2,10 @@
 
 Guidance for Claude Code working in this personal AI development environment on udragon (Ubuntu 24.04, RTX 5070 Ti Blackwell).
 
+## Canonical Host
+
+**udragon is the source of truth.** Dragonsuite apps, service launchers, API keys, docs, project repos, model caches, and generated outputs live under `/srv/containers/edq` on udragon (`192.168.7.226`). Mac hosts such as cdragon are clients for browsing, editing, SSH, SMB/Obsidian access, and light local work; do not infer that a project should live on cdragon because a local shell or SSH alias resolves there. When in doubt, SSH to udragon and work from `/srv/containers/edq`.
+
 ## Directory Structure
 
 ```
@@ -73,6 +77,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8050      | Unsloth Studio         | On-demand (GPU)        | LLM fine-tuning — LoRA/QLoRA/RL               |
 | 8051      | OmniVoice Studio       | On-demand (GPU)        | Cinematic dubbing — transcribe/translate/voice |
 | 8052      | HiDream-O1-Image-Dev   | On-demand (GPU)        | Pixel-level unified 8B — T2I + editing         |
+| 8055      | Deep Cut Generator     | On-demand              | Typography POD concepts, print files, teasers  |
 | 8060      | Downloads Gallery      | On-demand              | Image + video gallery, lightbox, delete        |
 | 8080      | Dragonsight 4.6        | On-demand (GPU)        | Vision AI + smart naming + Gemma 4 multimodal  |
 | 8100      | Dragonsuite Dashboard  | On-demand              | Central launcher hub (start here)              |

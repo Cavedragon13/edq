@@ -280,6 +280,25 @@
       "output_dir": "/home/edq/ai_generated/frameforge"
     },
     {
+      "id": "deep-cut-generator",
+      "name": "Deep Cut Generator",
+      "description": "Minimalist typography POD concepts with SVG, print PNG, social teasers, and metadata exports",
+      "category": "merch",
+      "port": 8055,
+      "path": "/",
+      "icon": "&#128085;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_deep_cut_generator.sh",
+      "project_path": "/srv/containers/edq/projects/deep-cut-generator",
+      "features": [
+        "Typography",
+        "TeePublic CSV",
+        "Social Carousel",
+        "Dark Mode"
+      ],
+      "stop_command": "pkill -f 'deep-cut-generator/server.py' || pkill -f 'uvicorn.*8055' || true",
+      "output_dir": "/home/edq/ai_generated/deep-cut-generator"
+    },
+    {
       "id": "wan2gp",
       "name": "WanGP2",
       "description": "Video Generation + Multiple Models",
@@ -1299,6 +1318,10 @@
     "media": {
       "name": "Media",
       "icon": "&#127909;"
+    },
+    "merch": {
+      "name": "Merch / POD",
+      "icon": "&#128085;"
     },
     "automation": {
       "name": "Automation",

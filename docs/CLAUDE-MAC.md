@@ -13,6 +13,8 @@ This is the **macOS client setup** for the Dragonsuite AI development environmen
 - Documentation and organization
 - Light local testing
 
+The canonical Dragonsuite filesystem is `/srv/containers/edq` on udragon. If a Mac hostname, SSH alias, SMB mount, or Obsidian session looks stale or points somewhere unexpected, verify against udragon before assuming the Mac copy is authoritative.
+
 ## Core Principles (Same on All Platforms)
 
 1. **RTFM First** - Read official docs before building

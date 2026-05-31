@@ -11,7 +11,7 @@ import os
 import signal
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import io
 
 from fastapi import FastAPI, HTTPException, Response
@@ -34,6 +34,7 @@ app = FastAPI(title="Dragonsuite v2", description="AI Project Dashboard")
 # Paths
 BASE_DIR = Path("/srv/containers/edq")
 CONFIG_PATH = BASE_DIR / "config" / "dragonsuite.json"
+RUNTIME_STATE_PATH = BASE_DIR / "data" / "dragonsuite_runtime.json"
 MEDIA_DIR = BASE_DIR / "media"
 PROJECTS_DIR = BASE_DIR / "projects"
 
@@ -58,6 +59,42 @@ def load_config() -> dict:
 
     with open(CONFIG_PATH, "r") as f:
         return json.load(f)
+
+
+def load_runtime_state() -> dict:
+    """Load lightweight dashboard runtime metadata."""
+    if not RUNTIME_STATE_PATH.exists():
+        return {"services": {}}
+    try:
+        with open(RUNTIME_STATE_PATH, "r") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return {"services": {}}
+        data.setdefault("services", {})
+        return data
+    except Exception:
+        return {"services": {}}
+
+
+def save_runtime_state(state: dict) -> None:
+    """Persist dashboard runtime metadata."""
+    RUNTIME_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = RUNTIME_STATE_PATH.with_suffix(".json.tmp")
+    with open(tmp, "w") as f:
+        json.dump(state, f, indent=2, sort_keys=True)
+    tmp.replace(RUNTIME_STATE_PATH)
+
+
+def record_launch_event(service_id: str) -> dict:
+    """Record a dashboard-initiated launch timestamp for Running tab ordering."""
+    state = load_runtime_state()
+    services = state.setdefault("services", {})
+    now = datetime.now(timezone.utc)
+    entry = services.setdefault(service_id, {})
+    entry["last_launch_ts"] = now.timestamp()
+    entry["last_launch_at"] = now.isoformat()
+    save_runtime_state(state)
+    return entry
 
 
 def check_port(port: int, host: str = "127.0.0.1") -> bool:
@@ -151,12 +188,15 @@ async def get_config():
 async def get_all_status():
     """Check status of all services."""
     config = load_config()
+    runtime = load_runtime_state().get("services", {})
     local_ip = get_local_ip()
 
     gpu_procs = get_vram_per_process()
 
     statuses = []
     for service in config.get("services", []):
+        service_id = service.get("id")
+        service_state = runtime.get(service_id, {})
         port = service.get("port")
         always_on = service.get("always_on", False)
         status_host = service.get("status_host") or "127.0.0.1"
@@ -182,7 +222,7 @@ async def get_all_status():
                 url += service["path"]
 
         statuses.append({
-            "id": service.get("id"),
+            "id": service_id,
             "name": service.get("name"),
             "running": is_running,
             "always_on": always_on,
@@ -201,6 +241,8 @@ async def get_all_status():
             "vram_gb": service.get("vram_gb"),
             "live_vram_gb": live_vram_gb,
             "output_dir": service.get("output_dir"),
+            "last_launch_ts": service_state.get("last_launch_ts"),
+            "last_launch_at": service_state.get("last_launch_at"),
         })
 
     return {
@@ -573,7 +615,13 @@ async def start_service(service_id: str, force: bool = False):
             cwd="/srv/containers/edq",
             start_new_session=True
         )
-        return {"status": "started", "message": f"Starting {service['name']}..."}
+        launch_state = record_launch_event(service_id)
+        return {
+            "status": "started",
+            "message": f"Starting {service['name']}...",
+            "last_launch_ts": launch_state.get("last_launch_ts"),
+            "last_launch_at": launch_state.get("last_launch_at"),
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to start service: {str(e)}")
 

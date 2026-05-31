@@ -6,6 +6,8 @@
 
 **Single Source of Truth** - No duplicates. Use symlinks when a file must exist in multiple locations.
 
+**Canonical host:** udragon (`192.168.7.226`) owns the working Dragonsuite tree at `/srv/containers/edq`. Mac machines are clients and editors; keep durable service code, launchers, secrets, model paths, and generated-output conventions anchored to udragon unless a task is explicitly Mac-native.
+
 ## Directory Structure
 
 ```
