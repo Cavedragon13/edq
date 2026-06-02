@@ -335,4 +335,3 @@ Suggested approach:
 6. Smoke test with a tiny/fast profile, then verify output file, stop behavior, and VRAM release.
 
 Do not start Wan2GP testing as "click until it downloads enough stuff." That is exactly the kind of workflow that should be converted into explicit local model selection and preflight checks first.
-
