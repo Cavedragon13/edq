@@ -116,7 +116,7 @@ Central `.env` at `/srv/containers/edq/.env` — load with `from dotenv import l
 
 ## Core Rules
 
-1. **RTFM before writing.** Before any external API/SDK/CLI call: read docs, verify exact method names. Wrong names fail completely. Run `/read-before-coding` skill after writing any API code.
+1. **RTFM before writing.** Before any external API/SDK/CLI call: read docs, verify exact method names. Wrong names fail completely. Run `/rtfm` skill after writing any API code.
 2. **Do the work yourself.** Never ask the user to run commands or paste output — use Bash, filesystem, Playwright, MCP tools directly.
 3. **Syntax-check before done.** Python: `python3 -m py_compile`. HTML JS: extract script blocks and validate with node. See CLAUDE.md history for the full command template.
 4. **Generative output sanity before done.** Run a representative prompt, inspect the actual file, confirm it follows the prompt. Outputs must land in `~/ai_generated/<service>/` with timestamps.
