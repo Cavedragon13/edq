@@ -110,6 +110,16 @@ def get_pipeline(quantization: str) -> Ideogram4Pipeline:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
+    # Transformers 5.10 preallocates a large CUDA warmup buffer while loading
+    # the quantized Qwen3-VL text encoder. On a 16GB card, the real model fits
+    # but that extra warmup reservation does not.
+    try:
+        import transformers.modeling_utils as modeling_utils
+
+        modeling_utils.caching_allocator_warmup = lambda *args, **kwargs: None
+    except Exception:
+        pass
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     pipe = Ideogram4Pipeline.from_pretrained(
         config=Ideogram4PipelineConfig(weights_repo=QUANTIZATION_REPOS[quantization]),

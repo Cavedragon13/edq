@@ -40,6 +40,7 @@ activate_venv "$VENV"
 set_pytorch_env
 
 export IDEOGRAM4_PORT=$PORT
+export PYTHONUNBUFFERED=1
 export HF_HOME="${HF_HOME:-$DRAGONSUITE_ROOT/cache_huggingface}"
 export HUGGINGFACE_HUB_CACHE="${HUGGINGFACE_HUB_CACHE:-$HF_HOME/hub}"
 mkdir -p "$HOME/ai_generated/ideogram4" "$HF_HOME" "$HUGGINGFACE_HUB_CACHE"
