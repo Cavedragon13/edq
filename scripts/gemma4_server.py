@@ -477,7 +477,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     {"role": "system", "content": LYRICS_SYSTEM_PROMPT},
                     {"role": "user", "content": lyrics},
                 ],
-                "stream": True
+                "stream": True,
+                "think": False  # lyrics rewrite needs the answer, not a hidden reasoning delay
             }).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/x-ndjson")
@@ -539,12 +540,34 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 f"{OLLAMA}/api/chat", data=payload,
                 headers={"Content-Type": "application/json"}, method="POST")
             with urllib.request.urlopen(req, timeout=300) as resp:
+                # Gemma 4 (12B + E4B vision) are reasoning models: under Ollama they
+                # stream chain-of-thought in a separate `message.thinking` field BEFORE
+                # any `message.content`. For images that phase runs 10-30s; forwarding
+                # only content left the UI blank that whole time (looked like a hang).
+                # Wrap thinking in <think></think> so the frontend's existing parser
+                # streams it into the collapsible "Thinking…" box, then the answer.
+                think_open = think_closed = False
                 for raw in resp:
-                    obj = json.loads(raw.decode())
-                    delta = obj.get("message", {}).get("content", "")
-                    if delta:
-                        line = (json.dumps({"delta": delta}) + "\n").encode()
-                        self.wfile.write(line); self.wfile.flush()
+                    if not raw.strip():
+                        continue
+                    msg = json.loads(raw.decode()).get("message", {})
+                    thinking = msg.get("thinking", "")
+                    content = msg.get("content", "")
+                    out = ""
+                    if thinking:
+                        if not think_open:
+                            out += "<think>"; think_open = True
+                        out += thinking
+                    if content:
+                        if think_open and not think_closed:
+                            out += "</think>"; think_closed = True
+                        out += content
+                    if out:
+                        self.wfile.write((json.dumps({"delta": out}) + "\n").encode())
+                        self.wfile.flush()
+                if think_open and not think_closed:
+                    self.wfile.write((json.dumps({"delta": "</think>"}) + "\n").encode())
+                    self.wfile.flush()
         except Exception as e:
             try:
                 self.wfile.write((json.dumps({"delta": f"[error: {e}]"}) + "\n").encode())

@@ -28,7 +28,7 @@
         const CONFIG = {
             ollama: {
                 url: '/api/ollama/chat',
-                model: 'gemma4:e4b'
+                model: 'gemma4:12b'
             },
             florence: {
                 url: '/api/florence/analyze',
@@ -246,7 +246,8 @@
                     body: JSON.stringify({
                         model: model,
                         messages: [{ role: 'user', content: prompt, images: [base64Image] }],
-                        stream: false
+                        stream: false,
+                        think: false  // Gemma 4 / Qwen3-VL reason silently; analyzer only uses message.content, so skip the latency
                     })
                 });
 
