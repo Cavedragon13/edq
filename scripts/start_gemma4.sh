@@ -10,6 +10,7 @@ PORT=8043
 VENV="venv_gemma4"
 HF_MODEL="hf.co/OBLITERATUS/gemma-4-E4B-it-OBLITERATED:Q5_K_M"
 LOCAL_TAG="gemma4-obliterated"
+MODEL_12B="gemma4:12b"   # default model — unified encoder-free multimodal (text + image)
 
 service_header "$SERVICE_NAME" "$PORT"
 clear_port "$PORT"
@@ -34,6 +35,12 @@ if ! ollama list 2>/dev/null | grep -q "$LOCAL_TAG"; then
     fi
 fi
 echo "✓ $LOCAL_TAG present"
+
+if ! ollama list 2>/dev/null | grep -q "^${MODEL_12B} "; then
+    echo "⏳ Pulling $MODEL_12B (~7.6 GB, default model)..."
+    ollama pull "$MODEL_12B"
+fi
+echo "✓ $MODEL_12B present"
 
 echo "🚀 Starting $SERVICE_NAME..."
 if pgrep -f "gemma4_server.py" > /dev/null; then

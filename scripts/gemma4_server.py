@@ -46,7 +46,7 @@ button{border:none;border-radius:8px;padding:10px 18px;cursor:pointer;font-size:
 <body>
 <header>
   <h1>🎵 Lyric Enhancer</h1>
-  <span class="badge">Gemma 4 E4B</span>
+  <span class="badge">Gemma 4</span>
   <nav><a href="/">💬 Chat</a></nav>
 </header>
 <main>
@@ -138,8 +138,19 @@ function copyResult() {
 
 PORT         = int(os.environ.get("GEMMA4_PORT", 8043))
 OLLAMA       = "http://localhost:11434"
-MODEL_TEXT   = "gemma4-obliterated"   # abliterated, text-only
-MODEL_VISION = "gemma4-vision"        # gemma4:e4b + uncensored system prompt, has mmproj
+
+# Selectable models — each maps to the Ollama tag used for text vs. image requests.
+# Gemma 4 12B is unified (encoder-free): one tag serves both text and vision.
+# E4B keeps its existing abliterated text tag + separate vision tag (gemma4:e4b + mmproj).
+MODELS = {
+    "gemma4-12b": {"text": "gemma4:12b",        "vision": "gemma4:12b"},
+    "e4b":        {"text": "gemma4-obliterated", "vision": "gemma4-vision"},
+}
+DEFAULT_MODEL = "gemma4-12b"
+
+# Back-compat aliases for callers without a selector (e.g. the lyrics enhancer).
+MODEL_TEXT   = MODELS[DEFAULT_MODEL]["text"]
+MODEL_VISION = MODELS[DEFAULT_MODEL]["vision"]
 
 HTML = r"""<!DOCTYPE html>
 <html lang="en">
@@ -174,6 +185,9 @@ header h1{font-size:1rem;font-weight:600;color:#7ee787;white-space:nowrap}
 #htitle{font-size:.82rem;color:#8b949e;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1;margin-left:4px}
 nav a{color:#58a6ff;font-size:.8rem;text-decoration:none;padding:3px 9px;border:1px solid #30363d;border-radius:6px;white-space:nowrap}
 nav a:hover{background:#161b22}
+#model-sel{background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:6px;padding:4px 8px;font-size:.78rem;font-family:inherit;cursor:pointer}
+#model-sel:hover{border-color:#8b949e}
+#model-sel:focus{outline:none;border-color:#388bfd}
 #chat{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
 .msg{max-width:80%;padding:12px 16px;border-radius:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .user{align-self:flex-end;background:#1f6feb;border-radius:12px 12px 4px 12px}
@@ -206,7 +220,11 @@ footer{border-top:1px solid #21262d;flex-shrink:0}
 <body>
 <header>
   <button id="tog" onclick="toggleSidebar()" title="History">=</button>
-  <h1>&#129408; Gemma 4 E4B</h1><span class="badge">LLM</span>
+  <h1>&#129408; Gemma 4</h1>
+  <select id="model-sel" title="Model" aria-label="Model">
+    <option value="gemma4-12b">Gemma 4 12B</option>
+    <option value="e4b">Gemma 4 E4B</option>
+  </select>
   <span id="htitle"></span>
   <nav style="margin-left:auto"><a href="/lyrics">&#127926; Lyrics</a></nav>
 </header>
@@ -241,6 +259,12 @@ const pendingImg=document.getElementById('pending-img');
 const pendingThumb=document.getElementById('pending-thumb');
 const micBtn=document.getElementById('mic-btn');
 let pendingImageB64=null,pendingImageType=null,currentId=null;
+
+// ── Model selector (persisted) ───────────────────────────────
+const MK='gemma4_model';
+const modelSel=document.getElementById('model-sel');
+modelSel.value=localStorage.getItem(MK)||'gemma4-12b';
+modelSel.addEventListener('change',()=>localStorage.setItem(MK,modelSel.value));
 
 // ── Sidebar & storage ────────────────────────────────────────
 const SK='gemma4_convos';
@@ -366,7 +390,7 @@ async function send(){
 
   let thinkBuf='',responseBuf='',inThink=false,thinkEl=null,botBubble=null;
   try{
-    const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:payload})});
+    const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:payload,model:modelSel.value})});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const reader=r.body.getReader(),dec=new TextDecoder();
     while(true){
@@ -484,6 +508,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(length))
         messages = body.get("messages", [])
+        sel = MODELS.get(body.get("model"), MODELS[DEFAULT_MODEL])
 
         # Build Ollama messages — images stay as-is (already base64 strings)
         has_images = False
@@ -495,8 +520,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 has_images = True
             ollama_messages.append(om)
 
-        # Route: vision model when images present (GGUF has no mmproj), text model otherwise
-        model = MODEL_VISION if has_images else MODEL_TEXT
+        # Route: vision tag when images present, text tag otherwise (per selected model)
+        model = sel["vision"] if has_images else sel["text"]
 
         payload = json.dumps({
             "model": model,

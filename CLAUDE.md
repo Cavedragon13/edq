@@ -68,7 +68,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8040                                     | DragonGlass              | On-demand          | Google Maps scout + Street View + Gemini          |
 | 8041                                     | AI Toolkit               | On-demand (GPU)    | LoRA trainer for FLUX                             |
 | 8042                                     | Voxtral TTS              | On-demand (GPU)    | Mistral Voxtral-4B-TTS, 20 voices, 9 languages    |
-| 8043                                     | Gemma 4 E4B              | On-demand          | Chat over Ollama, 128K ctx, multimodal            |
+| 8043                                     | Gemma 4 12B              | On-demand          | Default 12B unified multimodal; E4B toggle, Ollama |
 | 8044                                     | Agentic Video Editor     | On-demand (GPU)    | 4-agent pipeline — Director/Trim/Editor/Review    |
 | 8046                                     | Dragonweyr               | On-demand          | Polymarket scout + Claude AI + CLOB execution     |
 | 8047                                     | Dragonweyr-Kalshi        | On-demand          | Kalshi scout + Claude AI + order execution        |
@@ -82,7 +82,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8080                                     | Dragonsight 4.6          | On-demand (GPU)    | Vision AI + smart naming + Gemma 4 multimodal     |
 | 8100                                     | Dragonsuite Dashboard    | On-demand          | Central launcher hub (start here)                 |
 | **udragon always-on**                    |                          |                    |                                                   |
-| 11434                                    | Ollama API               | Always-on (snap)   |                                                   |
+| 11434                                    | Ollama API               | Always-on (systemd) | v0.30.6, official binary /usr/local/bin/ollama; MAX_LOADED_MODELS=1 |
 | 21115-21119                              | RustDesk Server          | Always-on (Docker) | hbbs+hbbr; clients use Tailscale 100.100.225.124  |
 | **minidragon (192.168.7.114) always-on** |                          |                    |                                                   |
 | 2283                                     | Immich                   | Always-on          | Photo/video library                               |

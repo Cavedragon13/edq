@@ -2,8 +2,8 @@
   "services": [
     {
       "id": "gemma4",
-      "name": "Gemma 4 E4B",
-      "description": "Gemma 4 E4B Obliterated \u2014 uncensored, 128K ctx, multimodal (text + image + audio)",
+      "name": "Gemma 4 12B",
+      "description": "Gemma 4 12B (default) \u2014 unified encoder-free multimodal (text + image); E4B Obliterated selectable via toggle",
       "category": "llm",
       "port": 8043,
       "path": "/",
@@ -11,12 +11,12 @@
       "launch_command": "cd /srv/containers/edq && bash scripts/start_gemma4.sh",
       "project_path": null,
       "features": [
-        "128K Context",
+        "12B default + E4B toggle",
         "Multimodal",
         "Streaming",
         "Local Ollama"
       ],
-      "stop_command": "pkill -f 'gemma4_server.py' || true; ollama stop gemma4-obliterated:latest 2>/dev/null || ollama stop gemma4-obliterated 2>/dev/null || true"
+      "stop_command": "pkill -f 'gemma4_server.py' || true; ollama stop gemma4:12b 2>/dev/null || true; ollama stop gemma4-obliterated:latest 2>/dev/null || ollama stop gemma4-obliterated 2>/dev/null || true"
     },
     {
       "id": "mercury2",
@@ -954,7 +954,7 @@
       "port": 11434,
       "path": "/",
       "icon": "&#129302;",
-      "launch_command": "sudo snap start ollama",
+      "launch_command": "sudo systemctl start ollama",
       "features": [
         "deepseek-r1:14b",
         "qwen3:8b",
@@ -962,7 +962,7 @@
         "llama3.2",
         "gemma4:e4b"
       ],
-      "stop_command": "sudo snap stop ollama"
+      "stop_command": "sudo systemctl stop ollama"
     },
     {
       "id": "lm-studio",
