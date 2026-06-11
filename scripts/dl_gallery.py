@@ -9,11 +9,12 @@ import mimetypes
 import subprocess
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlparse
 
 from PIL import Image
 
 DOWNLOADS = Path.home() / "Downloads"
+AI_GENERATED = Path.home() / "ai_generated"
 THUMB_CACHE = Path("/tmp/dl_thumbs")
 THUMB_SIZE = (320, 320)
 PORT = 8060
@@ -24,10 +25,29 @@ MEDIA_EXTS = IMAGE_EXTS | VIDEO_EXTS
 THUMB_CACHE.mkdir(exist_ok=True)
 
 
-def safe_path(name: str) -> Path | None:
-    p = (DOWNLOADS / name).resolve()
+def resolve_root(key: str) -> Path | None:
+    """Map an allowlisted root key to a directory.
+
+    'downloads' (or empty) -> ~/Downloads; any other key -> ~/ai_generated/<key>.
+    The key must be a single path component (no traversal). We validate the name
+    BEFORE resolving, then resolve — output_dir entries are often symlinks into
+    project dirs, so resolving first would push the target outside ~/ai_generated.
+    """
+    if not key or key == "downloads":
+        return DOWNLOADS
+    if "/" in key or key in (".", ".."):
+        return None
+    p = AI_GENERATED / key
+    if not p.is_dir():
+        return None
+    return p.resolve()
+
+
+def safe_path(name: str, root: Path) -> Path | None:
+    rr = root.resolve()
+    p = (rr / name).resolve()
     try:
-        p.relative_to(DOWNLOADS.resolve())
+        p.relative_to(rr)
         return p
     except ValueError:
         return None
@@ -68,18 +88,22 @@ def make_video_thumb(src: Path) -> Path | None:
     return tp if tp.exists() else None
 
 
-def media_files() -> list[dict]:
+def media_files(root: Path) -> list[dict]:
     files = [
-        f for f in DOWNLOADS.iterdir()
+        f for f in root.iterdir()
         if f.is_file() and f.suffix.lower() in MEDIA_EXTS
     ]
     files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
     return [{"name": f.name, "video": f.suffix.lower() in VIDEO_EXTS} for f in files]
 
 
-def gallery_html() -> bytes:
-    media = media_files()
+def gallery_html(root_key: str, root: Path) -> bytes:
+    is_dl = root == DOWNLOADS
+    title = "Downloads Gallery" if is_dl else f"{root.name} — Gallery"
+    where = "~/Downloads" if is_dl else f"~/ai_generated/{root_key}"
+    media = media_files(root)
     media_json = json.dumps(media)
+    root_json = json.dumps(root_key)
     n_img = sum(1 for m in media if not m["video"])
     n_vid = sum(1 for m in media if m["video"])
 
@@ -88,17 +112,18 @@ def gallery_html() -> bytes:
         parts.append(f"{n_img} image{'s' if n_img != 1 else ''}")
     if n_vid:
         parts.append(f"{n_vid} video{'s' if n_vid != 1 else ''}")
-    count_text = ", ".join(parts) if parts else "No media in ~/Downloads"
+    count_text = ", ".join(parts) if parts else f"No media in {where}"
 
     cards = []
     for i, m in enumerate(media):
         name = m["name"]
         esc = name.replace("&", "&amp;").replace('"', "&quot;")
+        rq = f"?root={root_key}"
         if m["video"]:
             cards.append(
                 f'<div class="card video-card" data-idx="{i}" onclick="openLb({i})">'
                 f'<div class="thumb-wrap">'
-                f'<img src="/thumb/{esc}" loading="lazy" alt="{esc}">'
+                f'<img src="/thumb/{esc}{rq}" loading="lazy" alt="{esc}">'
                 f'<div class="play-icon">&#9654;</div>'
                 f'</div>'
                 f'<div class="label" title="{esc}">{esc}</div>'
@@ -107,19 +132,19 @@ def gallery_html() -> bytes:
         else:
             cards.append(
                 f'<div class="card" data-idx="{i}" onclick="openLb({i})">'
-                f'<img src="/thumb/{esc}" loading="lazy" alt="{esc}">'
+                f'<img src="/thumb/{esc}{rq}" loading="lazy" alt="{esc}">'
                 f'<div class="label" title="{esc}">{esc}</div>'
                 f'</div>'
             )
 
-    cards_html = "\n".join(cards) if cards else "<p class='empty'>No media in ~/Downloads</p>"
+    cards_html = "\n".join(cards) if cards else f"<p class='empty'>No media in {where}</p>"
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Downloads Gallery</title>
+<title>{title}</title>
 <style>
   *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{ background: #1a1a1a; color: #e0e0e0; font-family: system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }}
@@ -197,7 +222,7 @@ def gallery_html() -> bytes:
 <body>
 
 <header>
-  <h1>&#128193; Downloads Gallery</h1>
+  <h1>&#128193; {title}</h1>
   <span class="meta" id="hdr-meta">{count_text}</span>
   <button class="btn btn-ss" id="ss-btn" onclick="toggleSlideshow()">&#9654; Slideshow</button>
   <button class="btn" onclick="location.reload()">&#8635; Refresh</button>
@@ -226,6 +251,8 @@ def gallery_html() -> bytes:
 
 <script>
   const mediaItems = {media_json};
+  const ROOT_KEY = {root_json};
+  function rq(p) {{ return p + '?root=' + encodeURIComponent(ROOT_KEY); }}
   let cur = 0;
   let ssActive = false;
   let ssPaused = false;
@@ -269,8 +296,8 @@ def gallery_html() -> bytes:
       lbImg.src = '';
       lbVid.pause();
       lbVid.style.display = 'block';
-      lbVid.poster = '/thumb/' + encodeURIComponent(item.name);
-      lbVid.src = '/img/' + encodeURIComponent(item.name);
+      lbVid.poster = rq('/thumb/' + encodeURIComponent(item.name));
+      lbVid.src = rq('/img/' + encodeURIComponent(item.name));
       lbVid.load();
       lbVid.play().catch(function() {{}});
     }} else {{
@@ -278,7 +305,7 @@ def gallery_html() -> bytes:
       lbVid.src = '';
       lbVid.style.display = 'none';
       lbImg.style.display = 'block';
-      lbImg.src = '/img/' + encodeURIComponent(item.name);
+      lbImg.src = rq('/img/' + encodeURIComponent(item.name));
     }}
 
     lbName.textContent = item.name;
@@ -364,7 +391,7 @@ def gallery_html() -> bytes:
   async function deleteMedia() {{
     const item = mediaItems[cur];
     if (!confirm('Delete ' + item.name + '?')) return;
-    const res = await fetch('/delete/' + encodeURIComponent(item.name), {{method: 'POST'}});
+    const res = await fetch(rq('/delete/' + encodeURIComponent(item.name)), {{method: 'POST'}});
     if (!res.ok) {{ alert('Delete failed'); return; }}
 
     const card = document.querySelector('.card[data-idx="' + cur + '"]');
@@ -459,14 +486,27 @@ class Handler(BaseHTTPRequestHandler):
                     except (BrokenPipeError, ConnectionResetError):
                         break
 
+    def root_for_request(self) -> tuple[str, Path] | None:
+        parsed = urlparse(self.path)
+        root_key = parse_qs(parsed.query).get("root", [""])[0]
+        root = resolve_root(root_key)
+        if root is None:
+            return None
+        return root_key, root
+
     def do_GET(self):
-        path = unquote(self.path).split("?")[0]
+        parsed = urlparse(self.path)
+        path = unquote(parsed.path)
+        rr = self.root_for_request()
+        if rr is None:
+            self.send_error(404); return
+        root_key, root = rr
 
         if path in ("/", "/index.html"):
-            self.send_bytes(gallery_html(), "text/html; charset=utf-8")
+            self.send_bytes(gallery_html(root_key, root), "text/html; charset=utf-8")
 
         elif path.startswith("/thumb/"):
-            src = safe_path(path[7:])
+            src = safe_path(path[7:], root)
             if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
                 self.send_error(404); return
             try:
@@ -481,7 +521,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_error(500)
 
         elif path.startswith("/img/"):
-            src = safe_path(path[5:])
+            src = safe_path(path[5:], root)
             if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
                 self.send_error(404); return
             try:
@@ -493,10 +533,15 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self):
-        path = unquote(self.path)
+        parsed = urlparse(self.path)
+        path = unquote(parsed.path)
+        rr = self.root_for_request()
+        if rr is None:
+            self.send_error(404); return
+        _, root = rr
 
         if path.startswith("/delete/"):
-            src = safe_path(path[8:])
+            src = safe_path(path[8:], root)
             if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
                 self.send_error(404); return
             src.unlink()

@@ -144,27 +144,6 @@
       "output_dir": "/home/edq/ai_generated/zimage"
     },
     {
-      "id": "ideogram4",
-      "name": "Ideogram 4",
-      "description": "Open-weight 9.3B image model with strong typography, structured JSON prompting, and native 2K output",
-      "category": "image",
-      "port": 8054,
-      "path": "/",
-      "icon": "&#128444;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_ideogram4.sh",
-      "project_path": "/srv/containers/edq/projects/ideogram4",
-      "features": [
-        "Text-to-image",
-        "Typography",
-        "Structured JSON",
-        "Native 2K",
-        "nf4 CUDA"
-      ],
-      "stop_command": "pkill -f 'ideogram4_gradio.py' || true",
-      "vram_gb": 16.0,
-      "output_dir": "/home/edq/ai_generated/ideogram4"
-    },
-    {
       "id": "bonsai-mlx",
       "name": "Bonsai MLX Studio",
       "description": "Apple Silicon Bonsai Image 4B Studio, preloaded with ternary MLX and tested to real image output",
