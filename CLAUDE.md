@@ -42,7 +42,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8012                                     | Rembg                    | On-demand (GPU)    | Background removal                                |
 | 8013                                     | Qwen-Image-Layered       | On-demand (GPU)    | Layer decomposition for image editing             |
 | 8014                                     | Qwen3-Audiobook          | On-demand          | Document to audiobook                             |
-| 8015                                     | DragonArt Studio         | Production         | 70+ AI image transformation modes (React)         |
+| 8015                                     | DragonArt Studio         | Production         | 70+ image modes + Street View capture (React)     |
 | 8016                                     | Wan2.1 T2V 1.3B          | On-demand (GPU)    | T2V, sequential CPU offload, diffusers            |
 | 8017                                     | FaceFusion               | On-demand (GPU)    | Face swap + enhancement                           |
 | 8018                                     | Creative Upscaler        | On-demand (GPU)    | AI upscaling with style transfer                  |
@@ -65,7 +65,6 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8037                                     | TADA TTS                 | On-demand (GPU)    | Hume AI voice cloning, 9 languages                |
 | 8038                                     | MatAnyone 2              | On-demand (GPU)    | Human video matting, click-to-select              |
 | 8039                                     | Linkding                 | On-demand          | Cross-browser bookmark manager (Docker)           |
-| 8040                                     | DragonGlass              | On-demand          | Google Maps scout + Street View + Gemini          |
 | 8041                                     | AI Toolkit               | On-demand (GPU)    | LoRA trainer for FLUX                             |
 | 8042                                     | Voxtral TTS              | On-demand (GPU)    | Mistral Voxtral-4B-TTS, 20 voices, 9 languages    |
 | 8043                                     | Gemma 4 12B              | On-demand          | Default 12B unified multimodal; E4B toggle, Ollama |
@@ -78,7 +77,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8051                                     | OmniVoice Studio         | On-demand (GPU)    | Cinematic dubbing — transcribe/translate/voice    |
 | 8052                                     | HiDream-O1-Image-Dev     | On-demand (GPU)    | Pixel-level unified 8B — T2I + editing            |
 | 8055                                     | Deep Cut Generator       | On-demand          | Typography POD concepts, print files, teasers     |
-| 8060                                     | Downloads Gallery        | On-demand          | Image + video gallery, lightbox, delete           |
+| 8060                                     | Downloads Gallery        | Always-on (systemd) | Downloads + any service output folder via card chips; lightbox |
 | 8080                                     | Dragonsight 4.6          | On-demand (GPU)    | Vision AI + smart naming + Gemma 4 multimodal     |
 | 8100                                     | Dragonsuite Dashboard    | On-demand          | Central launcher hub (start here)                 |
 | **udragon always-on**                    |                          |                    |                                                   |

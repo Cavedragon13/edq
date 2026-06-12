@@ -1230,7 +1230,7 @@
     {
       "id": "dl-gallery",
       "name": "Downloads Gallery",
-      "description": "Thumbnail browser for ~/Downloads \u2014 280px grid, newest first, click to open full size",
+      "description": "Thumbnail browser for ~/Downloads and any service output folder (via card \ud83d\udcc1 chips) \u2014 grid, lightbox, slideshow, delete",
       "category": "utility",
       "port": 8060,
       "path": "/",

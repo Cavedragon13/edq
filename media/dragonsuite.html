@@ -382,6 +382,8 @@ body.light .cnav { background:rgba(240,246,250,.80); }
   padding:2px 7px; border-radius:4px;
   background:var(--bge); color:var(--tx2); border:1px solid var(--bd);
 }
+a.feat-link { text-decoration:none; cursor:pointer; transition:border-color .15s, filter .15s; }
+a.feat-link:hover { border-color:var(--ac); filter:brightness(1.25); }
 .card-ft { display:flex; align-items:center; gap:6px; margin-top:auto; flex-wrap:wrap; }
 .cport {
   font-family:'JetBrains Mono',monospace;
@@ -795,7 +797,7 @@ function buildCard(s) {
   if (recent) {
     feats += '<span class="feat" style="color:var(--ac);border-color:rgba(34,211,238,.28)">Just launched</span>';
   }
-  if (s.output_dir) { var dn = s.output_dir.split('/').pop(); feats += '<span class="feat" style="color:var(--ac);border-color:rgba(34,211,238,.2)" title="' + s.output_dir + '">' + String.fromCodePoint(0x1F4C1) + ' ' + dn + '</span>'; }
+  if (s.output_dir) { var dn = s.output_dir.split('/').pop(); var gurl = location.protocol + '//' + location.hostname + ':8060/?root=' + encodeURIComponent(dn); feats += '<a class="feat feat-link" href="' + gurl + '" target="_blank" rel="noopener" style="color:var(--ac);border-color:rgba(34,211,238,.2)" title="Open ' + s.output_dir + ' in gallery">' + String.fromCodePoint(0x1F4C1) + ' ' + dn + '</a>'; }
   var ico = s.thumbnail
     ? '<img class="card-thumb" src="' + s.thumbnail + '" alt="" onerror="this.nextElementSibling.style.display=\'flex\'; this.remove()"><span class="card-emoji" style="display:none">' + (s.icon || '&#x2699;') + '</span>'
     : '<span class="card-emoji">' + (s.icon || '&#x2699;') + '</span>';
