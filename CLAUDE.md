@@ -69,6 +69,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8042                                     | Voxtral TTS              | On-demand (GPU)    | Mistral Voxtral-4B-TTS, 20 voices, 9 languages    |
 | 8043                                     | Gemma 4 12B              | On-demand          | Default 12B unified multimodal; E4B toggle, Ollama |
 | 8044                                     | Agentic Video Editor     | On-demand (GPU)    | 4-agent pipeline — Director/Trim/Editor/Review    |
+| 8045                                     | M.U.L.E. 3               | On-demand          | M.U.L.E. remake — canvas, AI opponents, auctions  |
 | 8046                                     | Dragonweyr               | On-demand          | Polymarket scout + Claude AI + CLOB execution     |
 | 8047                                     | Dragonweyr-Kalshi        | On-demand          | Kalshi scout + Claude AI + order execution        |
 | 8048                                     | Trading Dashboard        | On-demand          | Paper trading dashboard                           |

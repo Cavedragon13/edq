@@ -658,6 +658,25 @@
       "stop_command": "pkill -f 'http.server 8032' || pkill -f 'mule_game_web.py' || true"
     },
     {
+      "id": "mule3",
+      "name": "M.U.L.E. 3",
+      "description": "Faithful M.U.L.E. remake - canvas graphics, AI opponents, real-time price-meet auctions",
+      "category": "game",
+      "port": 8045,
+      "path": "/",
+      "icon": "&#129743;",
+      "thumbnail": "/media/thumbnails/mule3.png",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_mule3.sh",
+      "project_path": "/srv/containers/edq/projects/mule3",
+      "features": [
+        "AI Opponents",
+        "Real-Time Auctions",
+        "Bunten Berries",
+        "Random Events"
+      ],
+      "stop_command": "pkill -f 'http.server 8045' || true"
+    },
+    {
       "id": "dnd-generator",
       "name": "RPG Char Gen",
       "description": "Browser-based D&D character generator with 5d6-drop-two stats, gear sheet, portraits, and dark mode",
