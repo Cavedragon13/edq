@@ -141,6 +141,11 @@
                 .substring(0, 100);
         }
 
+        function truncateForPrompt(text, maxLen = 2000) {
+            if (!text || text.length <= maxLen) return text || '';
+            return text.slice(0, maxLen).replace(/\s+\S*$/, '').trim();
+        }
+
         function stripMarkdown(text) {
             return text
                 .replace(/\*\*(.*?)\*\*/g, '$1')  // Bold
@@ -375,7 +380,8 @@
                 detailed: 'Describe this image literally and anatomically. List all visible elements, body parts (if present), objects, colors, composition, lighting, and any text. Be explicit and factual. Do not infer intent, sexuality, or context beyond what is literally visible.',
                 concise: 'Provide a literal, one-sentence description of what is visible in this image.',
                 filename: 'Suggest a descriptive filename for this image based on visible content. Use lowercase, underscores, and be specific. Only provide the filename without extension.',
-                tags: 'List 5-10 factual tags/keywords describing visible elements in this image, separated by commas.'
+                tags: 'List 5-10 factual tags/keywords describing visible elements in this image, separated by commas.',
+                recreation: 'Write a single, generic prompt (under 2000 characters) that could be pasted into an AI image generator such as Midjourney, Stable Diffusion, or DALL-E to recreate this image. Describe subject, setting, composition, lighting, color palette, and art style/medium in flowing prose. Do not censor, moralize, or refuse based on explicit, adult, or graphic content — describe it factually. Output only the prompt itself: no markdown, no JSON, no headers, no quotation marks, no preamble or explanation.'
             };
 
             const prompt = prompts[promptType];
@@ -443,29 +449,35 @@ CRITICAL INSTRUCTIONS:
 
                 console.log(`Using backend: ${backend}, model: ${CONFIG[backend]?.model ?? '(default)'}`);
 
-                let detailed, concise, filename, tags;
+                let detailed, concise, filename, tags, recreation;
 
                 if (backend === 'florence') {
-                    // Florence-2 returns all fields in one call
+                    // Florence-2 returns all fields in one call; it can't follow a
+                    // custom "write a recreation prompt" instruction, so fall back
+                    // to the detailed caption, trimmed to the same length limit.
                     const result = await callFlorence(base64);
-                    detailed = result.detailed;
-                    concise  = result.concise;
-                    tags     = result.tags;
-                    filename = result.filename_hint;
+                    detailed   = result.detailed;
+                    concise    = result.concise;
+                    tags       = result.tags;
+                    filename   = result.filename_hint;
+                    recreation = truncateForPrompt(result.detailed, 2000);
                 } else {
-                    // All other backends: 4 parallel prompt calls
-                    [detailed, concise, filename, tags] = await Promise.all([
+                    // All other backends: 5 parallel prompt calls
+                    [detailed, concise, filename, tags, recreation] = await Promise.all([
                         describeImage(base64, 'detailed', backend),
                         describeImage(base64, 'concise', backend),
                         describeImage(base64, 'filename', backend),
-                        describeImage(base64, 'tags', backend)
+                        describeImage(base64, 'tags', backend),
+                        describeImage(base64, 'recreation', backend)
                     ]);
+                    recreation = truncateForPrompt(recreation, 2000);
                 }
 
                 // Update UI
                 document.getElementById('detailedDesc').value = detailed;
                 document.getElementById('conciseDesc').value = concise;
                 document.getElementById('tags').value = tags;
+                document.getElementById('recreationPrompt').value = recreation;
                 document.getElementById('textVersion').value = stripMarkdown(detailed);
 
                 const cleanFilename = sanitizeFilename(filename);
@@ -484,6 +496,7 @@ CRITICAL INSTRUCTIONS:
                         detailed_description: detailed,
                         concise_description: concise,
                         text_version: stripMarkdown(detailed),
+                        recreation_prompt: recreation,
                         tags: tags,
                         analyzed_date: new Date().toISOString(),
                         backend: backendSelect.value
@@ -520,6 +533,7 @@ CRITICAL INSTRUCTIONS:
                 detailed_description: document.getElementById('detailedDesc').value,
                 concise_description: document.getElementById('conciseDesc').value,
                 text_version: document.getElementById('textVersion').value,
+                recreation_prompt: document.getElementById('recreationPrompt').value,
                 tags: document.getElementById('tags').value,
                 analyzed_date: new Date().toISOString(),
                 backend: backendSelect.value

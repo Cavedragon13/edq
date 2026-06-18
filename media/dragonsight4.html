@@ -341,7 +341,7 @@
 
             <div class="output-box">
                 <label>
-                    Text Version (Plain)
+                    Plain Text
                     <button class="copy-btn" data-target="textVersion">📋 Copy</button>
                 </label>
                 <textarea id="textVersion" rows="4" placeholder="Plain text version without formatting..." readonly></textarea>
@@ -357,19 +357,21 @@
 
             <div class="output-box">
                 <label>
+                    Recreation Prompt
+                    <button class="copy-btn" data-target="recreationPrompt">📋 Copy</button>
+                </label>
+                <textarea id="recreationPrompt" rows="4" placeholder="Generic prompt (under 2000 characters) for pasting into an AI image generator..." readonly></textarea>
+            </div>
+
+            <div class="output-box">
+                <label>
                     Concise Description
                     <button class="copy-btn" data-target="conciseDesc">📋 Copy</button>
                 </label>
                 <textarea id="conciseDesc" rows="1" placeholder="One-line description..." readonly></textarea>
             </div>
 
-            <div class="output-box">
-                <label>
-                    Tags/Keywords
-                    <button class="copy-btn" data-target="tags">📋 Copy</button>
-                </label>
-                <textarea id="tags" rows="1" placeholder="Comma-separated tags..." readonly></textarea>
-            </div>
+            <input type="hidden" id="tags">
 
             <div class="output-box">
                 <label>
