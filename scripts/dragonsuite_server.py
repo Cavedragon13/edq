@@ -377,6 +377,9 @@ async def get_gpu_stats():
         )
 
         if result.returncode != 0:
+            stderr = result.stderr or ''
+            if 'version mismatch' in stderr.lower() or 'driver/library version mismatch' in stderr.lower():
+                return {"error": "driver_mismatch"}
             return {"error": "nvidia-smi failed"}
 
         output = result.stdout.strip()

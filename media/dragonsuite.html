@@ -135,16 +135,30 @@ body.light .hdr { background:rgba(240,246,250,.94); border-bottom-color:rgba(8,1
 @keyframes spin { to { transform:rotate(360deg); } }
 
 /* Category nav */
-.cnav {
+.cnav-wrap {
   position:sticky; top:58px; z-index:90;
-  display:flex; gap:0; padding:0 22px;
+  display:flex; align-items:stretch;
   background:rgba(8,14,28,.80); backdrop-filter:blur(20px);
   border-bottom:1px solid rgba(34,211,238,.07);
-  overflow-x:auto; scrollbar-width:none;
   transition:background .3s;
 }
-body.light .cnav { background:rgba(240,246,250,.80); }
+body.light .cnav-wrap { background:rgba(240,246,250,.80); }
+.cnav {
+  flex:1; min-width:0;
+  display:flex; gap:0; padding:0 22px;
+  overflow-x:auto; scrollbar-width:none;
+}
 .cnav::-webkit-scrollbar { display:none; }
+.cnav-arrow {
+  display:none; align-items:center; justify-content:center;
+  width:32px; flex-shrink:0;
+  border:none; background:transparent; color:var(--tx2);
+  font-size:20px; line-height:1; cursor:pointer;
+  transition:color var(--tr), background var(--tr);
+  border-left:1px solid var(--bd);
+}
+.cnav-prev { border-left:none; border-right:1px solid var(--bd); }
+.cnav-arrow:hover { color:var(--tx); background:var(--bge); }
 .ctab {
   display:flex; align-items:center; gap:5px;
   padding:0 13px; height:42px;
@@ -518,9 +532,13 @@ a.feat-link:hover { border-color:var(--ac); filter:brightness(1.25); }
   </div>
 </header>
 
-<nav class="cnav" id="cnav">
-  <button class="ctab active" data-cat="all">All <span class="cnum" id="cnt-all">0</span></button>
-</nav>
+<div class="cnav-wrap" id="cnav-wrap">
+  <button class="cnav-arrow cnav-prev" id="cnav-prev" onclick="scrollNav(-1)" title="Scroll tabs left">&#8249;</button>
+  <nav class="cnav" id="cnav">
+    <button class="ctab active" data-cat="all">All <span class="cnum" id="cnt-all">0</span></button>
+  </nav>
+  <button class="cnav-arrow cnav-next" id="cnav-next" onclick="scrollNav(1)" title="Scroll tabs right">&#8250;</button>
+</div>
 
 <main class="main">
   <div class="sgrid">
@@ -696,7 +714,13 @@ function sortByRuntime(a, b) {
 async function fetchGpu() {
   try {
     var d = await fetch('/api/gpu-stats').then(function(r){ return r.json(); });
-    if (d.error) return;
+    if (d.error) {
+      if (d.error === 'driver_mismatch') {
+        txt('sc-vram-val', 'Reboot'); txt('sc-vram-sub', 'Driver update pending');
+        txt('sc-gpu-val', '\u2014'); txt('sc-gpu-sub', 'Driver update pending');
+      }
+      return;
+    }
     var pct = Math.round(d.vram_percent);
     var used = (d.vram_used_mb / 1024).toFixed(1);
     var total = (d.vram_total_mb / 1024).toFixed(1);
@@ -741,6 +765,23 @@ async function fetchLlm() {
   } catch(_) {}
 }
 
+function scrollNav(dir) {
+  var nav = document.getElementById('cnav');
+  if (nav) nav.scrollBy({ left: dir * 220, behavior: 'smooth' });
+  setTimeout(updateNavArrows, 250);
+}
+
+function updateNavArrows() {
+  var nav = document.getElementById('cnav');
+  var prev = document.getElementById('cnav-prev');
+  var next = document.getElementById('cnav-next');
+  if (!nav || !prev || !next) return;
+  var canScrollLeft  = nav.scrollLeft > 1;
+  var canScrollRight = nav.scrollLeft < nav.scrollWidth - nav.clientWidth - 1;
+  prev.style.display = canScrollLeft  ? 'flex' : 'none';
+  next.style.display = canScrollRight ? 'flex' : 'none';
+}
+
 function buildNav(svcs, cats) {
   var counts = {all: svcs.length};
   svcs.forEach(function(s){ counts[s.category] = (counts[s.category] || 0) + 1; });
@@ -762,6 +803,7 @@ function buildNav(svcs, cats) {
       renderGrid();
     });
   });
+  setTimeout(updateNavArrows, 50);
 }
 
 function buildCard(s) {
@@ -823,7 +865,7 @@ function buildCard(s) {
 function renderGrid() {
   var grid = document.getElementById('svgrid');
   if (activeCat === 'running') {
-    var recent = services.filter(isRecentLaunch).sort(sortByRuntime);
+    var recent = services.filter(function(s){ return isRecentLaunch(s) && s.running; }).sort(sortByRuntime);
     var recentIds = {};
     recent.forEach(function(s){ recentIds[s.id] = true; });
     var active = services.filter(function(s){ return !s.always_on && s.running && !recentIds[s.id]; }).sort(sortByRuntime);
@@ -981,6 +1023,8 @@ themeBtn.addEventListener('click', function(){
 });
 
 document.getElementById('refresh-btn').addEventListener('click', function(){ fetchStatus(true); });
+document.getElementById('cnav').addEventListener('scroll', updateNavArrows);
+window.addEventListener('resize', updateNavArrows);
 
 // ── Pollen (Google Pollen API · KPSM coords · proxied via /api/pollen) ─
 var POLLEN_COLORS = ['#4b4f68','#34d399','#86efac','#fbbf24','#f97316','#f87171'];
@@ -1047,7 +1091,7 @@ async function fetchPollen() {
         var val = (t.indexInfo && t.indexInfo.value != null) ? Math.min(t.indexInfo.value, 5) : 0;
         var col = POLLEN_COLORS[val];
         var lbl = POLLEN_LABELS[val];
-        var name = (t.displayName || '').replace('Tree','Tr.').replace('Grass','Gr.').replace('Weed','Wd.').trim();
+        var name = (t.displayName || '').trim();
         return '<span class="hdr-pollen-pill"><span class="hdr-pollen-dot" style="background:' + col + '"></span><span class="hdr-pollen-name">' + name + '</span><span class="hdr-pollen-val" style="color:' + col + '">' + lbl + '</span></span>';
       }).join('');
       hdrPills.innerHTML = hdrHtml || '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--txm)">No data</span>';
@@ -1062,7 +1106,7 @@ setInterval(fetchPollen, 3600000); // 1 hour
 
 // ── Weather (NWS KPSM · Portsmouth NH) ─────────────────────────────────
 function cToF(c) { return (c !== null && c !== undefined) ? Math.round(c * 9/5 + 32) : null; }
-function msToMph(ms) { return (ms !== null && ms !== undefined) ? Math.round(ms * 2.23694) : null; }
+function kmhToMph(kmh) { return (kmh !== null && kmh !== undefined) ? Math.round(kmh * 0.621371) : null; }
 function degToCompass(d) {
   if (d === null || d === undefined) return '';
   return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d / 22.5) % 16];
@@ -1074,7 +1118,7 @@ async function fetchWeather() {
     if (!resp.ok) throw new Error('NWS ' + resp.status);
     var p = (await resp.json()).properties;
     var tempF = cToF(p.temperature?.value);
-    var mph   = msToMph(p.windSpeed?.value);
+    var mph   = kmhToMph(p.windSpeed?.value);
     var dir   = degToCompass(p.windDirection?.value);
     var icon  = document.getElementById('hdr-weather-icon');
     var tempEl = document.getElementById('hdr-weather-temp');
