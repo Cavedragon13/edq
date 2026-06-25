@@ -148,7 +148,7 @@
       "name": "Bonsai MLX Studio",
       "description": "Apple Silicon Bonsai Image 4B Studio, preloaded with ternary MLX and tested to real image output",
       "category": "image",
-      "port": 3000,
+      "port": 8019,
       "path": "/",
       "status_host": "192.168.7.131",
       "url_host": "192.168.7.131",
@@ -164,7 +164,7 @@
         "Next.js Studio"
       ],
       "stop_command": "cd /srv/containers/edq && bash scripts/stop_bonsai_mlx_mac.sh",
-      "output_dir": "/Users/edq/AI/Bonsai-Image-Demo/outputs"
+      "output_dir": "/home/edq/ai_generated/bonsai"
     },
     {
       "id": "realesrgan",
@@ -943,6 +943,26 @@
       ],
       "stop_command": "pkill -f \"concert-shirt/server.py\" || true",
       "output_dir": "/home/edq/ai_generated/concert-shirt"
+    },
+    {
+      "id": "remotion",
+      "name": "Remotion Studio",
+      "description": "React-based video rendering studio — programmatic video composition (remotion-test project)",
+      "category": "video",
+      "port": 3000,
+      "path": "/",
+      "always_on": true,
+      "icon": "&#127916;",
+      "launch_command": "systemctl --user start remotion-studio.service",
+      "project_path": "/srv/containers/edq/projects/remotion-test",
+      "features": [
+        "React",
+        "Programmatic Video",
+        "MP4 Render",
+        "systemd"
+      ],
+      "stop_command": "systemctl --user stop remotion-studio.service",
+      "output_dir": "/home/edq/ai_generated/remotion"
     },
     {
       "id": "ollama",

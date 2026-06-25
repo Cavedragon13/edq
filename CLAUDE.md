@@ -28,6 +28,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | Port                                     | Service                  | Type               | Notes                                             |
 | ---------------------------------------- | ------------------------ | ------------------ | ------------------------------------------------- |
 | 1234                                     | LM Studio API            | On-demand (manual) |                                                   |
+| 3000                                     | Remotion Studio          | Always-on (systemd) | Video composition/render, remotion-test project   |
 | 8001                                     | DragonFlux Klein         | On-demand (GPU)    | FLUX.2-klein + FLUX.1-dev HD + LoRA               |
 | 8002                                     | WanGP2                   | On-demand (GPU)    | Video generation (Wan 2.0)                        |
 | 8003                                     | Fish Speech              | On-demand (GPU)    | Expressive TTS + voice cloning                    |
@@ -46,6 +47,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8016                                     | Wan2.1 T2V 1.3B          | On-demand (GPU)    | T2V, sequential CPU offload, diffusers            |
 | 8017                                     | FaceFusion               | On-demand (GPU)    | Face swap + enhancement                           |
 | 8018                                     | Creative Upscaler        | On-demand (GPU)    | AI upscaling with style transfer                  |
+| 8019                                     | Bonsai MLX Studio        | On-demand (Mac MLX) | Apple Silicon image gen, frontend on 192.168.7.131; backend on :8040 same host |
 | 8020                                     | MCP Inspector            | On-demand          | Security auditing for MCP servers                 |
 | 8021                                     | ACE-Step 1.5 XL          | On-demand (GPU)    | Ultra-fast music gen (<4GB VRAM)                  |
 | 8022                                     | JustDubit                | On-demand (GPU)    | TTS / audio synthesis                             |
@@ -78,6 +80,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8051                                     | OmniVoice Studio         | On-demand (GPU)    | Cinematic dubbing — transcribe/translate/voice    |
 | 8052                                     | HiDream-O1-Image-Dev     | On-demand (GPU)    | Pixel-level unified 8B — T2I + editing            |
 | 8055                                     | Deep Cut Generator       | On-demand          | Typography POD concepts, print files, teasers     |
+| 8056                                     | ballpark-fingerprint     | Manual (Mac, not in Dragonsuite) | Personal FastAPI project; runs on 192.168.7.131, started manually |
 | 8060                                     | Downloads Gallery        | Always-on (systemd) | Downloads + any service output folder via card chips; lightbox |
 | 8080                                     | Dragonsight 4.6          | On-demand (GPU)    | Vision AI + smart naming + Gemma 4 multimodal     |
 | 8100                                     | Dragonsuite Dashboard    | On-demand          | Central launcher hub (start here)                 |
