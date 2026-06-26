@@ -46,11 +46,13 @@ git rev-parse --git-dir > /dev/null 2>&1 || { log "[edq] Not a git repo, skippin
 shopt -s nullglob
 git add \
     CLAUDE.md \
+    AGENTS.md \
     .mcp.json \
     config/ \
     docs/ \
     scripts/ \
     mcp-servers/ \
+    tasks/lessons.md \
     media/*.html \
     media/*.js \
     media/*.css \
@@ -85,6 +87,29 @@ if git rev-parse --git-dir > /dev/null 2>&1; then
         git push origin master >> "$LOG" 2>&1 && log "[claude] Pushed to GitHub" || log "[claude] WARNING: push failed"
     else
         log "[claude] Nothing to commit"
+    fi
+fi
+
+# --- claude skills repo (~/.claude/skills) ---
+cd /home/edq/.claude/skills
+git rev-parse --git-dir > /dev/null 2>&1 || { log "[skills] Not a git repo, skipping"; }
+
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    # Keep the local closeout SOP durable without committing the whole noisy skills tree.
+    git add llkb/SKILL.md 2>/dev/null || true
+
+    if ! git diff --cached --quiet; then
+        CHANGED=$(git diff --cached --name-only | wc -l)
+        MSG="chore: nightly auto-commit ($(date '+%Y-%m-%d'), $CHANGED file(s))"
+        git commit -m "$MSG" >> "$LOG" 2>&1
+        log "[skills] Committed $CHANGED file(s)"
+        if git remote get-url origin > /dev/null 2>&1; then
+            git push origin master >> "$LOG" 2>&1 && log "[skills] Pushed to GitHub" || log "[skills] WARNING: push failed"
+        else
+            log "[skills] No origin remote; committed locally only"
+        fi
+    else
+        log "[skills] Nothing to commit"
     fi
 fi
 

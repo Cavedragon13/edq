@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+
+# Local model weights, split files, and build/source checkouts are large runtime state.
+models/
+src/
+
+# Generated outputs and run logs live outside git.
+outputs/
+logs/

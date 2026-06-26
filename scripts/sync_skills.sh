@@ -126,6 +126,21 @@ fi
 cd "$GSTACK_DIR"
 ./setup --host claude --no-prefix >/tmp/gstack-setup.log 2>&1
 ./setup --host codex --no-prefix >>/tmp/gstack-setup.log 2>&1
+
+# Older or transitional gstack installs may leave bare command folders in
+# ~/.agents/skills. Codex should use ~/.codex/skills/gstack-* links instead.
+AGENT_SKILLS_DIR="$HOME/.agents/skills"
+if [ -d "$AGENT_SKILLS_DIR" ] && [ -d "$GSTACK_DIR/.agents/skills" ]; then
+    AGENT_BACKUP_DIR="$HOME/.agents/skill-backups/gstack-bare-commands-$(date +%Y%m%d-%H%M%S)"
+    find "$GSTACK_DIR/.agents/skills" -mindepth 1 -maxdepth 1 -type d -name "gstack-*" -print | while read -r skill_dir; do
+        skill_name=$(awk -F': *' '/^name: / { gsub(/^"|"$/, "", $2); print $2; exit }' "$skill_dir/SKILL.md" 2>/dev/null || true)
+        candidate="$AGENT_SKILLS_DIR/$skill_name"
+        if [ -n "$skill_name" ] && [ -f "$candidate/SKILL.md" ] && grep -q "(gstack)" "$candidate/SKILL.md"; then
+            mkdir -p "$AGENT_BACKUP_DIR"
+            mv "$candidate" "$AGENT_BACKUP_DIR/$skill_name"
+        fi
+    done
+fi
 REMOTE_GSTACK
 }
 
