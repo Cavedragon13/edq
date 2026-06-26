@@ -188,6 +188,26 @@
       "stop_command": "cd /srv/containers/edq && bash scripts/stop_krea2_cuda.sh"
     },
     {
+      "id": "krea2-turbo-cdragon",
+      "name": "Krea 2 Turbo (cdragon fallback)",
+      "description": "Fallback Krea 2 Turbo runner on cdragon.",
+      "category": "image",
+      "port": 8062,
+      "path": "/",
+      "status_host": "192.168.7.131",
+      "url_host": "192.168.7.131",
+      "icon": "&#10022;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_krea2_cdragon.sh",
+      "project_path": null,
+      "features": [
+        "Krea 2",
+        "Turbo GGUF",
+        "Apple Silicon",
+        "CPU VAE"
+      ],
+      "stop_command": "cd /srv/containers/edq && bash scripts/stop_krea2_cdragon.sh"
+    },
+    {
       "id": "realesrgan",
       "name": "Real-ESRGAN",
       "description": "AI Image Upscaling + Face Enhancement",

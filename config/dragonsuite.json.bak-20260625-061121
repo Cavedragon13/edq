@@ -167,27 +167,6 @@
       "output_dir": "/home/edq/ai_generated/bonsai"
     },
     {
-      "id": "krea2-turbo",
-      "name": "Krea 2 Turbo",
-      "description": "Local Krea 2 Turbo image generation on udragon CUDA.",
-      "category": "image",
-      "port": 8062,
-      "path": "/",
-      "status_host": "127.0.0.1",
-      "url_host": "192.168.7.226",
-      "icon": "&#10022;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_krea2_cuda.sh",
-      "project_path": "/srv/containers/edq/krea2",
-      "output_dir": "/home/edq/ai_generated/krea2",
-      "features": [
-        "Krea 2",
-        "Turbo GGUF",
-        "CUDA",
-        "RTX 5070 Ti"
-      ],
-      "stop_command": "cd /srv/containers/edq && bash scripts/stop_krea2_cuda.sh"
-    },
-    {
       "id": "realesrgan",
       "name": "Real-ESRGAN",
       "description": "AI Image Upscaling + Face Enhancement",
@@ -968,7 +947,7 @@
     {
       "id": "remotion",
       "name": "Remotion Studio",
-      "description": "React-based video rendering studio \u2014 programmatic video composition (remotion-test project)",
+      "description": "React-based video rendering studio — programmatic video composition (remotion-test project)",
       "category": "video",
       "port": 3000,
       "path": "/",

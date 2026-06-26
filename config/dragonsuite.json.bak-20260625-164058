@@ -169,7 +169,7 @@
     {
       "id": "krea2-turbo",
       "name": "Krea 2 Turbo",
-      "description": "Local Krea 2 Turbo image generation on udragon CUDA.",
+      "description": "Local Krea 2 Turbo on udragon CUDA via stable-diffusion.cpp, without ComfyUI or Diffusion Bee.",
       "category": "image",
       "port": 8062,
       "path": "/",
@@ -178,14 +178,38 @@
       "icon": "&#10022;",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_krea2_cuda.sh",
       "project_path": "/srv/containers/edq/krea2",
-      "output_dir": "/home/edq/ai_generated/krea2",
+      "output_dir": "/srv/containers/edq/krea2/outputs",
       "features": [
         "Krea 2",
         "Turbo GGUF",
         "CUDA",
-        "RTX 5070 Ti"
+        "RTX 5070 Ti",
+        "stable-diffusion.cpp",
+        "No ComfyUI"
       ],
       "stop_command": "cd /srv/containers/edq && bash scripts/stop_krea2_cuda.sh"
+    },
+    {
+      "id": "krea2-turbo-cdragon",
+      "name": "Krea 2 Turbo (cdragon fallback)",
+      "description": "Fallback Krea 2 Turbo runner on cdragon via stable-diffusion.cpp with CPU VAE decode.",
+      "category": "image",
+      "port": 8062,
+      "path": "/",
+      "status_host": "192.168.7.131",
+      "url_host": "192.168.7.131",
+      "icon": "&#10022;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_krea2_cdragon.sh",
+      "project_path": null,
+      "features": [
+        "Krea 2",
+        "Turbo GGUF",
+        "Apple Silicon",
+        "CPU VAE fallback",
+        "stable-diffusion.cpp",
+        "No ComfyUI"
+      ],
+      "stop_command": "cd /srv/containers/edq && bash scripts/stop_krea2_cdragon.sh"
     },
     {
       "id": "realesrgan",

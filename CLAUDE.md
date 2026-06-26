@@ -82,6 +82,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8055                                     | Deep Cut Generator       | On-demand          | Typography POD concepts, print files, teasers     |
 | 8056                                     | ballpark-fingerprint     | Manual (Mac, not in Dragonsuite) | Personal FastAPI project; runs on 192.168.7.131, started manually |
 | 8060                                     | Downloads Gallery        | Always-on (systemd) | Downloads + any service output folder via card chips; lightbox |
+| 8062                                     | Krea 2 Turbo             | On-demand (GPU)    | Krea 2 Turbo image generation via stable-diffusion.cpp CUDA |
 | 8080                                     | Dragonsight 4.6          | On-demand (GPU)    | Vision AI + smart naming + Gemma 4 multimodal     |
 | 8100                                     | Dragonsuite Dashboard    | On-demand          | Central launcher hub (start here)                 |
 | **udragon always-on**                    |                          |                    |                                                   |
@@ -124,6 +125,18 @@ Central `.env` at `/srv/containers/edq/.env` — load with `from dotenv import l
 3. **Syntax-check before done.** Python: `python3 -m py_compile`. HTML JS: extract script blocks and validate with node. See CLAUDE.md history for the full command template.
 4. **Generative output sanity before done.** Run a representative prompt, inspect the actual file, confirm it follows the prompt. Outputs must land in `~/ai_generated/<service>/` with timestamps.
 5. **Dark mode always required.** Every web UI defaults to dark on first load with localStorage persistence. See `knowledge-base/claude-sync/web_ui_patterns.md` for the full standard.
+
+## Test Artifacts & Cleanup
+
+- Real user-facing generated media belongs in `/home/edq/ai_generated/<service>/` with timestamped filenames.
+- Smoke tests, one-step sanity checks, audit runs, screenshots, API response samples, and other throwaway outputs belong in `/home/edq/ai_generated/test-artifacts/<type>/`, usually `images/`, `videos/`, `api-responses/`, or `screenshots/`.
+- Do not put throwaway test output in `/home/edq/Downloads`, Mac Downloads, the root of iCloud `1Projects`, or a service's user-facing gallery/output folder.
+- `scripts/cleanup_test_artifacts.sh` prunes test artifacts older than 30 days. Keep logs and internal traces in service log folders unless they are part of a deliberate audit artifact.
+
+## Transcript Mining
+
+- Claude/Codex JSONL transcripts are valid historical research material for old ideas, lessons, preferences, and house patterns.
+- Read `/home/edq/knowledge-base/claude-sync/transcript_mining.md` before mining transcripts. Treat them as leads, verify live facts, and promote durable nuggets into shared docs such as `feedback_log.md`, `global-CLAUDE.md`, `directory_map.md`, or focused topic notes.
 
 ## SOPs
 
