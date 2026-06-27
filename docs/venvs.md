@@ -6,7 +6,7 @@ Centralized tracking of Python virtual environments in this workspace.
 
 | Name                    | Path                                                 | Size   | Used By                       | Purpose                                                      |
 | ----------------------- | ---------------------------------------------------- | ------ | ----------------------------- | ------------------------------------------------------------ |
-| venv_dragonsuite        | `/srv/containers/edq/venv_dragonsuite`               | ~53MB  | `dragonsuite_server.py`       | Dashboard backend (FastAPI)                                  |
+| venv_dragonsuite        | `/srv/containers/edq/venv_dragonsuite`               | ~53MB  | `dragonsuite_server.py`, `krea2_runner.py` | Dashboard backend plus lightweight Krea 2 HTTP wrapper |
 | venv_concert_shirt      | `/srv/containers/edq/venv_concert_shirt`             | ~50MB  | `start_concert_shirt.sh`      | Concert History T-Shirt Generator (port 8030)                |
 | venv_florence2          | `/srv/containers/edq/venv_florence2`                 | ~7GB   | `start_dragonsight.sh`        | Florence2 vision model service                               |
 | venv_flux2              | `/srv/containers/edq/venv_flux2`                     | ~7GB   | `start_flux2_klein.sh`        | DragonFlux Klein + Street View Studio (shared GPU stack)     |

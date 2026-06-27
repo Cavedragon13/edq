@@ -169,7 +169,7 @@
     {
       "id": "krea2-turbo",
       "name": "Krea 2 Turbo",
-      "description": "Local Krea 2 Turbo image generation on udragon CUDA.",
+      "description": "Local Krea 2 Turbo image generation with LoRA inference on udragon CUDA.",
       "category": "image",
       "port": 8062,
       "path": "/",
@@ -182,10 +182,12 @@
       "features": [
         "Krea 2",
         "Turbo GGUF",
+        "LoRA",
         "CUDA",
         "RTX 5070 Ti"
       ],
-      "stop_command": "cd /srv/containers/edq && bash scripts/stop_krea2_cuda.sh"
+      "stop_command": "cd /srv/containers/edq && bash scripts/stop_krea2_cuda.sh",
+      "vram_gb": 11
     },
     {
       "id": "realesrgan",

@@ -167,6 +167,54 @@ bash scripts/start_zimage.sh
 
 ---
 
+## Krea 2 Turbo
+
+**Port:** 8062
+**Purpose:** Local Krea 2 Turbo image generation through stable-diffusion.cpp with LoRA inference
+
+### Launch
+
+```bash
+cd /srv/containers/edq
+bash scripts/start_krea2_cuda.sh
+```
+
+**Access at:** `http://192.168.7.226:8062`
+
+### Configuration
+
+- **Script**: `krea2/krea2_runner.py`
+- **Launcher**: `scripts/start_krea2_cuda.sh`
+- **Venv**: `venv_dragonsuite` (stdlib HTTP wrapper plus `huggingface_hub` for LoRA downloads)
+- **Models**: `/srv/containers/edq/krea2/models/`
+- **LoRAs**: `/srv/containers/edq/krea2/loras/`
+- **Output**: `~/ai_generated/krea2/`
+
+### LoRA Workflow
+
+- Official Krea LoRA metadata is tracked in `krea2/loras/manifest.json`.
+- LoRA weights are local model assets and are ignored by git.
+- Download a specific official LoRA with:
+
+```bash
+cd /srv/containers/edq
+bash scripts/download_krea2_loras.sh neondrip
+```
+
+- The UI lists installed LoRAs from `krea2/loras/`, sends the selected weight as `<lora:name:scale>`, and always passes `--lora-model-dir` to stable-diffusion.cpp so manual prompt tags work too.
+- Use `auto` apply mode by default. The current Krea Turbo GGUF is quantized, so stable-diffusion.cpp should choose runtime application for compatibility.
+
+### Training Note
+
+This runner is inference-only. It does not train Krea LoRAs because it uses a GGUF stable-diffusion.cpp path rather than a diffusers training stack. For training, use or extend a trainer service such as AI Toolkit only after verifying Krea Raw/Turbo support and VRAM requirements against the current upstream docs.
+
+### Verified Outputs
+
+- 2026-06-25: Local CUDA generation verified with outputs landing in `~/ai_generated/krea2/`.
+- 2026-06-27: LoRA inference verified with `neondrip` at 256x256/1 step. Output saved under `/home/edq/ai_generated/test-artifacts/images/krea2-20260627-143833-lora-neondrip.png`; log confirms 528/528 LoRA tensors applied.
+
+---
+
 ## Qwen-Image-Layered
 
 **Port:** 8013

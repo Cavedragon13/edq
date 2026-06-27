@@ -82,7 +82,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8055                                     | Deep Cut Generator       | On-demand          | Typography POD concepts, print files, teasers     |
 | 8056                                     | ballpark-fingerprint     | Manual (Mac, not in Dragonsuite) | Personal FastAPI project; runs on 192.168.7.131, started manually |
 | 8060                                     | Downloads Gallery        | Always-on (systemd) | Downloads + any service output folder via card chips; lightbox |
-| 8062                                     | Krea 2 Turbo             | On-demand (GPU)    | Krea 2 Turbo image generation via stable-diffusion.cpp CUDA |
+| 8062                                     | Krea 2 Turbo             | On-demand (GPU)    | Krea 2 Turbo image generation + LoRA inference via stable-diffusion.cpp CUDA |
 | 8080                                     | Dragonsight 4.6          | On-demand (GPU)    | Vision AI + smart naming + Gemma 4 multimodal     |
 | 8100                                     | Dragonsuite Dashboard    | On-demand          | Central launcher hub (start here)                 |
 | **udragon always-on**                    |                          |                    |                                                   |

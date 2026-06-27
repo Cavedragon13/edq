@@ -8,3 +8,8 @@ src/
 # Generated outputs and run logs live outside git.
 outputs/
 logs/
+
+# LoRA weights are local model assets. Keep the manifest tracked.
+loras/**/*.safetensors
+loras/**/*.pt
+loras/**/*.gguf

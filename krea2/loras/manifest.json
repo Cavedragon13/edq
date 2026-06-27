@@ -1,0 +1,76 @@
+{
+  "official": [
+    {
+      "id": "neondrip",
+      "name": "Neon Drip",
+      "repo_id": "krea/Krea-2-LoRA-neondrip",
+      "filename": "neondrip.safetensors",
+      "tag": "neondrip",
+      "trigger": "neondrip"
+    },
+    {
+      "id": "softwatercolor",
+      "name": "Soft Watercolor",
+      "repo_id": "krea/Krea-2-LoRA-softwatercolor",
+      "filename": "softwatercolor.safetensors",
+      "tag": "softwatercolor",
+      "trigger": "softwatercolor"
+    },
+    {
+      "id": "sunsetblur",
+      "name": "Sunset Blur",
+      "repo_id": "krea/Krea-2-LoRA-sunsetblur",
+      "filename": "sunsetblur.safetensors",
+      "tag": "sunsetblur",
+      "trigger": "sunsetblur"
+    },
+    {
+      "id": "darkbrush",
+      "name": "Dark Brush",
+      "repo_id": "krea/Krea-2-LoRA-darkbrush",
+      "filename": "darkbrush.safetensors",
+      "tag": "darkbrush",
+      "trigger": "darkbrush"
+    },
+    {
+      "id": "vintagetarot",
+      "name": "Vintage Tarot",
+      "repo_id": "krea/Krea-2-LoRA-vintagetarot",
+      "filename": "vintagetarot.safetensors",
+      "tag": "vintagetarot",
+      "trigger": "vintagetarot"
+    },
+    {
+      "id": "dotmatrix",
+      "name": "Dot Matrix",
+      "repo_id": "krea/Krea-2-LoRA-dotmatrix",
+      "filename": "dotmatrix.safetensors",
+      "tag": "dotmatrix",
+      "trigger": "dotmatrix"
+    },
+    {
+      "id": "kidsdrawing",
+      "name": "Kids Drawing",
+      "repo_id": "krea/Krea-2-LoRA-kidsdrawing",
+      "filename": "kidsdrawing.safetensors",
+      "tag": "kidsdrawing",
+      "trigger": "kidsdrawing"
+    },
+    {
+      "id": "rainywindow",
+      "name": "Rainy Window",
+      "repo_id": "krea/Krea-2-LoRA-rainywindow",
+      "filename": "rainywindow.safetensors",
+      "tag": "rainywindow",
+      "trigger": "rainywindow"
+    },
+    {
+      "id": "retroanime",
+      "name": "Retro Anime",
+      "repo_id": "krea/Krea-2-LoRA-retroanime",
+      "filename": "retroanime.safetensors",
+      "tag": "retroanime",
+      "trigger": "retroanime"
+    }
+  ]
+}
