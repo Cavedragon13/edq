@@ -7,8 +7,17 @@ source scripts/dragonsuite_lib.sh
 
 SERVICE_NAME="ACE-Step 1.5 XL"
 PORT=8021
+ACE_HOME="$DRAGONSUITE_ROOT/projects/ACE-Step-1.5-xl"
+ACE_CHECKPOINTS_DIR="$ACE_HOME/checkpoints"
 
 service_header "$SERVICE_NAME" "$PORT"
+if [ ! -d "$ACE_CHECKPOINTS_DIR/acestep-v15-xl-turbo" ]; then
+    echo "❌ ACE-Step XL checkpoints not found at $ACE_CHECKPOINTS_DIR"
+    echo "   Expected: $ACE_CHECKPOINTS_DIR/acestep-v15-xl-turbo"
+    exit 1
+fi
+
+export ACESTEP_CHECKPOINTS_DIR="$ACE_CHECKPOINTS_DIR"
 gpu_preflight "$PORT"
 set_pytorch_env
 
