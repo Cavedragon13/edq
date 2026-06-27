@@ -1,4 +1,4 @@
-# Dungeon Generator
+# RPG Char Gen
 
 Small browser-based D&D character generator with:
 
@@ -7,17 +7,20 @@ Small browser-based D&D character generator with:
 - editable sheet fields
 - room for armor, weapons, magic items, and notes
 - a rerollable, in-browser portrait generator
+- optional OpenAI Images API portrait generation using `gpt-image-2` with `OPENAI_API_KEY` loaded server-side from `.env`
 - light and dark modes with saved preference
 - portrait export as PNG
 
 ## Run it
 
-Open [index.html](./index.html) in a browser, or serve the folder locally:
+Serve the folder locally so AI portraits can use `OPENAI_API_KEY` from `/srv/containers/edq/.env` or a project-local `.env`:
 
 ```bash
 cd /home/edq/projects/dnd-generator
-python3 -m http.server 4173
+PORT=4173 python3 server.py
 ```
+
+Opening [index.html](./index.html) directly still works for local SVG portraits, but AI portrait generation needs the server.
 
 ## Dashboard
 

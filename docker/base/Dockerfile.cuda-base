@@ -1,0 +1,48 @@
+# Dragonsuite CUDA Runtime Base
+# Built once, extended by all GPU services.
+# Tag: dragonsuite/cuda-base:12.8
+#
+# Based on CUDA 12.8.1 cudnn-runtime (not devel) — final service images don't
+# need the compiler toolchain. Services that compile CUDA kernels (e.g. Wan2GP
+# SageAttention) use Dockerfile.cuda-devel-base instead.
+
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# System packages used by most ML services
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-dev \
+    python3-pip \
+    python3.12-venv \
+    ffmpeg \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libsndfile1 \
+    libportaudio2 \
+    curl \
+    wget \
+    git \
+    build-essential \
+    && ln -sf /usr/bin/python3.12 /usr/bin/python3 \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# PEP 668 override — intentional, we own this container entirely.
+# Applies to all pip install commands in this image and derived images.
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
+# Universal GPU memory optimization — services can override if needed
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+# HF cache location — must match volume mount in docker-compose.yml
+ENV HF_HOME=/root/.cache/huggingface
+
+# Gradio server binding defaults — services override the port
+ENV GRADIO_SERVER_NAME=0.0.0.0

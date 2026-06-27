@@ -1,0 +1,229 @@
+# Dragonsuite Docker Compose — Master Service Definitions
+#
+# Migration status: Phase 0 (foundation only)
+# Services are added here as each venv is containerized.
+#
+# NETWORK: host mode — all services bind 0.0.0.0:<port>, reachable at 192.168.7.226:<port>
+# from LAN without any port mapping config. Ollama (11434) and LM Studio (1234) on the
+# host are also reachable by containers transparently.
+#
+# VOLUMES: bind mounts only (no named volumes) — models/cache/output must be accessible
+# via SMB shares from Macs.
+#
+# PROFILES:
+#   dashboard  — Dragonsuite dashboard (port 8100)
+#   cpu        — CPU-only Python services
+#   static     — Static file servers (no Python ML)
+#   node       — Node.js services (DragonArt, Horse Racing)
+#   gpu-light  — GPU services < ~8GB VRAM
+#   gpu-heavy  — GPU services > ~8GB VRAM
+#   all        — Everything
+#
+# USAGE:
+#   Single service:  docker compose -f docker/docker-compose.yml up -d <service-id>
+#   By profile:      docker compose -f docker/docker-compose.yml --profile gpu-light up -d
+#   Stop service:    docker compose -f docker/docker-compose.yml stop <service-id>
+#   Logs:            docker compose -f docker/docker-compose.yml logs -f <service-id>
+#
+# ROLLBACK: each service in dragonsuite.json has launch_command_venv as fallback.
+# Change launch_command back to the venv version — no service restart needed.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REUSABLE FRAGMENTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-gpu-deploy: &gpu-deploy
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+
+x-gpu-env: &gpu-env
+  PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+  HF_HOME: /root/.cache/huggingface
+  GRADIO_SERVER_NAME: "0.0.0.0"
+
+x-gpu-volumes: &gpu-volumes
+  - /srv/containers/edq/cache_huggingface:/root/.cache/huggingface:rw
+  - /home/edq/ai_generated:/ai_generated:rw
+
+x-env-file: &env-file
+  env_file:
+    - /srv/containers/edq/.env
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STATIC HTTP SERVICES  (profile: static)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Phase 1 target ──────────────────────────────────────────────────────────
+
+  interactive-games:
+    profiles: [static, all]
+    image: python:3.12-slim
+    network_mode: host
+    working_dir: /srv
+    volumes:
+      - /srv/containers/edq/projects/interactive-games:/srv:ro
+    command: python3 -m http.server 8031
+    restart: unless-stopped
+
+  audiomass:
+    profiles: [static, all]
+    image: python:3.12-slim
+    network_mode: host
+    working_dir: /srv
+    volumes:
+      - /srv/containers/edq/projects/AudioMass/src:/srv:ro
+    command: python3 -m http.server 8027
+    restart: unless-stopped
+
+  mule-game:
+    profiles: [static, all]
+    image: python:3.12-slim
+    network_mode: host
+    working_dir: /srv
+    volumes:
+      - /srv/containers/edq/media:/srv:ro
+    command: python3 -m http.server 8032
+    restart: unless-stopped
+
+  # ── Phase 1 target — Node.js ─────────────────────────────────────────────
+
+  # dragonart-studio:
+  #   profiles: [node, all]
+  #   build:
+  #     context: /home/edq/ai_generated/dragonart-studio
+  #     dockerfile: /srv/containers/edq/docker/shared/Dockerfile.node-app
+  #   network_mode: host
+  #   env_file:
+  #     - /srv/containers/edq/.env
+  #   volumes:
+  #     - /home/edq/ai_generated/dragonart-studio:/ai_generated:rw
+  #   restart: unless-stopped
+  # NOTE: uncomment when Dockerfile.node-app is written (Phase 1)
+
+  # horse-racing:
+  #   profiles: [node, all]
+  #   build:
+  #     context: /srv/containers/edq/projects/horse-racing
+  #     dockerfile: /srv/containers/edq/docker/shared/Dockerfile.node-app
+  #   network_mode: host
+  #   restart: unless-stopped
+  # NOTE: uncomment when Dockerfile.node-app is written (Phase 1)
+
+  # ── Phase 2 targets — CPU Python ────────────────────────────────────────
+
+  # dragonsuite:
+  #   profiles: [dashboard, all]
+  #   build:
+  #     context: /srv/containers/edq
+  #     dockerfile: docker/dragonsuite/Dockerfile
+  #   network_mode: host
+  #   env_file:
+  #     - /srv/containers/edq/.env
+  #   volumes:
+  #     - /srv/containers/edq/config:/config:ro
+  #     - /srv/containers/edq/media:/media:ro
+  #     - /srv/containers/edq/scripts:/scripts:ro
+  #     - /srv/containers/edq/logs:/logs:rw
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   restart: unless-stopped
+  # NOTE: needs dragonsuite_server.py DOCKER_SERVICES changes first
+
+  # the-movies:
+  #   profiles: [cpu, all]
+  #   build:
+  #     context: /srv/containers/edq
+  #     dockerfile: docker/the-movies/Dockerfile
+  #   network_mode: host
+  #   env_file:
+  #     - /srv/containers/edq/.env
+  #   volumes:
+  #     - /home/edq/ai_generated/the-movies:/ai_generated:rw
+  #   restart: unless-stopped
+
+  # dragonsong:
+  #   profiles: [cpu, all]
+  #   build:
+  #     context: /srv/containers/edq
+  #     dockerfile: docker/dragonsong/Dockerfile
+  #   network_mode: host
+  #   env_file:
+  #     - /srv/containers/edq/.env
+  #   restart: unless-stopped
+
+  # ── Phase 3 targets — GPU Light ─────────────────────────────────────────
+
+  # rembg:
+  #   profiles: [gpu-light, all]
+  #   build:
+  #     context: /srv/containers/edq
+  #     dockerfile: docker/rembg/Dockerfile
+  #   network_mode: host
+  #   <<: *gpu-deploy
+  #   env_file:
+  #     - /srv/containers/edq/.env
+  #   environment:
+  #     <<: *gpu-env
+  #   volumes: *gpu-volumes
+  #   restart: unless-stopped
+
+  # realesrgan:
+  #   profiles: [gpu-light, all]
+  #   build:
+  #     context: /srv/containers/edq
+  #     dockerfile: docker/realesrgan/Dockerfile
+  #   network_mode: host
+  #   <<: *gpu-deploy
+  #   env_file:
+  #     - /srv/containers/edq/.env
+  #   environment:
+  #     <<: *gpu-env
+  #     GRADIO_SERVER_PORT: "8010"
+  #   volumes: *gpu-volumes
+  #   restart: unless-stopped
+
+  # ── Phase 4 targets — GPU Heavy ─────────────────────────────────────────
+
+  # wan2gp:
+  #   profiles: [gpu-heavy, all]
+  #   build:
+  #     context: /srv/containers/edq/projects/Wan2GP
+  #     dockerfile: Dockerfile
+  #     args:
+  #       CUDA_ARCHITECTURES: "12.0"
+  #   network_mode: host
+  #   <<: *gpu-deploy
+  #   env_file:
+  #     - /srv/containers/edq/.env
+  #   environment:
+  #     <<: *gpu-env
+  #   volumes:
+  #     - /srv/containers/edq/cache_huggingface:/root/.cache/huggingface:rw
+  #     - /home/edq/ai_generated/wan2gp:/ai_generated/wan2gp:rw
+  #   restart: unless-stopped
+
+  # fish-speech:
+  #   profiles: [gpu-heavy, all]
+  #   build:
+  #     context: /srv/containers/edq/projects/fish-speech
+  #     dockerfile: docker/Dockerfile
+  #     args:
+  #       BACKEND: cuda
+  #     target: webui
+  #   network_mode: host
+  #   <<: *gpu-deploy
+  #   env_file:
+  #     - /srv/containers/edq/.env
+  #   environment:
+  #     <<: *gpu-env
+  #     GRADIO_SERVER_PORT: "8003"
+  #   volumes:
+  #     - /srv/containers/edq/projects/fish-speech/checkpoints:/app/checkpoints:ro
+  #     - /home/edq/ai_generated/fish-speech:/app/references:rw
+  #   restart: unless-stopped

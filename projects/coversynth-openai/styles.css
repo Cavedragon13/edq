@@ -1,0 +1,207 @@
+:root {
+  color-scheme: dark;
+  --bg: #111317;
+  --panel: #171b21;
+  --panel-2: #20262e;
+  --line: #303842;
+  --text: #edf1f4;
+  --muted: #a2adb8;
+  --accent: #56c0a6;
+  --danger: #f28a92;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(420px, 0.9fr) minmax(500px, 1.1fr);
+  height: 100vh;
+}
+
+.panel {
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+}
+.source-panel { border-right: 1px solid var(--line); }
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.kicker {
+  margin: 0 0 4px;
+  color: var(--accent);
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+h1 { margin: 0; font-size: 34px; letter-spacing: 0; }
+
+.controls-row,
+.sticky-actions,
+.refine-row {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+.controls-row { flex-wrap: wrap; justify-content: flex-end; }
+
+.sticky-actions {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  align-items: center;
+  padding: 10px 0 14px;
+  background: linear-gradient(var(--bg) 78%, rgba(17, 19, 23, 0));
+}
+
+label,
+.text-label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.text-label { margin: 14px 0 6px; }
+select,
+input,
+textarea,
+button {
+  font: inherit;
+}
+select,
+input[type="text"],
+textarea {
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+select,
+input[type="text"] { padding: 9px 10px; }
+textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 14px;
+  line-height: 1.45;
+}
+
+button {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 9px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+button:hover { border-color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: default; }
+#analyze,
+#generate { border-color: var(--accent); }
+
+#status {
+  margin: 0 0 0 auto;
+  color: var(--muted);
+  min-width: 180px;
+  max-width: 360px;
+  font-size: 13px;
+}
+#status[data-tone="error"] { color: var(--danger); }
+
+.drop-zone {
+  display: grid;
+  place-items: center;
+  min-height: 118px;
+  padding: 18px;
+  border: 1px dashed #52606e;
+  border-radius: 10px;
+  background: #151a20;
+  cursor: pointer;
+  text-align: center;
+}
+.drop-zone:hover,
+.drop-zone.is-dragging {
+  border-color: var(--accent);
+  background: #17231f;
+}
+.drop-zone input { display: none; }
+.drop-title {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 700;
+}
+.drop-meta {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#playlist {
+  min-height: 360px;
+  height: calc(100vh - 330px);
+}
+.result-panel {
+  display: grid;
+  grid-template-rows: minmax(260px, 46vh) auto auto auto;
+  gap: 10px;
+}
+.cover-wrap {
+  aspect-ratio: 1 / 1;
+  max-height: 46vh;
+  justify-self: center;
+  background: #080b0d;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cover-wrap img:not([src]) { display: none; }
+#prompt { min-height: 130px; }
+.refine-row input { flex: 1; }
+.analysis {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+}
+.analysis div {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.analysis strong { color: var(--text); }
+
+@media (max-width: 980px) {
+  body { overflow: auto; }
+  .shell { grid-template-columns: 1fr; height: auto; }
+  .source-panel { border-right: 0; border-bottom: 1px solid var(--line); }
+  .app-header { align-items: flex-start; flex-direction: column; }
+  .controls-row { justify-content: flex-start; }
+  .sticky-actions { flex-wrap: wrap; }
+  #status { width: 100%; margin-left: 0; max-width: none; }
+  #playlist { height: 280px; min-height: 280px; }
+  .result-panel { grid-template-rows: auto; }
+  .cover-wrap { width: min(100%, 520px); max-height: none; }
+}

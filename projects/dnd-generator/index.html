@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dungeon Generator</title>
+    <title>RPG Char Gen</title>
     <meta
       name="description"
       content="Browser-based D&D character generator with 5d6 rolls, gear notes, and rerollable portrait art."
@@ -25,7 +25,7 @@
       <header class="masthead">
         <div class="brand-block">
           <p class="eyebrow">Old-school dice. Fast modern rerolls.</p>
-          <h1>Dungeon Generator</h1>
+          <h1>RPG Char Gen</h1>
           <p class="lede">
             Roll each stat as 5d6, keep the best 3, sketch the hero, and toss them back into fate if the build feels cursed.
           </p>
@@ -50,7 +50,10 @@
                 <p class="section-kicker">Character Image</p>
                 <h2>Portrait Forge</h2>
               </div>
-              <p class="microcopy">Make a face. If it misses, reroll it.</p>
+              <p id="portraitStatus" class="microcopy">Local forge ready.</p>
+            </div>
+            <div class="image-controls">
+              <button id="generateAiPortraitButton" class="button button-small">Generate AI Portrait</button>
             </div>
             <div class="portrait-frame">
               <img id="portraitImage" alt="Generated fantasy character portrait">

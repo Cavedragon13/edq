@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  omnivoice-studio:
+    build:
+      context: /srv/containers/edq/projects/omnivoice-studio
+      dockerfile: Dockerfile
+    container_name: omnivoice-studio
+    restart: unless-stopped
+    ports:
+      - "8051:8000"
+    volumes:
+      - /srv/containers/edq/projects/omnivoice-studio/omnivoice_data:/app/omnivoice_data
+      - /srv/containers/edq/cache_huggingface:/root/.cache/huggingface
+    environment:
+      - HF_TOKEN=${HF_TOKEN:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

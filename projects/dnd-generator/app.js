@@ -21,6 +21,10 @@ const FIELD_IDS = {
   notes: "notesInput"
 };
 
+// Use "chatgpt-image-latest" here if you want a moving ChatGPT image-model alias.
+const OPENAI_IMAGE_MODEL = "gpt-image-2";
+const PORTRAIT_API_URL = "/api/generate-portrait";
+
 const DATA = {
   ancestries: [
     "Human",
@@ -195,6 +199,7 @@ const state = {
   stats: [],
   portraitSpec: null,
   portraitSvg: "",
+  portraitImageUrl: "",
   theme: "light"
 };
 
@@ -212,6 +217,8 @@ function cacheDom() {
   dom.promptOutput = document.getElementById("promptOutput");
   dom.statsGrid = document.getElementById("statsGrid");
   dom.rollSummary = document.getElementById("rollSummary");
+  dom.portraitStatus = document.getElementById("portraitStatus");
+  dom.generateAiPortraitButton = document.getElementById("generateAiPortraitButton");
   dom.themeToggleButton = document.getElementById("themeToggleButton");
   dom.themeToggleIcon = document.getElementById("themeToggleIcon");
   dom.themeToggleLabel = document.getElementById("themeToggleLabel");
@@ -238,6 +245,7 @@ function bindControls() {
   document
     .getElementById("copyPromptButton")
     .addEventListener("click", copyPrompt);
+  dom.generateAiPortraitButton.addEventListener("click", generateAiPortrait);
 
   Object.keys(FIELD_IDS).forEach((key) => {
     dom[key].addEventListener("input", () => {
@@ -286,6 +294,7 @@ function newCharacter() {
 
   state.character = { ...identity, ...loadout };
   state.portraitSpec = buildPortraitSpec();
+  state.portraitImageUrl = "";
 
   syncFieldsFromState();
   renderAll();
@@ -301,6 +310,7 @@ function rerollStatsOnly() {
 
 function rerollPortraitOnly() {
   state.portraitSpec = buildPortraitSpec();
+  state.portraitImageUrl = "";
   renderPortrait();
   refreshNarrative();
 }
@@ -422,7 +432,9 @@ function renderStats() {
 
 function renderPortrait() {
   state.portraitSvg = buildPortraitSvg(state.character, state.portraitSpec, state.stats);
-  dom.portraitImage.src = svgToDataUri(state.portraitSvg);
+  state.portraitImageUrl = svgToDataUri(state.portraitSvg);
+  dom.portraitImage.src = state.portraitImageUrl;
+  dom.portraitStatus.textContent = "Local forge ready.";
   dom.portraitCaption.textContent = buildPortraitCaption();
 }
 
@@ -449,6 +461,56 @@ function buildPortraitCaption() {
 function buildImagePrompt() {
   const prime = [...state.stats].sort((left, right) => right.score - left.score)[0];
   return `Fantasy character portrait of ${state.character.name}, a ${state.character.heritage.toLowerCase()} ${state.character.className.toLowerCase()} from ${state.character.homeland}. ${state.character.hook} Wears ${state.character.armor}. Carries ${state.character.weapons}. Signature magic item: ${state.character.magic}. Emphasize ${prime.label.toLowerCase()}, painterly tabletop art, dramatic light, detailed face, half-body composition, adventure-worn clothing, clean background, no text.`;
+}
+
+async function generateAiPortrait() {
+  setAiPortraitLoading(true);
+
+  try {
+    const response = await fetch(PORTRAIT_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: OPENAI_IMAGE_MODEL,
+        prompt: buildImagePrompt(),
+        size: "1024x1536",
+        quality: "medium"
+      })
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok) {
+      const message = payload.error?.message || "OpenAI image generation failed.";
+      throw new Error(message);
+    }
+
+    const imageBase64 = payload.image;
+
+    if (!imageBase64) {
+      throw new Error("OpenAI did not return image data.");
+    }
+
+    state.portraitImageUrl = `data:image/png;base64,${imageBase64}`;
+    dom.portraitImage.src = state.portraitImageUrl;
+    dom.portraitStatus.textContent = `${OPENAI_IMAGE_MODEL} portrait ready.`;
+  } catch (error) {
+    dom.portraitStatus.textContent = error.message;
+  } finally {
+    setAiPortraitLoading(false);
+  }
+}
+
+function setAiPortraitLoading(isLoading) {
+  dom.generateAiPortraitButton.disabled = isLoading;
+  dom.generateAiPortraitButton.textContent = isLoading
+    ? "Generating..."
+    : "Generate AI Portrait";
+  if (isLoading) {
+    dom.portraitStatus.textContent = `Calling ${OPENAI_IMAGE_MODEL}...`;
+  }
 }
 
 function buildPortraitSvg(character, spec, stats) {
@@ -577,7 +639,7 @@ function buildPortraitSvg(character, spec, stats) {
 }
 
 function savePortrait() {
-  const svgUrl = svgToDataUri(state.portraitSvg);
+  const portraitUrl = state.portraitImageUrl || svgToDataUri(state.portraitSvg);
   const image = new Image();
 
   image.onload = () => {
@@ -596,7 +658,7 @@ function savePortrait() {
     link.click();
   };
 
-  image.src = svgUrl;
+  image.src = portraitUrl;
 }
 
 async function copyPrompt() {

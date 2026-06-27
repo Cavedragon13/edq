@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FrameForge</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <header class="app-header">
+          <div class="brand-mark">
+            <img src="assets/seed13-logo.png" alt="Seed 13 Productions">
+          </div>
+          <div>
+            <p class="kicker">Seed 13 Productions</p>
+            <h1>FrameForge</h1>
+          </div>
+          <div class="provider-status">
+            <span id="providerStatus">OpenAI</span>
+            <strong id="modelStatus">gpt-image-2</strong>
+          </div>
+        </header>
+
+        <div class="controls-grid">
+          <label>Project
+            <input id="project" type="text" value="FrameForge Project">
+          </label>
+          <label>Jobs
+            <input id="jobCount" type="number" min="1" max="10" value="6">
+          </label>
+          <label>Provider
+            <select id="imageProvider">
+              <option value="openai">OpenAI</option>
+              <option value="google">Gemini / Google</option>
+            </select>
+          </label>
+          <label>Prompt model
+            <select id="promptModel">
+              <option>gpt-5.4-mini</option>
+              <option>gpt-5.4-nano</option>
+              <option>gpt-5.2</option>
+              <option>gpt-5</option>
+              <option>gpt-4.1-mini</option>
+            </select>
+          </label>
+          <label>Image model
+            <select id="imageModel">
+              <option>gpt-image-2</option>
+            </select>
+          </label>
+          <label>Size
+            <select id="size">
+              <option>1024x1024</option>
+              <option>1536x1024</option>
+              <option>1024x1536</option>
+              <option>2048x1024</option>
+            </select>
+          </label>
+          <label>Quality
+            <select id="quality">
+              <option>high</option>
+              <option>medium</option>
+              <option>low</option>
+            </select>
+          </label>
+          <label class="toggle-line">
+            <input id="allowText" type="checkbox" checked>
+            <span>Text</span>
+          </label>
+          <label class="toggle-line">
+            <input id="autoClean" type="checkbox">
+            <span>Clean before run</span>
+          </label>
+        </div>
+
+        <label class="text-label" for="idea">Idea</label>
+        <textarea id="idea" class="idea-box" spellcheck="true"></textarea>
+
+        <div class="action-bar">
+          <button id="generateManifest">Generate Manifest</button>
+          <button id="validateManifest">Validate Manifest</button>
+          <button id="sanitizeManifest">Clean Prompts</button>
+          <button id="dryRun">Dry Run</button>
+          <button id="runSelected">Run Selected</button>
+          <button id="runAll">Run All</button>
+          <button id="retryFailed">Retry Failed</button>
+          <button id="formatJson">Format JSON</button>
+          <button id="loadExample">Example</button>
+          <p id="status">Ready.</p>
+          <p id="cleanState" class="clean-state">Cleanup: not run</p>
+        </div>
+
+        <label id="dropZone" class="drop-zone" for="file">
+          <input id="file" type="file" accept=".json,.txt,.csv,.pdf,.md">
+          <span class="drop-title">Manifest</span>
+          <span id="fileMeta" class="drop-meta">JSON, text, markdown, or PDF</span>
+        </label>
+
+        <label class="text-label" for="manifest">JSON</label>
+        <textarea id="manifest" class="manifest-box" spellcheck="false"></textarea>
+      </section>
+
+      <section class="right-rail">
+        <div class="split">
+          <section>
+            <h2>Jobs</h2>
+            <div id="jobs" class="jobs"></div>
+          </section>
+          <section>
+            <h2>Validation</h2>
+            <ul id="validation" class="validation">
+              <li data-tone="muted">No manifest loaded.</li>
+            </ul>
+            <div class="plan-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>File</th>
+                    <th>Size</th>
+                    <th>Quality</th>
+                    <th>Provider</th>
+                    <th>Model</th>
+                  </tr>
+                </thead>
+                <tbody id="plan"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <section>
+          <h2>Gallery</h2>
+          <div id="gallery" class="gallery"></div>
+        </section>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

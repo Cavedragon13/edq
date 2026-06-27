@@ -1,0 +1,43 @@
+# Dragonsuite CUDA Dev Base
+# For services that compile CUDA kernels at build time (e.g. Wan2GP SageAttention).
+# Use multi-stage builds: compile in this stage, copy binaries to cuda-base runtime.
+# Tag: dragonsuite/cuda-devel-base:12.8
+
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-dev \
+    python3-pip \
+    python3.12-venv \
+    ffmpeg \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libsndfile1 \
+    libportaudio2 \
+    curl \
+    wget \
+    git \
+    build-essential \
+    ninja-build \
+    cmake \
+    && ln -sf /usr/bin/python3.12 /usr/bin/python3 \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# PEP 668 override — intentional, we own this container entirely.
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+ENV HF_HOME=/root/.cache/huggingface
+ENV GRADIO_SERVER_NAME=0.0.0.0
+
+# Blackwell sm_120 — required for RTX 5070 Ti
+ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"

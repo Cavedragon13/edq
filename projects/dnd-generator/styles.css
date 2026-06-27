@@ -170,6 +170,12 @@ body::before {
   outline: none;
 }
 
+.button:disabled {
+  cursor: wait;
+  opacity: 0.66;
+  transform: none;
+}
+
 .button-strong {
   background: linear-gradient(135deg, var(--forest), var(--forest-soft));
   border-color: transparent;
@@ -252,6 +258,12 @@ body::before {
   height: 160px;
   background: radial-gradient(circle, rgba(201, 150, 67, 0.28), transparent 68%);
   pointer-events: none;
+}
+
+.image-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
 }
 
 .portrait-frame {

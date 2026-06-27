@@ -46,6 +46,15 @@ apps/
 # ============================================================================
 projects/*/
 !projects/.gitkeep
+!projects/.mcp.json
+!projects/dnd-generator/
+!projects/dnd-generator/**
+!projects/coversynth-openai/
+!projects/coversynth-openai/**
+!projects/coversynth-json/
+!projects/coversynth-json/**
+!projects/trading-experiments/
+!projects/trading-experiments/**
 
 # ============================================================================
 # Pinokio (large download cache)
@@ -106,6 +115,13 @@ logs/
 *.sock
 *.sqlite
 *.db
+data/dragonsuite_runtime.json
+swapfiles/
+backups/
+media/bookmark_backups/
+media/linkding_data/
+media/dragonart-dist-backup/
+docker/**/data/
 
 # ============================================================================
 # Editor & IDE
@@ -148,3 +164,4 @@ yarn-error.log*
 !CLAUDE.md
 !.cursorrules
 !PINOKIO.md
+.gstack/

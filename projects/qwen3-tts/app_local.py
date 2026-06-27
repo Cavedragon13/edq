@@ -21,6 +21,7 @@ import soundfile as sf
 # Configuration
 OUTPUT_DIR = os.path.expanduser("~/ai_generated/qwen3-tts")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.environ.setdefault("NUMBA_CACHE_DIR", "/tmp/numba-qwen3-tts")
 
 # Model cache - only one model loaded at a time for memory efficiency
 _current_model = None
@@ -224,7 +225,6 @@ def generate_voice_design(text, language, voice_description, progress=gr.Progres
 # ============ Gradio UI ============
 with gr.Blocks(
     title="Qwen3-TTS",
-    theme=gr.themes.Soft(primary_hue="indigo"),
 ) as demo:
     gr.Markdown(
         """
@@ -433,4 +433,5 @@ if __name__ == "__main__":
         share=False,
         favicon_path="/srv/containers/edq/media/favicons/qwen-tts.svg",
         allowed_paths=[OUTPUT_DIR],
+        theme=gr.themes.Soft(primary_hue="indigo"),
     )

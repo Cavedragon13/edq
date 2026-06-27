@@ -151,7 +151,7 @@ if [ -f "$SCORECARD" ]; then
     declare -A TRACKED_REPOS=(
         ["Fish Speech"]="$PROJECT_DIR/projects/fish-speech"
         ["MatAnyone 2"]="$PROJECT_DIR/projects/matanyone2"
-        ["ACE-Step 1.5"]="$PROJECT_DIR/projects/ACE-Step-1.5"
+        ["ACE-Step 1.5 XL"]="$PROJECT_DIR/projects/ACE-Step-1.5-xl"
         ["LivePortrait"]="$PROJECT_DIR/projects/LivePortrait"
         ["Wan2GP"]="$PROJECT_DIR/projects/Wan2GP"
         ["SAM 2.1"]="$PROJECT_DIR/projects/sam2"

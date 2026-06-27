@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CoverSynth OpenAI</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel source-panel">
+        <header class="app-header">
+          <div>
+            <p class="kicker">Playlist Analysis</p>
+            <h1>CoverSynth OpenAI</h1>
+          </div>
+          <div class="controls-row">
+            <label>Model
+              <select id="model">
+                <option>gpt-5.4-mini</option>
+                <option>gpt-5.4-nano</option>
+                <option>gpt-5.2</option>
+                <option>gpt-5</option>
+                <option>gpt-4.1-mini</option>
+              </select>
+            </label>
+            <label>Image quality
+              <select id="quality">
+                <option>medium</option>
+                <option>low</option>
+                <option>high</option>
+              </select>
+            </label>
+          </div>
+        </header>
+
+        <div class="sticky-actions">
+          <button id="analyze">Analyze Playlist</button>
+          <button id="generate" disabled>Generate Cover</button>
+          <button id="downloadCover" disabled>Download Cover</button>
+          <button id="saveLog">Save Log</button>
+          <p id="status">Ready.</p>
+        </div>
+
+        <label id="dropZone" class="drop-zone" for="file">
+          <input id="file" type="file" accept=".txt,.csv,.pdf,.md">
+          <span class="drop-title">Drop a PDF or text file here</span>
+          <span id="fileMeta" class="drop-meta">or click to choose a file from this browser</span>
+        </label>
+
+        <label class="text-label" for="playlist">Playlist text</label>
+        <textarea id="playlist" spellcheck="false" placeholder="Paste playlist rows, exported text, lyrics, or notes here. File paths are not file uploads; use the drop area above for PDFs."></textarea>
+      </section>
+
+      <section class="panel result-panel">
+        <div class="cover-wrap">
+          <img id="cover" alt="Generated playlist cover">
+        </div>
+
+        <label class="text-label" for="prompt">Image prompt</label>
+        <textarea id="prompt" placeholder="The synthesized cover prompt will appear here. Edit it before generating if needed."></textarea>
+
+        <div class="refine-row">
+          <input id="refinement" placeholder="Refine: warmer colors, less literal, more noir...">
+          <button id="refine" disabled>Refine</button>
+        </div>
+
+        <div id="analysis" class="analysis"></div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
