@@ -52,6 +52,12 @@ Centralized tracking of Python virtual environments in this workspace.
 | vocab-translator-mcp | `/srv/containers/edq/mcp-servers/vocab-translator/venv` | ~20MB | Vocab translator MCP server with Ollama backend       |
 | mcp-inspector        | `/srv/containers/edq/venv_mcp_inspector`                | ~30MB | MCP Inspector web app with Supabase integration       |
 
+## Docker-Isolated Services
+
+| Name     | Project Path                                  | Used By             | Purpose                                            |
+| -------- | --------------------------------------------- | ------------------- | -------------------------------------------------- |
+| Odysseus | `/srv/containers/edq/projects/odysseus`       | `start_odysseus.sh` | Self-hosted AI workspace via Docker Compose (8057) |
+
 ## Naming Convention
 
 - Centralized venvs: `/srv/containers/edq/venv_<project>`
@@ -119,3 +125,4 @@ When removing a project:
 | 2026-04-19 | Installed Claude Code skills: caveman (6 compression skills: /caveman /caveman-compress /caveman-commit /caveman-review) |
 | 2026-05-04 | Updated `venv_zimage` — now shared with Z-Anime (port 8008); venv_zimage entry updated in registry                       |
 | 2026-06-11 | Removed orphans: `venv_lavasr` (7.6G) + `venv_streetview` (434M), Ideogram 4 (`venv_ideogram4` 5.2G), ACE-Step-1.5 (37G, superseded by XL), and Tier-3 pruned-service scripts (dragonglass/streetview/audiomass/lavasr/ltx2/gpu_monitor). DragonArt's Street View feature is self-contained and unaffected. ~50G reclaimed. |
+| 2026-06-28 | Added Docker-isolated Odysseus service for self-hosted AI workspace (port 8057, no Python venv)                         |

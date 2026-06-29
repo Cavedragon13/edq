@@ -1346,6 +1346,25 @@
       "stop_command": "pkill -f 'app.py.*hidream-o1-dev' || pkill -f 'start_hidream_o1' || true",
       "vram_gb": 16.0,
       "output_dir": "/home/edq/ai_generated/hidream-o1"
+    },
+    {
+      "id": "odysseus",
+      "name": "Odysseus",
+      "description": "Self-hosted AI workspace for chat, agents, research, documents, email, notes, calendar, and local model workflows",
+      "category": "llm",
+      "port": 8057,
+      "path": "/",
+      "icon": "&#128506;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_odysseus.sh",
+      "project_path": "/srv/containers/edq/projects/odysseus",
+      "features": [
+        "Chat + Agents",
+        "Deep Research",
+        "Documents",
+        "Cookbook"
+      ],
+      "stop_command": "cd /srv/containers/edq && bash scripts/stop_odysseus.sh",
+      "output_dir": "/home/edq/ai_generated/odysseus"
     }
   ],
   "categories": {
