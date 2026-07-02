@@ -25,77 +25,77 @@ Guidance for Claude Code working in this personal AI development environment on 
 
 ## Port Layout
 
-| Port                                     | Service                  | Type               | Notes                                             |
-| ---------------------------------------- | ------------------------ | ------------------ | ------------------------------------------------- |
-| 1234                                     | LM Studio API            | On-demand (manual) |                                                   |
-| 3000                                     | Remotion Studio          | Always-on (systemd) | Video composition/render, remotion-test project   |
-| 8001                                     | DragonFlux Klein         | On-demand (GPU)    | FLUX.2-klein + FLUX.1-dev HD + LoRA               |
-| 8002                                     | WanGP2                   | On-demand (GPU)    | Video generation (Wan 2.0)                        |
-| 8003                                     | Fish Speech              | On-demand (GPU)    | Expressive TTS + voice cloning                    |
-| 8004                                     | HeartMuLa                | On-demand (GPU)    | Music gen from lyrics (~12GB VRAM)                |
-| 8005                                     | SAM 2.1                  | On-demand (GPU)    | Image/video segmentation                          |
-| 8006                                     | LivePortrait             | On-demand (GPU)    | Portrait animation + expression transfer          |
-| 8007                                     | Hunyuan3D-2              | On-demand (GPU)    | Image to 3D mesh                                  |
-| 8008                                     | Z-Anime                  | On-demand (GPU)    | Anime fine-tune of Z-Image Base, 6B S3-DiT        |
-| 8009                                     | Qwen3-TTS                | On-demand (GPU)    | High-quality TTS + voice design                   |
-| 8010                                     | Real-ESRGAN              | On-demand (GPU)    | AI upscaling, multiple models                     |
-| 8011                                     | Z-Image Base             | On-demand (GPU)    | Alibaba 6B text-to-image (Base/Turbo/Fast)        |
-| 8012                                     | Rembg                    | On-demand (GPU)    | Background removal                                |
-| 8013                                     | Qwen-Image-Layered       | On-demand (GPU)    | Layer decomposition for image editing             |
-| 8014                                     | Qwen3-Audiobook          | On-demand          | Document to audiobook                             |
-| 8015                                     | DragonArt Studio         | Production         | 70+ image modes + Street View capture (React)     |
-| 8016                                     | Wan2.1 T2V 1.3B          | On-demand (GPU)    | T2V, sequential CPU offload, diffusers            |
-| 8017                                     | FaceFusion               | On-demand (GPU)    | Face swap + enhancement                           |
-| 8018                                     | Creative Upscaler        | On-demand (GPU)    | AI upscaling with style transfer                  |
-| 8019                                     | Bonsai MLX Studio        | On-demand (Mac MLX) | Apple Silicon image gen, frontend on 192.168.7.131; backend on :8040 same host |
-| 8020                                     | MCP Inspector            | On-demand          | Security auditing for MCP servers                 |
-| 8021                                     | ACE-Step 1.5 XL          | On-demand (GPU)    | Ultra-fast music gen (<4GB VRAM)                  |
-| 8022                                     | JustDubit                | On-demand (GPU)    | TTS / audio synthesis                             |
-| 8023                                     | SoulX-Singer             | On-demand (GPU)    | AI singing voice synthesis                        |
-| 8024                                     | DeepGen 1.0              | On-demand (GPU)    | Image generation                                  |
-| 8025                                     | Dolphin Vision 7B        | On-demand (GPU)    | Uncensored VLM image Q&A                          |
-| 8026                                     | Dragon Audio Workstation | On-demand (GPU)    | Enhance+48kHz, Stems, Dereverb, ASR, /editor/     |
-| 8027                                     | Foundation-1             | On-demand (GPU)    | Music generation                                  |
-| 8028                                     | LTX-Video 0.9.8-13B      | On-demand (GPU)    | T2V+I2V, 7-step distilled, 3-pass upscale         |
-| 8029                                     | Dragonsong               | On-demand          | Lyria RealTime music — live steering + record     |
-| 8030                                     | Horse Racing v2          | On-demand          | Win/Place/Show betting, parlay, AI opponents      |
-| 8031                                     | Interactive Games        | On-demand          | Survival Series, Lunar Reckoning, text adventures |
-| 8032                                     | M.U.L.E.                 | On-demand          | Economic strategy game                            |
-| 8033                                     | Concert Shirt            | On-demand          | Ticket OCR to concert list to print-on-demand     |
-| 8035                                     | The Movies               | On-demand          | AI film studio — Nano Banana 2 + Veo + Lyria      |
-| 8036                                     | Mercury2 Diffusion Chat  | On-demand          | Inception Labs diffusion LLM                      |
-| 8037                                     | TADA TTS                 | On-demand (GPU)    | Hume AI voice cloning, 9 languages                |
-| 8038                                     | MatAnyone 2              | On-demand (GPU)    | Human video matting, click-to-select              |
-| 8039                                     | Linkding                 | On-demand          | Cross-browser bookmark manager (Docker)           |
-| 8041                                     | AI Toolkit               | On-demand (GPU)    | LoRA trainer for FLUX                             |
-| 8042                                     | Voxtral TTS              | On-demand (GPU)    | Mistral Voxtral-4B-TTS, 20 voices, 9 languages    |
-| 8043                                     | Gemma 4 12B              | On-demand          | Default 12B unified multimodal; E4B toggle, Ollama |
-| 8044                                     | Agentic Video Editor     | On-demand (GPU)    | 4-agent pipeline — Director/Trim/Editor/Review    |
-| 8045                                     | M.U.L.E. 3               | On-demand          | M.U.L.E. remake — canvas, AI opponents, auctions  |
-| 8046                                     | Dragonweyr               | On-demand          | Polymarket scout + Claude AI + CLOB execution     |
-| 8047                                     | Dragonweyr-Kalshi        | On-demand          | Kalshi scout + Claude AI + order execution        |
-| 8048                                     | Trading Dashboard        | On-demand          | Paper trading dashboard                           |
-| 8049                                     | VoxCPM2                  | On-demand (GPU)    | 2B diffusion TTS, 48kHz, 30+ languages            |
-| 8050                                     | Unsloth Studio           | On-demand (GPU)    | LLM fine-tuning — LoRA/QLoRA/RL                   |
-| 8051                                     | OmniVoice Studio         | On-demand (GPU)    | Cinematic dubbing — transcribe/translate/voice    |
-| 8052                                     | HiDream-O1-Image-Dev     | On-demand (GPU)    | Pixel-level unified 8B — T2I + editing            |
-| 8055                                     | Deep Cut Generator       | On-demand          | Typography POD concepts, print files, teasers     |
-| 8056                                     | ballpark-fingerprint     | Manual (Mac, not in Dragonsuite) | Personal FastAPI project; runs on 192.168.7.131, started manually |
-| 8057                                     | Odysseus                 | On-demand (Docker) | Self-hosted AI workspace: chat, agents, research, docs, email, calendar |
-| 8060                                     | Downloads Gallery        | Always-on (systemd) | Downloads + any service output folder via card chips; lightbox |
-| 8062                                     | Krea 2 Turbo             | On-demand (GPU)    | Krea 2 Turbo image generation + LoRA inference via stable-diffusion.cpp CUDA |
-| 8080                                     | Dragonsight 4.6          | On-demand (GPU)    | Vision AI + smart naming + Gemma 4 multimodal     |
-| 8100                                     | Dragonsuite Dashboard    | On-demand          | Central launcher hub (start here)                 |
-| **udragon always-on**                    |                          |                    |                                                   |
-| 11434                                    | Ollama API               | Always-on (systemd) | v0.30.6, official binary /usr/local/bin/ollama; MAX_LOADED_MODELS=1 |
-| 21115-21119                              | RustDesk Server          | Always-on (Docker) | hbbs+hbbr; clients use Tailscale 100.100.225.124  |
-| **minidragon (192.168.7.114) always-on** |                          |                    |                                                   |
-| 2283                                     | Immich                   | Always-on          | Photo/video library                               |
-| 4533                                     | Navidrome                | Always-on          | Music streaming, FLAC-native                      |
-| 8096                                     | Jellyfin                 | Always-on          | Movie/TV/music/photo, Intel QSV transcode         |
-| 8123                                     | Home Assistant           | Always-on          | Smart home automation                             |
-| 9000                                     | Portainer                | Always-on          | Docker management UI                              |
-| 25600                                    | Komga                    | Always-on          | Comics/ebooks — CBR/CBZ/EPUB/PDF                  |
+| Port                                     | Service                  | Type                             | Notes                                                                          |
+| ---------------------------------------- | ------------------------ | -------------------------------- | ------------------------------------------------------------------------------ |
+| 1234                                     | LM Studio API            | On-demand (manual)               |                                                                                |
+| 3000                                     | Remotion Studio          | Always-on (systemd)              | Video composition/render, remotion-test project                                |
+| 8001                                     | DragonFlux Klein         | On-demand (GPU)                  | FLUX.2-klein + FLUX.1-dev HD + LoRA                                            |
+| 8002                                     | WanGP2                   | On-demand (GPU)                  | Video generation (Wan 2.0)                                                     |
+| 8003                                     | Fish Speech              | On-demand (GPU)                  | Expressive TTS + voice cloning                                                 |
+| 8004                                     | HeartMuLa                | On-demand (GPU)                  | Music gen from lyrics (~12GB VRAM)                                             |
+| 8005                                     | SAM 2.1                  | On-demand (GPU)                  | Image/video segmentation                                                       |
+| 8006                                     | LivePortrait             | On-demand (GPU)                  | Portrait animation + expression transfer                                       |
+| 8007                                     | Hunyuan3D-2              | On-demand (GPU)                  | Image to 3D mesh                                                               |
+| 8008                                     | Z-Anime                  | On-demand (GPU)                  | Anime fine-tune of Z-Image Base, 6B S3-DiT                                     |
+| 8009                                     | Qwen3-TTS                | On-demand (GPU)                  | High-quality TTS + voice design                                                |
+| 8010                                     | Real-ESRGAN              | On-demand (GPU)                  | AI upscaling, multiple models                                                  |
+| 8011                                     | Z-Image Base             | On-demand (GPU)                  | Alibaba 6B text-to-image (Base/Turbo/Fast)                                     |
+| 8012                                     | Rembg                    | On-demand (GPU)                  | Background removal                                                             |
+| 8013                                     | Qwen-Image-Layered       | On-demand (GPU)                  | Layer decomposition for image editing                                          |
+| 8014                                     | Qwen3-Audiobook          | On-demand                        | Document to audiobook                                                          |
+| 8015                                     | DragonArt Studio         | Production                       | 70+ image modes + Street View capture (React)                                  |
+| 8016                                     | Wan2.1 T2V 1.3B          | On-demand (GPU)                  | T2V, sequential CPU offload, diffusers                                         |
+| 8017                                     | FaceFusion               | On-demand (GPU)                  | Face swap + enhancement                                                        |
+| 8018                                     | Creative Upscaler        | On-demand (GPU)                  | AI upscaling with style transfer                                               |
+| 8019                                     | Bonsai MLX Studio        | On-demand (Mac MLX)              | Apple Silicon image gen, frontend on 192.168.7.131; backend on :8040 same host |
+| 8020                                     | MCP Inspector            | On-demand                        | Security auditing for MCP servers                                              |
+| 8021                                     | ACE-Step 1.5 XL          | On-demand (GPU)                  | Ultra-fast music gen (<4GB VRAM)                                               |
+| 8022                                     | JustDubit                | On-demand (GPU)                  | TTS / audio synthesis                                                          |
+| 8023                                     | SoulX-Singer             | On-demand (GPU)                  | AI singing voice synthesis                                                     |
+| 8024                                     | DeepGen 1.0              | On-demand (GPU)                  | Image generation                                                               |
+| 8025                                     | Dolphin Vision 7B        | On-demand (GPU)                  | Uncensored VLM image Q&A                                                       |
+| 8026                                     | Dragon Audio Workstation | On-demand (GPU)                  | Enhance+48kHz, Stems, Dereverb, ASR, /editor/                                  |
+| 8027                                     | Foundation-1             | On-demand (GPU)                  | Music generation                                                               |
+| 8028                                     | LTX-Video 0.9.8-13B      | On-demand (GPU)                  | T2V+I2V, 7-step distilled, 3-pass upscale                                      |
+| 8029                                     | Dragonsong               | On-demand                        | Lyria RealTime music — live steering + record                                  |
+| 8030                                     | Horse Racing v2          | On-demand                        | Win/Place/Show betting, parlay, AI opponents                                   |
+| 8031                                     | Interactive Games        | On-demand                        | Survival Series, Lunar Reckoning, text adventures                              |
+| 8032                                     | M.U.L.E.                 | On-demand                        | Economic strategy game                                                         |
+| 8033                                     | Concert Shirt            | On-demand                        | Ticket OCR to concert list to print-on-demand                                  |
+| 8035                                     | The Movies               | On-demand                        | AI film studio — Nano Banana 2 + Veo + Lyria                                   |
+| 8036                                     | Mercury2 Diffusion Chat  | On-demand                        | Inception Labs diffusion LLM                                                   |
+| 8037                                     | TADA TTS                 | On-demand (GPU)                  | Hume AI voice cloning, 9 languages                                             |
+| 8038                                     | MatAnyone 2              | On-demand (GPU)                  | Human video matting, click-to-select                                           |
+| 8039                                     | Linkding                 | On-demand                        | Cross-browser bookmark manager (Docker)                                        |
+| 8041                                     | AI Toolkit               | On-demand (GPU)                  | LoRA trainer for FLUX                                                          |
+| 8042                                     | Voxtral TTS              | On-demand (GPU)                  | Mistral Voxtral-4B-TTS, 20 voices, 9 languages                                 |
+| 8043                                     | Gemma 4 12B              | On-demand                        | Default 12B unified multimodal; E4B toggle, Ollama                             |
+| 8044                                     | Agentic Video Editor     | On-demand (GPU)                  | 4-agent pipeline — Director/Trim/Editor/Review                                 |
+| 8045                                     | M.U.L.E. 3               | On-demand                        | M.U.L.E. remake — canvas, AI opponents, auctions                               |
+| 8046                                     | Dragonweyr               | On-demand                        | Polymarket scout + Claude AI + CLOB execution                                  |
+| 8047                                     | Dragonweyr-Kalshi        | On-demand                        | Kalshi scout + Claude AI + order execution                                     |
+| 8048                                     | Trading Dashboard        | On-demand                        | Paper trading dashboard                                                        |
+| 8049                                     | VoxCPM2                  | On-demand (GPU)                  | 2B diffusion TTS, 48kHz, 30+ languages                                         |
+| 8050                                     | Unsloth Studio           | On-demand (GPU)                  | LLM fine-tuning — LoRA/QLoRA/RL                                                |
+| 8051                                     | OmniVoice Studio         | On-demand (GPU)                  | Cinematic dubbing — transcribe/translate/voice                                 |
+| 8052                                     | HiDream-O1-Image-Dev     | On-demand (GPU)                  | Pixel-level unified 8B — T2I + editing                                         |
+| 8055                                     | Deep Cut Generator       | On-demand                        | Typography POD concepts, print files, teasers                                  |
+| 8056                                     | ballpark-fingerprint     | Manual (Mac, not in Dragonsuite) | Personal FastAPI project; runs on 192.168.7.131, started manually              |
+| 8057                                     | Odysseus                 | On-demand (Docker)               | Self-hosted AI workspace: chat, agents, research, docs, email, calendar        |
+| 8060                                     | Downloads Gallery        | Always-on (systemd)              | Downloads + any service output folder via card chips; lightbox                 |
+| 8062                                     | Krea 2 Turbo             | On-demand (GPU)                  | Krea 2 Turbo image generation + LoRA inference via stable-diffusion.cpp CUDA   |
+| 8080                                     | Dragonsight 4.6          | On-demand (GPU)                  | Vision AI + smart naming + Gemma 4 multimodal                                  |
+| 8100                                     | Dragonsuite Dashboard    | On-demand                        | Central launcher hub (start here)                                              |
+| **udragon always-on**                    |                          |                                  |                                                                                |
+| 11434                                    | Ollama API               | Always-on (systemd)              | v0.30.6, official binary /usr/local/bin/ollama; MAX_LOADED_MODELS=1            |
+| 21115-21119                              | RustDesk Server          | Always-on (Docker)               | hbbs+hbbr; clients use Tailscale 100.100.225.124                               |
+| **minidragon (192.168.7.114) always-on** |                          |                                  |                                                                                |
+| 2283                                     | Immich                   | Always-on                        | Photo/video library                                                            |
+| 4533                                     | Navidrome                | Always-on                        | Music streaming, FLAC-native                                                   |
+| 8096                                     | Jellyfin                 | Always-on                        | Movie/TV/music/photo, Intel QSV transcode                                      |
+| 8123                                     | Home Assistant           | Always-on                        | Smart home automation                                                          |
+| 9000                                     | Portainer                | Always-on                        | Docker management UI                                                           |
+| 25600                                    | Komga                    | Always-on                        | Comics/ebooks — CBR/CBZ/EPUB/PDF                                               |
 
 ## Quick Start
 
