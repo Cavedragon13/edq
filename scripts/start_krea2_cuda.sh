@@ -41,7 +41,7 @@ clear_port "$PORT"
 activate_venv venv_dragonsuite
 
 echo "Starting $SERVICE_NAME..."
-nohup python "$APP_DIR/krea2_runner.py" > /tmp/krea2_cuda_runner.log 2>&1 &
+nohup setsid bash -c 'exec python "$1"' _ "$APP_DIR/krea2_runner.py" > /tmp/krea2_cuda_runner.log 2>&1 &
 register_tool $!
 
 if wait_for_port "$PORT" 60; then
