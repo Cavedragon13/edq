@@ -37,6 +37,17 @@ set_pytorch_env
 export GRADIO_SERVER_NAME="0.0.0.0"
 export GRADIO_SERVER_PORT="$PORT"
 export FISH_SPEECH_OUTPUT_DIR="$OUTPUT_DIR"
+# S2-Pro's static KV cache defaults to the full 32768-token max_seq_len
+# (~4.5GB) regardless of actual request length — right at the edge of a
+# 16GB card once weights + decoder are loaded. 8192 still covers far more
+# than a typical TTS clip and frees ~3.4GB.
+export FISH_SPEECH_MAX_SEQ_LEN="${FISH_SPEECH_MAX_SEQ_LEN:-8192}"
+# The DAC decoder's 3 internal transformer sub-blocks each hardcode a
+# (32768x32768) bool causal_mask (~1GB each, ~3GB total) despite their own
+# configs using block_size 2048-8192. 16384 is 2x the largest documented
+# block_size — generous headroom for this deployment's short-clip TTS use,
+# while freeing ~2.6GB.
+export FISH_SPEECH_DAC_CAUSAL_MASK_SIZE="${FISH_SPEECH_DAC_CAUSAL_MASK_SIZE:-16384}"
 
 mkdir -p "$FISH_SPEECH_DIR/references"
 mkdir -p "$OUTPUT_DIR"
