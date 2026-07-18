@@ -337,7 +337,7 @@
       ],
       "stop_command": "pkill -f 'wgp.py' || true",
       "vram_gb": 14,
-      "output_dir": "/home/edq/ai_generated/wangp2"
+      "output_dir": "/home/edq/ai_generated/wan2gp"
     },
     {
       "id": "wan-1b",

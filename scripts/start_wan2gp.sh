@@ -17,7 +17,6 @@ activate_venv "$VENV"
 set_pytorch_env
 
 mkdir -p "$OUTPUT_DIR"
-export WAN2GP_OUTPUT_DIR="$OUTPUT_DIR"
 
 echo "Recommended models for 16GB VRAM:"
 echo "  - Wan 2.2 Ovi (6GB) - fastest"
