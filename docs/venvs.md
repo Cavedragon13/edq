@@ -42,6 +42,8 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_kalshi             | `/srv/containers/edq/venv_kalshi`                    | ~300MB | `start_kalshi.sh`                          | Kalshi scout + Claude proxy + RSA-auth order exec (8047)     |
 | venv_agentic_video      | `/srv/containers/edq/venv_agentic_video`             | ~3GB   | `start_agentic_video.sh`                   | Agentic Video Editor — 4-agent pipeline (port 8044)          |
 | venv_unsloth_studio     | `/srv/containers/edq/venv_unsloth_studio`            | ~8GB   | `start_unsloth_studio.sh`                  | Unsloth Studio — LoRA/QLoRA/RL LLM fine-tuning (port 8050)   |
+| venv_muscriptor         | `/srv/containers/edq/venv_muscriptor`                | ~7GB   | `start_muscriptor.sh`                      | MuScriptor audio→MIDI transcription, Kyutai 1.4B (port 8040) |
+| .venv (lucida)          | `/srv/containers/edq/projects/lucida/.venv`          | ~8GB   | `start_lucida.sh`                          | Lucida BG remover, BiRefNet fine-tune, uv project (8058)     |
 
 ## MCP Server Venvs
 
@@ -126,3 +128,5 @@ When removing a project:
 | 2026-05-04 | Updated `venv_zimage` — now shared with Z-Anime (port 8008); venv_zimage entry updated in registry                                                                                                                                                                                                                          |
 | 2026-06-11 | Removed orphans: `venv_lavasr` (7.6G) + `venv_streetview` (434M), Ideogram 4 (`venv_ideogram4` 5.2G), ACE-Step-1.5 (37G, superseded by XL), and Tier-3 pruned-service scripts (dragonglass/streetview/audiomass/lavasr/ltx2/gpu_monitor). DragonArt's Street View feature is self-contained and unaffected. ~50G reclaimed. |
 | 2026-06-28 | Added Docker-isolated Odysseus service for self-hosted AI workspace (port 8057, no Python venv)                                                                                                                                                                                                                             |
+| 2026-07-19 | Added `venv_muscriptor` for MuScriptor audio→MIDI transcription (port 8040) — models GATED on HF, access request pending user approval                                                                                                                                                                                       |
+| 2026-07-19 | Added uv-managed `.venv` in `projects/lucida` for Lucida background remover (port 8058) — torch overridden to cu128 post-sync; use `.venv` directly, NOT `uv run` (resync would restore locked CPU torch)                                                                                                                     |

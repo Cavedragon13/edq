@@ -67,6 +67,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8037                                     | TADA TTS                 | On-demand (GPU)                  | Hume AI voice cloning, 9 languages                                             |
 | 8038                                     | MatAnyone 2              | On-demand (GPU)                  | Human video matting, click-to-select                                           |
 | 8039                                     | Linkding                 | On-demand                        | Cross-browser bookmark manager (Docker)                                        |
+| 8040                                     | MuScriptor               | On-demand (GPU)                  | Music transcription audio→MIDI (Kyutai 1.4B), piano-roll web UI                |
 | 8041                                     | AI Toolkit               | On-demand (GPU)                  | LoRA trainer for FLUX                                                          |
 | 8042                                     | Voxtral TTS              | On-demand (GPU)                  | Mistral Voxtral-4B-TTS, 20 voices, 9 languages                                 |
 | 8043                                     | Gemma 4 12B              | On-demand                        | Default 12B unified multimodal; E4B toggle, Ollama                             |
@@ -82,6 +83,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8055                                     | Deep Cut Generator       | On-demand                        | Typography POD concepts, print files, teasers                                  |
 | 8056                                     | ballpark-fingerprint     | Manual (Mac, not in Dragonsuite) | Personal FastAPI project; runs on 192.168.7.131, started manually              |
 | 8057                                     | Odysseus                 | On-demand (Docker)               | Self-hosted AI workspace: chat, agents, research, docs, email, calendar        |
+| 8058                                     | Lucida BG Remover        | On-demand (GPU)                  | BG removal keeping glass/camouflage/text/glow (BiRefNet fine-tune)             |
 | 8060                                     | Downloads Gallery        | Always-on (systemd)              | Downloads + any service output folder via card chips; lightbox                 |
 | 8062                                     | Krea 2 Turbo             | On-demand (GPU)                  | Krea 2 Turbo image generation + LoRA inference via stable-diffusion.cpp CUDA   |
 | 8080                                     | Dragonsight 4.6          | On-demand (GPU)                  | Vision AI + smart naming + Gemma 4 multimodal                                  |
