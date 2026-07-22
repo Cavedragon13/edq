@@ -6,10 +6,10 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
-# Honest footprint — 1.4B transformer decoder. Estimate; re-measure once the
-# gated weights are downloadable and adjust.
+# Honest footprint — measured peak during a real transcription (large/1.4B
+# variant, fp32, batch_size=1): ~12GB used - ~1.2GB baseline ≈ 11GB. Rounded up.
 TOOL_NAME="muscriptor"
-REQ_VRAM_MIB=7000
+REQ_VRAM_MIB=11500
 REQ_RAM_MIB=6000
 source scripts/vram_guard.sh
 

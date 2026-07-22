@@ -1382,7 +1382,7 @@
                 "Multi-instrument"
             ],
             "stop_command": "pkill -f 'muscriptor_server.py' || true",
-            "vram_gb": 7.0,
+            "vram_gb": 12.0,
             "output_dir": "/home/edq/ai_generated/muscriptor"
         },
         {
