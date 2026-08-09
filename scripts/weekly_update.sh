@@ -57,14 +57,10 @@ log "--- Git repos: checking for upstream updates ---"
 
 PENDING_ROWS=""
 
-for repo_dir in "$PROJECT_DIR/projects"/*/; do
-    if [ ! -d "$repo_dir/.git" ]; then
-        continue
-    fi
-
-    repo_name=$(basename "$repo_dir")
-
+report_repo_status() {
+    local repo_dir="$1" repo_name="$2" pull_hint="$3"
     if git -C "$repo_dir" fetch --quiet 2>/dev/null; then
+        local behind current_sha
         behind=$(git -C "$repo_dir" rev-list HEAD..origin/HEAD --count 2>/dev/null || echo "?")
         current_sha=$(git -C "$repo_dir" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -76,12 +72,33 @@ for repo_dir in "$PROJECT_DIR/projects"/*/; do
             PENDING_ROWS+="| $repo_name | \`$current_sha\` | unknown | check manually |\n"
         else
             log "  🔄 $repo_name — $behind commit(s) available (current: $current_sha)"
-            PENDING_ROWS+="| $repo_name | \`$current_sha\` | **$behind commit(s) available** | \`git pull\` in projects/$repo_name |\n"
+            PENDING_ROWS+="| $repo_name | \`$current_sha\` | **$behind commit(s) available** | $pull_hint |\n"
         fi
     else
         log "  ⚠️  $repo_name — fetch failed (no remote or network issue)"
         PENDING_ROWS+="| $repo_name | unknown | fetch failed | check network/remote |\n"
     fi
+}
+
+for repo_dir in "$PROJECT_DIR/projects"/*/; do
+    [ -d "$repo_dir/.git" ] || continue
+    repo_name=$(basename "$repo_dir")
+    report_repo_status "$repo_dir" "$repo_name" "\`git pull\` in projects/$repo_name"
+done
+
+# Vendored/embedded source repos that live outside projects/*/ and are not
+# safe to auto-pull-and-relaunch via the Dragonsuite pass below (they need a
+# bespoke compile step, e.g. a CMake/CUDA rebuild, that the generic
+# requirements.txt-sync-and-relaunch flow doesn't know how to do). Report
+# only, same as the scan above, so drift is visible in the scorecard instead
+# of silently going unnoticed.
+declare -A EXTRA_REPOS=(
+    ["krea2-stable-diffusion-cpp"]="$PROJECT_DIR/krea2/src/stable-diffusion.cpp"
+)
+for repo_name in "${!EXTRA_REPOS[@]}"; do
+    repo_dir="${EXTRA_REPOS[$repo_name]}"
+    [ -d "$repo_dir/.git" ] || continue
+    report_repo_status "$repo_dir" "$repo_name" "manual rebuild — see krea2/src/stable-diffusion.cpp (git pull + submodule update + cmake --build build-cuda)"
 done
 
 # -------------------------------------------------------
@@ -248,6 +265,10 @@ declare -A VENVS=(
     ["tada"]="$PROJECT_DIR/venv_tada"
     ["matanyone2"]="$PROJECT_DIR/venv_matanyone2"
     ["flux2"]="$PROJECT_DIR/venv_flux2"
+    ["zimage"]="$PROJECT_DIR/venv_zimage"
+    ["qwen_image_layered"]="$PROJECT_DIR/venv_qwen_image_layered"
+    ["deepgen"]="$PROJECT_DIR/venv_deepgen"
+    ["hidream_o1"]="$PROJECT_DIR/venv_hidream_o1"
     ["dragonsuite"]="$PROJECT_DIR/venv_dragonsuite"
     ["wan_1b"]="$PROJECT_DIR/venv_wan_1b"
     ["ltxvideo"]="$PROJECT_DIR/venv_ltxvideo"

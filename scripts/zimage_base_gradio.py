@@ -495,7 +495,7 @@ def generate_image(
                 gen_kwargs["negative_prompt"] = negative_prompt
 
             if loaded_loras and lora_scale != 1.0:
-                gen_kwargs["cross_attention_kwargs"] = {"scale": lora_scale}
+                gen_kwargs["joint_attention_kwargs"] = {"scale": lora_scale}
 
         result = pipeline(**gen_kwargs)
         image = result.images[0]

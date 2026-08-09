@@ -31,8 +31,62 @@ REQUIRED_MODEL_FILES = [
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
+LORA_DIR = Path("/srv/containers/edq/models/loras/deepgen")
+LORA_DIR.mkdir(parents=True, exist_ok=True)
+
 pipe = None
 load_error = None
+loaded_loras = []
+
+
+def get_available_loras():
+    lora_files = []
+    for ext in ["*.safetensors", "*.bin", "*.pt"]:
+        lora_files.extend(LORA_DIR.glob(ext))
+        lora_files.extend(LORA_DIR.glob(f"**/{ext}"))
+    loras = ["None"]
+    for f in sorted(set(lora_files)):
+        try:
+            loras.append(str(f.relative_to(LORA_DIR)))
+        except ValueError:
+            loras.append(f.name)
+    return loras
+
+
+def apply_lora(lora_name, lora_scale=1.0):
+    """Load a LoRA onto the DeepGen transformer directly via PEFT.
+
+    DeepGenPipeline doesn't inherit SD3LoraLoaderMixin (no pipe.load_lora_weights),
+    but the transformer it wraps already mixes in diffusers' PeftAdapterMixin, so
+    LoRA adapters are loaded straight onto pipe.transformer instead.
+    """
+    global loaded_loras
+    if pipe is None:
+        return "Load model first"
+    if loaded_loras:
+        try:
+            pipe.transformer.unload_lora()
+        except Exception:
+            pass
+        loaded_loras = []
+    if lora_name == "None" or not lora_name:
+        return "No LoRA loaded"
+    lora_path = LORA_DIR / lora_name
+    if not lora_path.exists():
+        return f"LoRA not found: {lora_path}"
+    try:
+        from safetensors.torch import load_file
+        state_dict = load_file(str(lora_path))
+        pipe.transformer.load_lora_adapter(state_dict, prefix=None, adapter_name="default")
+        pipe.transformer.set_adapters(["default"], [lora_scale])
+        loaded_loras = [lora_name]
+        return f"LoRA loaded: {lora_name}"
+    except Exception as e:
+        return f"Error loading LoRA: {e}"
+
+
+def refresh_loras():
+    return gr.update(choices=get_available_loras())
 
 
 def clear_memory():
@@ -102,7 +156,7 @@ def save_image(image, prefix):
     return str(output_path)
 
 
-def generate_image(prompt, negative_prompt, width, height, steps, guidance_scale, seed, progress=gr.Progress()):
+def generate_image(prompt, negative_prompt, width, height, steps, guidance_scale, seed, lora_name, lora_scale, progress=gr.Progress()):
     if not prompt or not prompt.strip():
         return None, "Enter a prompt."
 
@@ -110,6 +164,8 @@ def generate_image(prompt, negative_prompt, width, height, steps, guidance_scale
     ok, message = load_pipeline()
     if not ok:
         return None, f"Failed to load model:\n{message}"
+
+    lora_status = apply_lora(lora_name, lora_scale)
 
     try:
         progress(0.15, desc="Generating...")
@@ -125,7 +181,10 @@ def generate_image(prompt, negative_prompt, width, height, steps, guidance_scale
         image = result.images[0]
         output_path = save_image(image, "deepgen")
         clear_memory()
-        return output_path, f"Saved: {output_path}"
+        status = f"Saved: {output_path}"
+        if loaded_loras:
+            status += f"\n{lora_status} (scale: {lora_scale})"
+        return output_path, status
     except Exception as exc:
         import traceback
 
@@ -133,7 +192,7 @@ def generate_image(prompt, negative_prompt, width, height, steps, guidance_scale
         return None, f"Error:\n{exc}\n\n{traceback.format_exc()}"
 
 
-def edit_image(source_image, prompt, negative_prompt, width, height, steps, guidance_scale, seed, progress=gr.Progress()):
+def edit_image(source_image, prompt, negative_prompt, width, height, steps, guidance_scale, seed, lora_name, lora_scale, progress=gr.Progress()):
     if source_image is None:
         return None, "Upload a source image."
     if not prompt or not prompt.strip():
@@ -143,6 +202,8 @@ def edit_image(source_image, prompt, negative_prompt, width, height, steps, guid
     ok, message = load_pipeline()
     if not ok:
         return None, f"Failed to load model:\n{message}"
+
+    lora_status = apply_lora(lora_name, lora_scale)
 
     try:
         if not isinstance(source_image, Image.Image):
@@ -163,7 +224,10 @@ def edit_image(source_image, prompt, negative_prompt, width, height, steps, guid
         image = result.images[0]
         output_path = save_image(image, "deepgen_edit")
         clear_memory()
-        return output_path, f"Saved: {output_path}"
+        status = f"Saved: {output_path}"
+        if loaded_loras:
+            status += f"\n{lora_status} (scale: {lora_scale})"
+        return output_path, status
     except Exception as exc:
         import traceback
 
@@ -188,6 +252,12 @@ with gr.Blocks(title="DeepGen 1.0") as demo:
                     t2i_steps = gr.Slider(label="Steps", minimum=10, maximum=60, value=30, step=5)
                     t2i_guidance = gr.Slider(label="Guidance", minimum=1.0, maximum=10.0, value=4.0, step=0.5)
                 t2i_seed = gr.Number(label="Seed", value=42, precision=0)
+                with gr.Accordion("LoRA Settings", open=False):
+                    with gr.Row():
+                        t2i_lora = gr.Dropdown(choices=get_available_loras(), value="None", label="LoRA", scale=3)
+                        t2i_lora_refresh = gr.Button("Refresh", scale=1, size="sm")
+                    t2i_lora_scale = gr.Slider(0.0, 2.0, value=0.8, step=0.05, label="LoRA Scale")
+                    gr.Markdown(f"Place LoRA files in: `{LORA_DIR}`")
                 t2i_button = gr.Button("Generate", variant="primary")
             with gr.Column():
                 t2i_output = gr.Image(label="Output", type="filepath")
@@ -195,10 +265,11 @@ with gr.Blocks(title="DeepGen 1.0") as demo:
 
         t2i_button.click(
             fn=generate_image,
-            inputs=[t2i_prompt, t2i_negative, t2i_width, t2i_height, t2i_steps, t2i_guidance, t2i_seed],
+            inputs=[t2i_prompt, t2i_negative, t2i_width, t2i_height, t2i_steps, t2i_guidance, t2i_seed, t2i_lora, t2i_lora_scale],
             outputs=[t2i_output, t2i_status],
             show_progress=True,
         )
+        t2i_lora_refresh.click(fn=refresh_loras, outputs=[t2i_lora])
 
     with gr.Tab("Image Editing"):
         with gr.Row():
@@ -213,6 +284,12 @@ with gr.Blocks(title="DeepGen 1.0") as demo:
                     edit_steps = gr.Slider(label="Steps", minimum=10, maximum=60, value=30, step=5)
                     edit_guidance = gr.Slider(label="Guidance", minimum=1.0, maximum=10.0, value=4.0, step=0.5)
                 edit_seed = gr.Number(label="Seed", value=42, precision=0)
+                with gr.Accordion("LoRA Settings", open=False):
+                    with gr.Row():
+                        edit_lora = gr.Dropdown(choices=get_available_loras(), value="None", label="LoRA", scale=3)
+                        edit_lora_refresh = gr.Button("Refresh", scale=1, size="sm")
+                    edit_lora_scale = gr.Slider(0.0, 2.0, value=0.8, step=0.05, label="LoRA Scale")
+                    gr.Markdown(f"Place LoRA files in: `{LORA_DIR}`")
                 edit_button = gr.Button("Edit", variant="primary")
             with gr.Column():
                 edit_output = gr.Image(label="Output", type="filepath")
@@ -220,10 +297,11 @@ with gr.Blocks(title="DeepGen 1.0") as demo:
 
         edit_button.click(
             fn=edit_image,
-            inputs=[edit_source, edit_prompt, edit_negative, edit_width, edit_height, edit_steps, edit_guidance, edit_seed],
+            inputs=[edit_source, edit_prompt, edit_negative, edit_width, edit_height, edit_steps, edit_guidance, edit_seed, edit_lora, edit_lora_scale],
             outputs=[edit_output, edit_status],
             show_progress=True,
         )
+        edit_lora_refresh.click(fn=refresh_loras, outputs=[edit_lora])
 
 
 if __name__ == "__main__":

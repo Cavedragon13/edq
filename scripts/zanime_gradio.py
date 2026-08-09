@@ -27,6 +27,52 @@ PORT = 8008
 MODEL_MODE = "Diffusers Base BF16"
 MODEL_NOTE = "Uses SeeSee21/Z-Anime/diffusers. AIO files are ComfyUI-only."
 
+# Z-Anime is a fine-tune of Z-Image Base and loads through the same
+# ZImagePipeline class, so it shares the Z-Image Base LoRA folder instead of
+# needing its own copies.
+LORA_DIR = Path("/srv/containers/edq/models/loras/zimage")
+LORA_DIR.mkdir(parents=True, exist_ok=True)
+loaded_loras = []
+
+
+def get_available_loras():
+    lora_files = []
+    for ext in ["*.safetensors", "*.bin", "*.pt"]:
+        lora_files.extend(LORA_DIR.glob(ext))
+        lora_files.extend(LORA_DIR.glob(f"**/{ext}"))
+    loras = ["None"]
+    for f in sorted(set(lora_files)):
+        try:
+            loras.append(str(f.relative_to(LORA_DIR)))
+        except ValueError:
+            loras.append(f.name)
+    return loras
+
+
+def apply_lora(pipe, lora_name):
+    global loaded_loras
+    if loaded_loras:
+        try:
+            pipe.unload_lora_weights()
+        except Exception:
+            pass
+        loaded_loras = []
+    if lora_name == "None" or not lora_name:
+        return "No LoRA loaded"
+    lora_path = LORA_DIR / lora_name
+    if not lora_path.exists():
+        return f"LoRA not found: {lora_path}"
+    try:
+        pipe.load_lora_weights(str(lora_path))
+        loaded_loras = [lora_name]
+        return f"LoRA loaded: {lora_name}"
+    except Exception as e:
+        return f"Error loading LoRA: {e}"
+
+
+def refresh_loras():
+    return gr.update(choices=get_available_loras())
+
 RESOLUTIONS = {
     "Portrait / Character (832×1216)":  (832, 1216),
     "Landscape / Scene (1216×832)":     (1216, 832),
@@ -74,15 +120,16 @@ def get_pipe():
     return _pipe
 
 
-def generate(prompt, negative, resolution, steps, cfg, seed):
+def generate(prompt, negative, resolution, steps, cfg, seed, lora_name, lora_scale):
     w, h = RESOLUTIONS[resolution]
     try:
         pipe = get_pipe()
     except Exception as e:
         return None, f"❌ Load failed: {e}"
+    lora_status = apply_lora(pipe, lora_name)
     generator = torch.Generator(device="cpu").manual_seed(int(seed))
     try:
-        result = pipe(
+        gen_kwargs = dict(
             prompt=prompt,
             negative_prompt=negative or "",
             width=w, height=h,
@@ -90,11 +137,16 @@ def generate(prompt, negative, resolution, steps, cfg, seed):
             guidance_scale=float(cfg),
             generator=generator,
         )
+        if loaded_loras and lora_scale != 1.0:
+            gen_kwargs["joint_attention_kwargs"] = {"scale": lora_scale}
+        result = pipe(**gen_kwargs)
         img = result.images[0]
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        out_path = OUTPUT_DIR / f"zanime_{ts}.png"
+        lora_suffix = f"_lora-{Path(lora_name).stem}" if loaded_loras else ""
+        out_path = OUTPUT_DIR / f"zanime_{ts}{lora_suffix}.png"
         img.save(out_path)
-        return str(out_path), f"✅ Saved: {out_path.name}\n{MODEL_MODE} · {w}×{h} · {steps} steps · CFG {cfg}"
+        lora_info = f"\n{lora_status}" + (f" (scale: {lora_scale})" if loaded_loras else "") if lora_name and lora_name != "None" else ""
+        return str(out_path), f"✅ Saved: {out_path.name}\n{MODEL_MODE} · {w}×{h} · {steps} steps · CFG {cfg}{lora_info}"
     except Exception as e:
         return None, f"❌ Generation failed: {e}"
 
@@ -133,14 +185,23 @@ with gr.Blocks(title="Z-Anime") as demo:
                 steps = gr.Slider(1, 60, value=40, step=1, label="Steps")
                 cfg   = gr.Slider(1.0, 9.0, value=4.0, step=0.5, label="CFG scale")
             seed    = gr.Number(value=42, label="Seed", precision=0)
+            with gr.Accordion("LoRA Settings", open=False):
+                with gr.Row():
+                    lora_dropdown = gr.Dropdown(choices=get_available_loras(), value="None",
+                                                label="LoRA (shared with Z-Image Base)", scale=3)
+                    refresh_btn = gr.Button("Refresh", scale=1, size="sm")
+                lora_scale = gr.Slider(0.0, 2.0, value=0.8, step=0.05, label="LoRA Scale")
+                gr.Markdown(f"Place LoRA files in: `{LORA_DIR}`")
             run_btn = gr.Button("Generate", variant="primary")
             gr.Markdown(f"`{MODEL_MODE}`\n\n{MODEL_NOTE}")
         with gr.Column(scale=1):
             output_img = gr.Image(label="Output", type="filepath")
             status     = gr.Textbox(label="Status", interactive=False)
 
+    refresh_btn.click(fn=refresh_loras, outputs=[lora_dropdown])
+
     run_btn.click(generate,
-                  inputs=[prompt, negative, resolution, steps, cfg, seed],
+                  inputs=[prompt, negative, resolution, steps, cfg, seed, lora_dropdown, lora_scale],
                   outputs=[output_img, status])
 
 if __name__ == "__main__":

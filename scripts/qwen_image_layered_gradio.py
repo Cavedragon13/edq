@@ -24,9 +24,52 @@ from PIL import Image
 OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/qwen-layered"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+LORA_DIR = Path("/srv/containers/edq/models/loras/qwen-image-layered")
+LORA_DIR.mkdir(parents=True, exist_ok=True)
+
 # Global state
 pipeline = None
+loaded_loras = []
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def get_available_loras():
+    lora_files = []
+    for ext in ["*.safetensors", "*.bin", "*.pt"]:
+        lora_files.extend(LORA_DIR.glob(ext))
+        lora_files.extend(LORA_DIR.glob(f"**/{ext}"))
+    loras = ["None"]
+    for f in sorted(set(lora_files)):
+        try:
+            loras.append(str(f.relative_to(LORA_DIR)))
+        except ValueError:
+            loras.append(f.name)
+    return loras
+
+
+def apply_lora(pipe, lora_name):
+    global loaded_loras
+    if loaded_loras:
+        try:
+            pipe.unload_lora_weights()
+        except Exception:
+            pass
+        loaded_loras = []
+    if lora_name == "None" or not lora_name:
+        return "No LoRA loaded"
+    lora_path = LORA_DIR / lora_name
+    if not lora_path.exists():
+        return f"LoRA not found: {lora_path}"
+    try:
+        pipe.load_lora_weights(str(lora_path))
+        loaded_loras = [lora_name]
+        return f"LoRA loaded: {lora_name}"
+    except Exception as e:
+        return f"Error loading LoRA: {e}"
+
+
+def refresh_loras():
+    return gr.update(choices=get_available_loras())
 
 # Dragon favicon as base64 SVG
 DRAGON_FAVICON = """
@@ -85,12 +128,15 @@ def load_pipeline():
 
 def decompose_image(
     image: Image.Image,
+    prompt: str,
     layers: int,
     resolution: int,
     cfg_scale: float,
     steps: int,
     seed: int,
     use_random_seed: bool,
+    lora_name: str,
+    lora_scale: float,
     progress=gr.Progress(track_tqdm=True),
 ) -> tuple:
     """Decompose an image into multiple layers."""
@@ -100,6 +146,7 @@ def decompose_image(
     try:
         # Load pipeline if needed
         pipe = load_pipeline()
+        lora_status = apply_lora(pipe, lora_name)
 
         # Convert to RGBA if needed
         if image.mode != "RGBA":
@@ -119,19 +166,25 @@ def decompose_image(
             torch.cuda.empty_cache()
 
         # Run pipeline
+        gen_kwargs = dict(
+            image=image,
+            layers=layers,
+            resolution=resolution,
+            true_cfg_scale=cfg_scale,
+            num_inference_steps=steps,
+            negative_prompt=" ",
+            cfg_normalize=True,
+            use_en_prompt=True,
+            generator=generator,
+            num_images_per_prompt=1,
+        )
+        if prompt and prompt.strip():
+            gen_kwargs["prompt"] = prompt.strip()
+        if loaded_loras and lora_scale != 1.0:
+            gen_kwargs["attention_kwargs"] = {"scale": lora_scale}
+
         with torch.inference_mode():
-            output = pipe(
-                image=image,
-                layers=layers,
-                resolution=resolution,
-                true_cfg_scale=cfg_scale,
-                num_inference_steps=steps,
-                negative_prompt=" ",
-                cfg_normalize=True,
-                use_en_prompt=True,
-                generator=generator,
-                num_images_per_prompt=1,
-            )
+            output = pipe(**gen_kwargs)
 
         layer_images = output.images[0]  # List of PIL RGBA images
 
@@ -200,6 +253,8 @@ def decompose_image(
         status = f"Decomposed into {len(layer_images)} layers\n"
         status += f"Seed: {seed}\n"
         status += f"Saved to: {run_dir}\n"
+        if loaded_loras:
+            status += f"{lora_status} (scale: {lora_scale})\n"
         if pptx_path:
             status += f"PPTX: {pptx_path.name}"
 
@@ -220,10 +275,11 @@ def decompose_image(
 
 def clear_memory():
     """Clear GPU memory."""
-    global pipeline
+    global pipeline, loaded_loras
     if pipeline is not None:
         del pipeline
         pipeline = None
+    loaded_loras = []
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -253,6 +309,22 @@ def create_interface():
                     type="pil",
                     sources=["upload", "clipboard"],
                 )
+
+                prompt = gr.Textbox(
+                    label="Prompt (optional)",
+                    placeholder="Guide the decomposition, e.g. 'separate the subject from the background'",
+                    lines=2,
+                )
+
+                with gr.Accordion("LoRA Settings", open=False):
+                    with gr.Row():
+                        lora_dropdown = gr.Dropdown(
+                            choices=get_available_loras(), value="None",
+                            label="LoRA", scale=3,
+                        )
+                        refresh_btn = gr.Button("Refresh", scale=1, size="sm")
+                    lora_scale = gr.Slider(0.0, 2.0, value=0.8, step=0.05, label="LoRA Scale")
+                    gr.Markdown(f"Place LoRA files in: `{LORA_DIR}`")
 
                 with gr.Row():
                     layers = gr.Slider(
@@ -328,12 +400,15 @@ def create_interface():
             fn=decompose_image,
             inputs=[
                 input_image,
+                prompt,
                 layers,
                 resolution,
                 cfg_scale,
                 steps,
                 seed,
                 use_random_seed,
+                lora_dropdown,
+                lora_scale,
             ],
             outputs=[gallery, zip_file, pptx_file, status_text],
         )
@@ -342,6 +417,8 @@ def create_interface():
             fn=clear_memory,
             outputs=[status_text],
         )
+
+        refresh_btn.click(fn=refresh_loras, outputs=[lora_dropdown])
 
         gr.HTML(f"""
         <div style="text-align: center; margin-top: 1rem; padding: 1rem; background: #faf5ff; border-radius: 8px;">
