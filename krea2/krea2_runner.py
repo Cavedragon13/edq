@@ -303,7 +303,7 @@ def build_command(payload: dict, out_path: Path, init_image_path: Path | None = 
     seed = clamp_int(payload.get("seed"), -1, -1, 2147483647)
     batch_count = batch_count_for_payload(payload, img2img=init_image_path is not None)
     cfg = clamp_float(payload.get("cfg_scale"), 1.0, 0.0, 20.0)
-    flow_shift = clamp_float(payload.get("flow_shift"), 1.15, 0.0, 10.0)
+    flow_shift = clamp_float(payload.get("flow_shift"), 1.15, 0.0, 3.0)
     sampler = str(payload.get("sampler") or "euler").strip()
     lora_apply_mode = str(payload.get("lora_apply_mode") or "auto").strip()
     if lora_apply_mode not in LORA_APPLY_MODES:
@@ -539,7 +539,7 @@ button,.link-button{background:var(--accent);color:#041018;border:0;border-radiu
       </div>
       <div class="row">
         <div><label for="cfg">CFG</label><input id="cfg" type="number" value="1" min="0" max="20" step="0.1"></div>
-        <div><label for="shift">Flow shift</label><input id="shift" type="number" value="1.15" min="0" max="10" step="0.05"></div>
+        <div><label for="shift">Flow shift</label><input id="shift" type="number" value="1.15" min="0" max="3" step="0.05" title="Krea2 looks right around 1.0-1.3. Values near the old max of 10 badly degrade output (visible noise/texture overlay, melted detail) — this ceiling is lowered to make that hard to hit by accident."></div>
       </div>
       <details>
         <summary>Advanced</summary>
