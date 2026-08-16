@@ -1404,6 +1404,26 @@
             "stop_command": "pkill -f 'uvicorn serving.app:app' || true",
             "vram_gb": 6.0,
             "output_dir": "/home/edq/ai_generated/lucida"
+        },
+        {
+            "id": "ltx25",
+            "name": "LTX-2.5",
+            "description": "Lightricks LTX-2.5 distilled \u2014 joint audio+video generation (GGUF, diffusers, non-Comfy)",
+            "category": "video",
+            "port": 8063,
+            "path": "/",
+            "icon": "&#127916;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_ltx25.sh",
+            "project_path": null,
+            "features": [
+                "Text-to-Video+Audio",
+                "Distilled few-step",
+                "Q3_K_M GGUF",
+                "Ollama prompt enhance"
+            ],
+            "stop_command": "pkill -f 'ltx25_server.py' || true",
+            "vram_gb": 14.0,
+            "output_dir": "/home/edq/ai_generated/ltx25"
         }
     ],
     "categories": {

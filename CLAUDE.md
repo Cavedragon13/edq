@@ -86,6 +86,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8058                                     | Lucida BG Remover        | On-demand (GPU)                  | BG removal keeping glass/camouflage/text/glow (BiRefNet fine-tune)             |
 | 8060                                     | Downloads Gallery        | Always-on (systemd)              | Downloads + any service output folder via card chips; lightbox                 |
 | 8062                                     | Krea 2 Turbo             | On-demand (GPU)                  | Krea 2 Turbo image generation + LoRA inference via stable-diffusion.cpp CUDA   |
+| 8063                                     | LTX-2.5                  | On-demand (GPU)                  | Lightricks distilled audio+video gen, GGUF + diffusers (non-Comfy)             |
 | 8080                                     | Dragonsight 4.6          | On-demand (GPU)                  | Vision AI + smart naming + Gemma 4 multimodal                                  |
 | 8100                                     | Dragonsuite Dashboard    | On-demand                        | Central launcher hub (start here)                                              |
 | **udragon always-on**                    |                          |                                  |                                                                                |

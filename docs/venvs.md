@@ -44,6 +44,7 @@ Centralized tracking of Python virtual environments in this workspace.
 | venv_unsloth_studio     | `/srv/containers/edq/venv_unsloth_studio`            | ~8GB   | `start_unsloth_studio.sh`                  | Unsloth Studio — LoRA/QLoRA/RL LLM fine-tuning (port 8050)   |
 | venv_muscriptor         | `/srv/containers/edq/venv_muscriptor`                | ~7GB   | `start_muscriptor.sh`                      | MuScriptor audio→MIDI transcription, Kyutai 1.4B (port 8040) |
 | .venv (lucida)          | `/srv/containers/edq/projects/lucida/.venv`          | ~8GB   | `start_lucida.sh`                          | Lucida BG remover, BiRefNet fine-tune, uv project (8058)     |
+| venv_ltx25              | `/srv/containers/edq/venv_ltx25`                     | ~9GB   | `start_ltx25.sh`                           | LTX-2.5 distilled audio+video, GGUF + diffusers-git (8063)   |
 
 ## MCP Server Venvs
 
@@ -130,3 +131,4 @@ When removing a project:
 | 2026-06-28 | Added Docker-isolated Odysseus service for self-hosted AI workspace (port 8057, no Python venv)                                                                                                                                                                                                                             |
 | 2026-07-19 | Added `venv_muscriptor` for MuScriptor audio→MIDI transcription (port 8040) — models GATED on HF, access request pending user approval                                                                                                                                                                                      |
 | 2026-07-19 | Added uv-managed `.venv` in `projects/lucida` for Lucida background remover (port 8058) — torch overridden to cu128 post-sync; use `.venv` directly, NOT `uv run` (resync would restore locked CPU torch)                                                                                                                   |
+| 2026-08-15 | Added `venv_ltx25` for LTX-2.5 distilled audio+video (port 8063) — diffusers installed from git (LTX-2.5 not in a release yet); Q3_K_M GGUF transformer; Diffusers repo gated separately from base LTX-2.5                                                                                                                  |
