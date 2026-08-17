@@ -84,6 +84,7 @@ Guidance for Claude Code working in this personal AI development environment on 
 | 8056                                     | ballpark-fingerprint     | Manual (Mac, not in Dragonsuite) | Personal FastAPI project; runs on 192.168.7.131, started manually              |
 | 8057                                     | Odysseus                 | On-demand (Docker)               | Self-hosted AI workspace: chat, agents, research, docs, email, calendar        |
 | 8058                                     | Lucida BG Remover        | On-demand (GPU)                  | BG removal keeping glass/camouflage/text/glow (BiRefNet fine-tune)             |
+| 8059                                     | MiniMax Music 3          | On-demand (GPU)                  | Full-song generation from lyrics + description (diffusers, LM group-offload)   |
 | 8060                                     | Downloads Gallery        | Always-on (systemd)              | Downloads + any service output folder via card chips; lightbox                 |
 | 8062                                     | Krea 2 Turbo             | On-demand (GPU)                  | Krea 2 Turbo image generation + LoRA inference via stable-diffusion.cpp CUDA   |
 | 8063                                     | LTX-2.5                  | On-demand (GPU)                  | Lightricks distilled audio+video gen, GGUF + diffusers (non-Comfy)             |

@@ -18,6 +18,7 @@ import gc
 import json
 import threading
 import time
+import traceback
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -51,6 +52,42 @@ _jobs: dict = {}
 _pipe = None  # cached phase-B pipeline (transformer/vae/connectors/vocoder)
 
 
+def _patch_ltx2_transformer_conversion() -> None:
+    """Work around a diffusers-git bug (checked 2026-08-16, dev branch ahead of
+    any release) in convert_ltx2_transformer_to_diffusers: its adaln_single
+    handler only renames 'adaln_single.'->'time_embed.' and
+    'audio_adaln_single.'->'audio_time_embed.', but never renames the
+    LTX-2.5-only 'prompt_adaln_single.'/'audio_prompt_adaln_single.' prefixes
+    the checkpoint actually ships (LTX_2_0_TRANSFORMER_KEYS_RENAME_DICT
+    predates LTX-2.5's added prompt-conditioning adaln blocks). Left
+    unpatched, those 12 params stay on the meta device and from_single_file
+    crashes with "Cannot copy out of meta tensor; no data!". Model wants
+    'prompt_adaln.'/'audio_prompt_adaln.' (just drop '_single') — verified by
+    diffing GGUF tensor names against LTX2VideoTransformer3DModel's own
+    named_parameters().
+    """
+    from diffusers.loaders import single_file_model as sfm
+    from diffusers.loaders.single_file_utils import (
+        convert_ltx2_transformer_to_diffusers as _orig_convert,
+    )
+
+    def _patched(checkpoint, **kwargs):
+        result = _orig_convert(checkpoint, **kwargs)
+        for old_prefix, new_prefix in (
+            ("prompt_adaln_single.", "prompt_adaln."),
+            ("audio_prompt_adaln_single.", "audio_prompt_adaln."),
+        ):
+            for k in list(result.keys()):
+                if k.startswith(old_prefix):
+                    result[new_prefix + k[len(old_prefix):]] = result.pop(k)
+        return result
+
+    sfm.SINGLE_FILE_LOADABLE_CLASSES["LTX2VideoTransformer3DModel"]["checkpoint_mapping_fn"] = _patched
+
+
+_patch_ltx2_transformer_conversion()
+
+
 def _log(msg: str) -> None:
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
@@ -65,7 +102,11 @@ def enhance_prompt(prompt: str) -> str:
                 "system": ENHANCE_SYSTEM,
                 "prompt": prompt,
                 "stream": False,
-                "options": {"temperature": 0.7, "num_predict": 320},
+                # 320 silently produced empty output (done_reason="length" with
+                # zero chars) — this model needs more headroom to reach visible
+                # text; 700 verified clean (stops naturally around 140 tokens).
+                "options": {"temperature": 0.7, "num_predict": 700},
+                "keep_alive": 0,  # don't let Ollama hold VRAM into the GPU-heavy LTX phases
             },
             timeout=120,
         )
@@ -77,7 +118,7 @@ def enhance_prompt(prompt: str) -> str:
         return prompt
 
 
-def encode_prompt_4bit(prompt: str, negative_prompt: str, need_negative: bool):
+def encode_prompt_4bit(prompt: str, negative_prompt: str, need_negative: bool, max_sequence_length: int):
     """Load the Gemma text encoder in 4-bit, encode, free it, return embeds."""
     from diffusers import LTX2Pipeline
     from transformers import BitsAndBytesConfig
@@ -116,6 +157,7 @@ def encode_prompt_4bit(prompt: str, negative_prompt: str, need_negative: bool):
             negative_prompt=negative_prompt,
             do_classifier_free_guidance=need_negative,
             device="cuda",
+            max_sequence_length=max_sequence_length,
         )
     prompt_embeds = prompt_embeds.to("cpu")
     prompt_attention_mask = prompt_attention_mask.to("cpu")
@@ -148,12 +190,32 @@ def get_pipeline():
     _log("loading pipeline components...")
     # tokenizer stays loaded (32MB): __call__ reads its padding_side for the
     # connectors even when prompt_embeds are supplied.
+    #
+    # duration_head=None is load-bearing, not an optimization: enable_model_
+    # cpu_offload()'s hook chain evicts each component only when the NEXT
+    # component in model_cpu_offload_seq ("...connectors->duration_head->
+    # transformer->...") starts its forward. We always pass an explicit
+    # num_frames, so duration_head's forward never runs — its hook never
+    # fires, the connectors->transformer hand-off never happens, and
+    # connectors (3.17B bf16 params) stays stranded on GPU until transformer
+    # (10.63B params) tries to load on top of it and OOMs. Dropping
+    # duration_head entirely removes the dead link so transformer's hook
+    # evicts connectors directly. Verified 2026-08-16: with this pipeline,
+    # peak VRAM at 512x288/25f went from 15.77GB (OOM, card is 15.83GB) to
+    # 11.35GB (success) purely from this one change.
     pipe = LTX2Pipeline.from_pretrained(
         COMPONENTS_DIR,
         transformer=transformer,
         text_encoder=None,
+        duration_head=None,
         torch_dtype=torch.bfloat16,
     )
+    # enable_sequential_cpu_offload() is NOT an option here: accelerate's
+    # per-submodule hook init reconstructs GGUF-quantized params and drops
+    # their quant_type, crashing with KeyError inside
+    # diffusers/quantizers/gguf/utils.py (GGML_QUANT_SIZES[None]) — verified
+    # 2026-08-16 against this exact diffusers-git checkout. model_cpu_offload
+    # is the only offload mode compatible with GGUF transformers right now.
     pipe.enable_model_cpu_offload()
     pipe.vae.enable_tiling()
     _pipe = pipe
@@ -181,12 +243,29 @@ def run_generation(job_id: str, params: dict) -> None:
                 job["enhanced_prompt"] = prompt
 
             negative = params.get("negative_prompt") or DEFAULT_NEGATIVE_PROMPT
+            # Distilled inference is guidance-free: both scales default to 1.0.
+            # LTX2Pipeline.do_classifier_free_guidance is (guidance_scale>1) OR
+            # (audio_guidance_scale>1) — audio_guidance_scale defaults to 7.0 in
+            # __call__ if left unset, which would silently turn CFG back on and
+            # crash (our phase-B pipeline has text_encoder=None, so the
+            # pipeline can't auto-encode a negative prompt). Always pass both
+            # explicitly and gate on their OR, matching the property exactly.
             guidance_scale = float(params.get("guidance_scale", 1.0))
-            need_negative = guidance_scale > 1.0
+            audio_guidance_scale = float(params.get("audio_guidance_scale", 1.0))
+            need_negative = guidance_scale > 1.0 or audio_guidance_scale > 1.0
+
+            # Must be divisible by 128 (LTX2TextConnectors' learnable-register
+            # constraint). 384 covers the prompt enhancer's 200-word/~320-token
+            # cap with headroom; 1024 (the pipeline default) is needless
+            # overkill that meaningfully inflates cross-attention memory at
+            # our card's 16GB ceiling.
+            max_sequence_length = int(params.get("max_sequence_length", 384))
 
             job["stage"] = "encoding prompt (4-bit Gemma)"
             with gpu_runtime.oom_guard("text encoding"):
-                (pe, pam, npe, npam) = encode_prompt_4bit(prompt, negative, need_negative)
+                (pe, pam, npe, npam) = encode_prompt_4bit(
+                    prompt, negative, need_negative, max_sequence_length
+                )
 
             job["stage"] = "loading pipeline"
             pipe = get_pipeline()
@@ -208,6 +287,8 @@ def run_generation(job_id: str, params: dict) -> None:
                     frame_rate=24.0,
                     sigmas=DISTILLED_SIGMA_VALUES,
                     guidance_scale=guidance_scale,
+                    audio_guidance_scale=audio_guidance_scale,
+                    max_sequence_length=max_sequence_length,
                     generator=generator,
                     output_type="pil",
                 )
@@ -245,7 +326,7 @@ def run_generation(job_id: str, params: dict) -> None:
         _log(f"generation failed: {e}")
     except Exception as e:  # noqa: BLE001
         job.update(status="error", error=f"{type(e).__name__}: {e}", stage="failed")
-        _log(f"generation failed: {type(e).__name__}: {e}")
+        _log(f"generation failed: {type(e).__name__}: {e}\n{traceback.format_exc()}")
 
 
 @app.post("/api/generate")

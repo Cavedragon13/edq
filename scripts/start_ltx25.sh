@@ -5,9 +5,11 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
-# Honest footprint: Q3_K_M GGUF transformer (~13GB resident) + activations.
-# Text encoder runs 4-bit and is freed before denoising, so peak is the
-# transformer phase. Measured after first real generation — adjust if needed.
+# Honest footprint — VERIFIED 2026-08-16 via nvidia-smi during a real
+# generation at default settings (960x544, 121 frames/5s, prompt enhance on):
+# measured peak 13533MiB. Text encoder runs 4-bit and is freed before the
+# transformer loads, so the peak is entirely the denoising phase. 14500 keeps
+# ~1GB of margin above the measured number.
 TOOL_NAME="ltx25"
 REQ_VRAM_MIB=14500
 REQ_RAM_MIB=12000
