@@ -39,7 +39,7 @@ def clear_memory():
 
 
 def check_model():
-    if not (MODELS_DIR / "model_index.json").exists():
+    if not (MODELS_DIR / "modular_model_index.json").exists():
         return (
             "MiniMax Music 3 model files not found.\n"
             "Run: bash scripts/download_minimax_music3_models.sh"
@@ -67,7 +67,14 @@ def load_pipeline():
         manager = ComponentsManager()
         manager.enable_auto_cpu_offload(device="cuda")
         p = ModularPipeline.from_pretrained(str(MODELS_DIR), components_manager=manager)
-        p.load_components(dtype=torch.bfloat16)
+        # modular_model_index.json hardcodes the original hub repo id per component, so
+        # load_components() would otherwise call out to the Hub for each one. Override with
+        # our local dir (applies to every component; per-component `subfolder` is untouched).
+        p.load_components(
+            dtype=torch.bfloat16,
+            pretrained_model_name_or_path=str(MODELS_DIR),
+            local_files_only=True,
+        )
 
         apply_group_offloading(
             p.language_model,

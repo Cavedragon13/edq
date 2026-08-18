@@ -18,7 +18,7 @@ OUTPUT_DIR="$HOME/ai_generated/minimax-music3"
 
 service_header "$SERVICE_NAME" "$PORT"
 
-if [ ! -f "$MODELS_DIR/model_index.json" ]; then
+if [ ! -f "$MODELS_DIR/modular_model_index.json" ]; then
     echo "❌ Model not found: $MODELS_DIR"
     echo "   Run: bash scripts/download_minimax_music3_models.sh"
     exit 1
