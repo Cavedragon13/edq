@@ -1124,6 +1124,8 @@
       "category": "image",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_ai_toolkit.sh",
       "stop_command": "pkill -f 'flux_train_ui' || pkill -f 'start_ai_toolkit' || true",
+      "project_path": "/srv/containers/edq/projects/ai-toolkit",
+      "vram_gb": 12,
       "output_dir": "/home/edq/ai_generated/ai-toolkit"
     },
     {
@@ -1225,6 +1227,7 @@
       "icon": "&#127909;",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_omnivoice_studio.sh",
       "stop_command": "pkill -f 'uvicorn backend.main:app.*--port 8051' || true",
+      "project_path": "/srv/containers/edq/projects/omnivoice-studio",
       "features": [
         "Video Dub",
         "Stem Split",
@@ -1444,6 +1447,26 @@
       "stop_command": "pkill -f 'minimax_music3_server.py' || true",
       "vram_gb": 9.0,
       "output_dir": "/home/edq/ai_generated/minimax-music3"
+    },
+    {
+      "id": "minimax-music3-mlx",
+      "name": "MiniMax Music 3 (MLX / odragon)",
+      "description": "Same model, MLX-native on odragon (Mac Mini M4 Pro) via mlx-serve's Zig engine — no VRAM/RAM crash risk, ~8.8x realtime measured 2026-08-19",
+      "category": "music",
+      "port": 11234,
+      "path": "/",
+      "status_host": "odragon.local",
+      "url_host": "odragon.local",
+      "icon": "&#127928;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_minimax_music3_mlx.sh",
+      "project_path": null,
+      "features": [
+        "Runs on odragon, not udragon GPU",
+        "MLX unified memory — no CPU-offload speed penalty",
+        "API-only for now — no dedicated UI yet",
+        "POST /v1/audio/music-generations"
+      ],
+      "stop_command": "cd /srv/containers/edq && bash scripts/stop_minimax_music3_mlx.sh"
     }
   ],
   "categories": {

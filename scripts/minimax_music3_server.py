@@ -81,6 +81,7 @@ def load_pipeline():
             onload_device=torch.device("cuda"),
             offload_type="leaf_level",
             use_stream=True,
+            low_cpu_mem_usage=True,
         )
 
         pipe = p
