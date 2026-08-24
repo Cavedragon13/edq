@@ -4,6 +4,18 @@
       "command": "/srv/containers/edq/mcp-servers/dragonsuite/venv/bin/python",
       "args": ["/srv/containers/edq/mcp-servers/dragonsuite/server.py"],
       "description": "Manage Dragonsuite GPU services - start/stop services, check VRAM"
+    },
+    "comfy-mcp": {
+      "command": "/srv/containers/edq/venv_comfyui/bin/comfy-mcp",
+      "env": {
+        "COMFY_BIN": "/srv/containers/edq/venv_comfyui/bin/comfy"
+      },
+      "description": "Official Comfy Org local MCP server (thin wrapper over comfy-cli) — requires ComfyUI running via start_comfyui.sh"
+    },
+    "comfyui-mcp": {
+      "command": "npx",
+      "args": ["-y", "comfyui-mcp"],
+      "description": "Community MCP server (artokun) — full control plane: node-by-node graph editing, workflow authoring, model management. Auto-detects ComfyUI on :8188"
     }
   },
   "_pool": {

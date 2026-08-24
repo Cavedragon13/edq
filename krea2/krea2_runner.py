@@ -727,6 +727,21 @@ qs('initImage').onchange=(e)=>readSourceImage(e.target.files[0]);
 qs('clearInitImage').onclick=clearSourceImage;
 qs('matchInitSize').onclick=matchSourceSize;
 qs('strength').oninput=()=>{ qs('strengthValue').textContent=Number(qs('strength').value).toFixed(2); };
+function restrictDecimalDigits(el,maxIntDigits,maxDecDigits){
+  let v=el.value.replace(/[^0-9.]/g,'');
+  const firstDot=v.indexOf('.');
+  if(firstDot!==-1) v=v.slice(0,firstDot+1)+v.slice(firstDot+1).replace(/[.]/g,'');
+  const parts=v.split('.');
+  parts[0]=parts[0].slice(0,maxIntDigits);
+  if(parts.length>1) v=parts[0]+'.'+parts[1].slice(0,maxDecDigits);
+  else v=parts[0];
+  if(v!==el.value) el.value=v;
+}
+qs('shift').addEventListener('input',()=>restrictDecimalDigits(qs('shift'),1,2));
+qs('shift').addEventListener('blur',()=>{
+  const v=Math.min(3,Math.max(0,Number(qs('shift').value)||1.15));
+  qs('shift').value=v.toFixed(2);
+});
 refreshLoras().finally(refresh);
 </script>
 </body>

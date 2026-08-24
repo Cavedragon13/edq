@@ -1,0 +1,3 @@
+[mcp_servers.dragonsuite]
+command = "/srv/containers/edq/mcp-servers/dragonsuite/venv/bin/python"
+args = ["/srv/containers/edq/mcp-servers/dragonsuite/server.py"]

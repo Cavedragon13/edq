@@ -106,7 +106,7 @@ Read at session start and apply all rules.
 
 ## MCP Server Policy
 
-Default active: `dragonsuite` (project), `gbrain` + `sqlite` (user). Everything else is in `_pool` — move to `mcpServers` in `.mcp.json` and restart VSCodium to enable.
+Default active: `dragonsuite` (project), `gbrain` + `sqlite` (user), `comfy-mcp` + `comfyui-mcp` (project — added 2026-08-23, drive the local ComfyUI service directly; ComfyUI itself must be running via `start_comfyui.sh` first). Everything else is in `_pool` — move to `mcpServers` in `.mcp.json` and restart VSCodium to enable.
 
 | Server             | Enable for                                        |
 | ------------------ | ------------------------------------------------- |
