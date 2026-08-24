@@ -9,9 +9,25 @@ source scripts/dragonsuite_lib.sh
 # fast_vram_budget_gib=12 (see scripts/sensenova_server.py), so only a working
 # set of layers is resident at once. 13500 keeps margin above the 12GB budget
 # for activations; adjust after the first real generation is profiled.
+#
+# CONFIRMED INFEASIBLE on this machine as of 2026-08-24 — do not lower
+# REQ_RAM_MIB back down without new evidence. Two real launch attempts both
+# blew through available RAM into swap exhaustion and had to be killed:
+#   1) ~21GB available (normal desktop load) — swap maxed (7.97/8GB) at ~half
+#      the GGUF loaded, killed at ~90s.
+#   2) ~24.8GB available (after closing all but one Chrome tab) — got further,
+#      but swap still went from 2.7GB free to ~0 in a single 10s tick near the
+#      end and had to be killed.
+# gguf_loader.py's `torch.from_numpy(tensor.data.copy())` forces the full
+# ~20GB GGUF into real (non-file-backed) RAM regardless of vram_mode (that
+# flag is GPU-offload-only, not CPU-side) — see docs/venvs.md 2026-08-24 entry.
+# Real peak is estimated ~28-30GB given attempt #2 still failed with 24.8GB
+# free. REQ_RAM_MIB is set above the observed failure point specifically so
+# this launcher refuses rather than repeating the swap-exhaustion crash; do
+# not attempt to "fix" this by lowering it.
 TOOL_NAME="sensenova"
 REQ_VRAM_MIB=13500
-REQ_RAM_MIB=24000
+REQ_RAM_MIB=30000
 source scripts/vram_guard.sh
 
 SERVICE_NAME="SenseNova-U1.5-8B-MoT"
