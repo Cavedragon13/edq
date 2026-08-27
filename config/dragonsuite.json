@@ -1505,6 +1505,25 @@
             "stop_command": "pkill -f 'ComfyUI/main.py' || true",
             "vram_gb": 0,
             "output_dir": "/home/edq/ai_generated/comfyui"
+        },
+        {
+            "id": "drive-archaeology",
+            "name": "Drive Archaeology",
+            "description": "Image old PATA/SATA/USB drives with ddrescue, watch progress live, browse past runs",
+            "category": "utility",
+            "port": 8061,
+            "path": "/",
+            "icon": "&#128451;",
+            "launch_command": "bash scripts/start_drivearchaeology.sh",
+            "project_path": "/srv/containers/edq/drive-archaeology",
+            "features": [
+                "Live ddrescue progress via SSE",
+                "Device auto-detect (system disks hidden)",
+                "SMART capture",
+                "Run history with links to SMART reports"
+            ],
+            "stop_command": "pkill -f '/srv/containers/edq/venv_drivearchaeology/bin/uvicorn' || true",
+            "vram_gb": 0
         }
     ],
     "categories": {
