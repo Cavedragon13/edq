@@ -7,22 +7,31 @@ import hashlib
 import json
 import mimetypes
 import subprocess
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from PIL import Image
 
 DOWNLOADS = Path.home() / "Downloads"
 AI_GENERATED = Path.home() / "ai_generated"
 THUMB_CACHE = Path("/tmp/dl_thumbs")
+FAVORITES_FILE = Path.home() / ".dl_gallery_favorites.json"
 THUMB_SIZE = (320, 320)
 PORT = 8060
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff", ".tif", ".avif"}
 VIDEO_EXTS = {".mp4", ".webm", ".mov", ".mkv", ".avi", ".m4v"}
 MEDIA_EXTS = IMAGE_EXTS | VIDEO_EXTS
+FAVORITES_KEY = "__favorites__"
 
 THUMB_CACHE.mkdir(exist_ok=True)
+
+_fav_lock = threading.Lock()
+
+
+def normalize_root_key(key: str) -> str:
+    return key if key else "downloads"
 
 
 def resolve_root(key: str) -> Path | None:
@@ -33,6 +42,8 @@ def resolve_root(key: str) -> Path | None:
     BEFORE resolving, then resolve — output_dir entries are often symlinks into
     project dirs, so resolving first would push the target outside ~/ai_generated.
     """
+    if key == FAVORITES_KEY:
+        return AI_GENERATED  # sentinel; the favorites page never reads this directory directly
     if not key or key == "downloads":
         return DOWNLOADS
     if "/" in key or key in (".", ".."):
@@ -41,6 +52,42 @@ def resolve_root(key: str) -> Path | None:
     if not p.is_dir():
         return None
     return p.resolve()
+
+
+def list_output_roots() -> list[str]:
+    """All browsable ai_generated subfolders, for the in-gallery folder switcher."""
+    if not AI_GENERATED.is_dir():
+        return []
+    return sorted(p.name for p in AI_GENERATED.iterdir() if p.is_dir())
+
+
+def load_favorites() -> set[tuple[str, str]]:
+    if not FAVORITES_FILE.exists():
+        return set()
+    try:
+        data = json.loads(FAVORITES_FILE.read_text())
+        return {(rk, name) for rk, name in data}
+    except Exception:
+        return set()
+
+
+def save_favorites(favs: set[tuple[str, str]]) -> None:
+    FAVORITES_FILE.write_text(json.dumps(sorted(favs)))
+
+
+def toggle_favorite(root_key: str, name: str) -> bool:
+    """Flip favorite state for (root_key, name); returns the new state."""
+    key = (normalize_root_key(root_key), name)
+    with _fav_lock:
+        favs = load_favorites()
+        if key in favs:
+            favs.discard(key)
+            state = False
+        else:
+            favs.add(key)
+            state = True
+        save_favorites(favs)
+    return state
 
 
 def safe_path(name: str, root: Path) -> Path | None:
@@ -88,22 +135,53 @@ def make_video_thumb(src: Path) -> Path | None:
     return tp if tp.exists() else None
 
 
-def media_files(root: Path) -> list[dict]:
+def list_media(root_key: str, root: Path, favs: set[tuple[str, str]]) -> list[dict]:
+    """Media items for a page render. Each item carries its own 'root' so the
+    favorites view can aggregate files that live under different roots."""
+    if root_key == FAVORITES_KEY:
+        items = []
+        for rk, name in favs:
+            r = resolve_root(rk)
+            if r is None:
+                continue
+            src = safe_path(name, r)
+            if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
+                continue
+            items.append({
+                "name": name, "video": src.suffix.lower() in VIDEO_EXTS,
+                "root": rk, "fav": True, "_mtime": src.stat().st_mtime,
+            })
+        items.sort(key=lambda m: m["_mtime"], reverse=True)
+        for m in items:
+            del m["_mtime"]
+        return items
+
     files = [
         f for f in root.iterdir()
         if f.is_file() and f.suffix.lower() in MEDIA_EXTS
     ]
     files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
-    return [{"name": f.name, "video": f.suffix.lower() in VIDEO_EXTS} for f in files]
+    return [
+        {
+            "name": f.name, "video": f.suffix.lower() in VIDEO_EXTS,
+            "root": root_key, "fav": (root_key, f.name) in favs,
+        }
+        for f in files
+    ]
 
 
 def gallery_html(root_key: str, root: Path) -> bytes:
-    is_dl = root == DOWNLOADS
-    title = "Downloads Gallery" if is_dl else f"{root.name} — Gallery"
-    where = "~/Downloads" if is_dl else f"~/ai_generated/{root_key}"
-    media = media_files(root)
+    is_favorites = root_key == FAVORITES_KEY
+    is_dl = (not is_favorites) and root == DOWNLOADS
+    if is_favorites:
+        title = "★ Favorites"
+        where = "your favorites"
+    else:
+        title = "Downloads Gallery" if is_dl else f"{root.name} — Gallery"
+        where = "~/Downloads" if is_dl else f"~/ai_generated/{root_key}"
+    favs = load_favorites()
+    media = list_media(root_key, root, favs)
     media_json = json.dumps(media)
-    root_json = json.dumps(root_key)
     n_img = sum(1 for m in media if not m["video"])
     n_vid = sum(1 for m in media if m["video"])
 
@@ -118,10 +196,16 @@ def gallery_html(root_key: str, root: Path) -> bytes:
     for i, m in enumerate(media):
         name = m["name"]
         esc = name.replace("&", "&amp;").replace('"', "&quot;")
-        rq = f"?root={root_key}"
+        rq = f"?root={quote(m['root'])}"
+        star_cls = "star-btn favd" if m["fav"] else "star-btn"
+        star_html = (
+            f'<button class="{star_cls}" data-idx="{i}" '
+            f'onclick="event.stopPropagation();toggleFav({i})">&#9733;</button>'
+        )
         if m["video"]:
             cards.append(
                 f'<div class="card video-card" data-idx="{i}" onclick="openLb({i})">'
+                f'{star_html}'
                 f'<div class="thumb-wrap">'
                 f'<img src="/thumb/{esc}{rq}" loading="lazy" alt="{esc}">'
                 f'<div class="play-icon">&#9654;</div>'
@@ -132,12 +216,21 @@ def gallery_html(root_key: str, root: Path) -> bytes:
         else:
             cards.append(
                 f'<div class="card" data-idx="{i}" onclick="openLb({i})">'
+                f'{star_html}'
                 f'<img src="/thumb/{esc}{rq}" loading="lazy" alt="{esc}">'
                 f'<div class="label" title="{esc}">{esc}</div>'
                 f'</div>'
             )
 
     cards_html = "\n".join(cards) if cards else f"<p class='empty'>No media in {where}</p>"
+
+    switch_opts = [f'<option value="{FAVORITES_KEY}"{" selected" if root_key == FAVORITES_KEY else ""}>&#9733; Favorites</option>']
+    switch_opts.append(f'<option value="downloads"{" selected" if root_key in ("downloads", "") else ""}>&#128193; Downloads</option>')
+    for name in list_output_roots():
+        esc_name = name.replace("&", "&amp;").replace('"', "&quot;")
+        sel = " selected" if root_key == name else ""
+        switch_opts.append(f'<option value="{esc_name}"{sel}>&#128193; {esc_name}</option>')
+    switch_html = "\n".join(switch_opts)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -161,17 +254,28 @@ def gallery_html(root_key: str, root: Path) -> bytes:
   .btn-ss {{ background: #1a3a5a; border-color: #2a6a9a; color: #7ab8e8; }}
   .btn-ss:hover {{ background: #2a4a7a; }}
   .hidden {{ display: none !important; }}
+  select.btn {{ appearance: none; }}
 
   /* grid */
   .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
            gap: 10px; padding: 14px; }}
-  .card {{ background: #242424; border: 1px solid #2e2e2e; border-radius: 8px;
+  .card {{ position: relative; background: #242424; border: 1px solid #2e2e2e; border-radius: 8px;
            overflow: hidden; cursor: pointer; transition: border-color .15s, transform .15s; }}
   .card:hover {{ border-color: #555; transform: translateY(-2px); }}
   .card > img {{ width: 100%; height: 200px; object-fit: cover; display: block; background: #111; }}
   .label {{ padding: 7px 10px; font-size: 0.7rem; color: #888; white-space: nowrap;
             overflow: hidden; text-overflow: ellipsis; }}
   .empty {{ padding: 60px; text-align: center; color: #444; grid-column: 1/-1; }}
+
+  /* favorite star */
+  .star-btn {{ position: absolute; top: 6px; right: 6px; z-index: 2; width: 28px; height: 28px;
+               border-radius: 50%; border: none; background: rgba(0,0,0,.55); color: rgba(255,255,255,.5);
+               font-size: 1.05rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+               transition: background .15s, color .15s; }}
+  .star-btn:hover {{ background: rgba(0,0,0,.8); color: #ffd23f; }}
+  .star-btn.favd {{ color: #ffd23f; }}
+  #lb-fav {{ background: transparent; border: 1px solid #444; color: #999; font-size: 1rem; }}
+  #lb-fav.favd {{ color: #ffd23f; border-color: #7a6420; }}
 
   /* video card */
   .video-card .thumb-wrap {{ position: relative; width: 100%; height: 200px; background: #111; }}
@@ -223,6 +327,9 @@ def gallery_html(root_key: str, root: Path) -> bytes:
 
 <header>
   <h1>&#128193; {title}</h1>
+  <select class="btn" id="root-switch" onchange="switchRoot(this.value)">
+{switch_html}
+  </select>
   <span class="meta" id="hdr-meta">{count_text}</span>
   <button class="btn btn-ss" id="ss-btn" onclick="toggleSlideshow()">&#9654; Slideshow</button>
   <button class="btn" onclick="location.reload()">&#8635; Refresh</button>
@@ -241,6 +348,8 @@ def gallery_html(root_key: str, root: Path) -> bytes:
     <div id="lb-bar">
       <span id="lb-name"></span>
       <span id="lb-counter"></span>
+      <button id="lb-fav" class="lb-btn" onclick="toggleFav(cur)">&#9733; Favorite</button>
+      <button id="lb-ss-btn" class="lb-btn btn-ss" onclick="toggleSlideshow()">&#9654; Slideshow</button>
       <button id="lb-ss-pause" class="lb-btn hidden" onclick="toggleSsPause()">&#9646;&#9646; Pause</button>
       <button id="lb-del" class="lb-btn" onclick="deleteMedia()">&#128465; Delete</button>
     </div>
@@ -251,8 +360,8 @@ def gallery_html(root_key: str, root: Path) -> bytes:
 
 <script>
   const mediaItems = {media_json};
-  const ROOT_KEY = {root_json};
-  function rq(p) {{ return p + '?root=' + encodeURIComponent(ROOT_KEY); }}
+  function rq(p, item) {{ return p + '?root=' + encodeURIComponent(item.root); }}
+  function switchRoot(key) {{ location.href = '/?root=' + encodeURIComponent(key); }}
   let cur = 0;
   let ssActive = false;
   let ssPaused = false;
@@ -268,6 +377,8 @@ def gallery_html(root_key: str, root: Path) -> bytes:
   const lbPrev    = document.getElementById('lb-prev');
   const lbNext    = document.getElementById('lb-next');
   const lbSsPause = document.getElementById('lb-ss-pause');
+  const lbSsBtn   = document.getElementById('lb-ss-btn');
+  const lbFav     = document.getElementById('lb-fav');
   const ssBtn     = document.getElementById('ss-btn');
   const ssBar     = document.getElementById('ss-bar');
 
@@ -296,8 +407,8 @@ def gallery_html(root_key: str, root: Path) -> bytes:
       lbImg.src = '';
       lbVid.pause();
       lbVid.style.display = 'block';
-      lbVid.poster = rq('/thumb/' + encodeURIComponent(item.name));
-      lbVid.src = rq('/img/' + encodeURIComponent(item.name));
+      lbVid.poster = rq('/thumb/' + encodeURIComponent(item.name), item);
+      lbVid.src = rq('/img/' + encodeURIComponent(item.name), item);
       lbVid.load();
       lbVid.play().catch(function() {{}});
     }} else {{
@@ -305,13 +416,14 @@ def gallery_html(root_key: str, root: Path) -> bytes:
       lbVid.src = '';
       lbVid.style.display = 'none';
       lbImg.style.display = 'block';
-      lbImg.src = rq('/img/' + encodeURIComponent(item.name));
+      lbImg.src = rq('/img/' + encodeURIComponent(item.name), item);
     }}
 
     lbName.textContent = item.name;
     lbCtr.textContent = (cur + 1) + ' / ' + mediaItems.length;
     lbPrev.disabled = cur === 0;
     lbNext.disabled = cur === mediaItems.length - 1;
+    lbFav.classList.toggle('favd', !!item.fav);
 
     if (ssActive && !ssPaused) scheduleNext(item.video);
   }}
@@ -327,7 +439,7 @@ def gallery_html(root_key: str, root: Path) -> bytes:
     else {{
       ssActive = true;
       ssPaused = false;
-      ssBtn.textContent = '■ Stop';
+      updateSsButtons();
       lbSsPause.classList.remove('hidden');
       lbSsPause.textContent = '⏸ Pause';
       if (lb.classList.contains('hidden')) openLb(0);
@@ -340,8 +452,26 @@ def gallery_html(root_key: str, root: Path) -> bytes:
     ssActive = false;
     ssPaused = false;
     clearSsTimer();
-    ssBtn.textContent = '▶ Slideshow';
+    updateSsButtons();
     lbSsPause.classList.add('hidden');
+  }}
+
+  function updateSsButtons() {{
+    const label = ssActive ? '■ Stop' : '▶ Slideshow';
+    ssBtn.textContent = label;
+    lbSsBtn.textContent = label;
+  }}
+
+  /* ── favorite ── */
+  async function toggleFav(idx) {{
+    const item = mediaItems[idx];
+    const res = await fetch(rq('/favorite/' + encodeURIComponent(item.name), item), {{method: 'POST'}});
+    if (!res.ok) return;
+    const data = await res.json();
+    item.fav = data.favorited;
+    const starBtn = document.querySelector('.star-btn[data-idx="' + idx + '"]');
+    if (starBtn) starBtn.classList.toggle('favd', item.fav);
+    if (idx === cur) lbFav.classList.toggle('favd', item.fav);
   }}
 
   function toggleSsPause() {{
@@ -391,7 +521,7 @@ def gallery_html(root_key: str, root: Path) -> bytes:
   async function deleteMedia() {{
     const item = mediaItems[cur];
     if (!confirm('Delete ' + item.name + '?')) return;
-    const res = await fetch(rq('/delete/' + encodeURIComponent(item.name)), {{method: 'POST'}});
+    const res = await fetch(rq('/delete/' + encodeURIComponent(item.name), item), {{method: 'POST'}});
     if (!res.ok) {{ alert('Delete failed'); return; }}
 
     const card = document.querySelector('.card[data-idx="' + cur + '"]');
@@ -400,6 +530,11 @@ def gallery_html(root_key: str, root: Path) -> bytes:
     document.querySelectorAll('.card').forEach(function(c, i) {{
       c.dataset.idx = i;
       c.onclick = (function(idx) {{ return function() {{ openLb(idx); }}; }})(i);
+      const star = c.querySelector('.star-btn');
+      if (star) {{
+        star.dataset.idx = i;
+        star.onclick = (function(idx) {{ return function(e) {{ e.stopPropagation(); toggleFav(idx); }}; }})(i);
+      }}
     }});
 
     const ni = mediaItems.filter(function(m) {{ return !m.video; }}).length;
@@ -504,8 +639,14 @@ class Handler(BaseHTTPRequestHandler):
 
         if path in ("/", "/index.html"):
             self.send_bytes(gallery_html(root_key, root), "text/html; charset=utf-8")
+            return
 
-        elif path.startswith("/thumb/"):
+        if root_key == FAVORITES_KEY:
+            # asset routes always carry the item's real root; the aggregate
+            # favorites key is only valid for rendering the index page.
+            self.send_error(404); return
+
+        if path.startswith("/thumb/"):
             src = safe_path(path[7:], root)
             if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
                 self.send_error(404); return
@@ -538,16 +679,33 @@ class Handler(BaseHTTPRequestHandler):
         rr = self.root_for_request()
         if rr is None:
             self.send_error(404); return
-        _, root = rr
+        root_key, root = rr
+        if root_key == FAVORITES_KEY:
+            self.send_error(404); return
 
         if path.startswith("/delete/"):
             src = safe_path(path[8:], root)
             if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
                 self.send_error(404); return
+            name = path[8:]
             src.unlink()
+            with _fav_lock:
+                favs = load_favorites()
+                key = (normalize_root_key(root_key), name)
+                if key in favs:
+                    favs.discard(key)
+                    save_favorites(favs)
             self.send_response(200)
             self.send_header("Content-Length", "0")
             self.end_headers()
+
+        elif path.startswith("/favorite/"):
+            name = path[10:]
+            src = safe_path(name, root)
+            if not src or not src.is_file() or src.suffix.lower() not in MEDIA_EXTS:
+                self.send_error(404); return
+            state = toggle_favorite(root_key, name)
+            self.send_bytes(json.dumps({"favorited": state}).encode(), "application/json")
 
         else:
             self.send_error(404)

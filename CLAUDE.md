@@ -89,7 +89,7 @@ Central `.env` at `/srv/containers/edq/.env` — load with `from dotenv import l
 
 **New service checklist** (use `dragonsuite-add` skill):
 
-- Standalone-first by default. If the model sort-of fits into WanGP or another existing multi-model app, that's an option to *propose*, not a silent default — reuse is agent-convenient, not automatically user-convenient. Ask.
+- Standalone-first by default. If the model sort-of fits into WanGP or another existing multi-model app, that's an option to _propose_, not a silent default — reuse is agent-convenient, not automatically user-convenient. Ask.
 - venv at `venv_<service>` + entry in `docs/venvs.md`
 - start script in `scripts/`, stop_command in `config/dragonsuite.json`
 - `output_dir` set in `config/dragonsuite.json` for all generative services

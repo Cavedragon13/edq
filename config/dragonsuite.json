@@ -1295,7 +1295,7 @@
         {
             "id": "dl-gallery",
             "name": "Downloads Gallery",
-            "description": "Thumbnail browser for ~/Downloads and any service output folder (via card \ud83d\udcc1 chips) \u2014 grid, lightbox, slideshow, delete",
+            "description": "Thumbnail browser for ~/Downloads and every ai_generated service output folder \u2014 grid, lightbox, slideshow from any image, favorites, in-app folder switcher, video playback, delete",
             "category": "utility",
             "port": 8060,
             "path": "/",
@@ -1305,7 +1305,11 @@
             "features": [
                 "Thumbnail Grid",
                 "Newest First",
-                "Full-size View"
+                "Full-size View",
+                "Favorites",
+                "Slideshow From Any Image",
+                "In-app Folder Switcher",
+                "Video Playback"
             ],
             "stop_command": "pkill -f dl_gallery.py"
         },
