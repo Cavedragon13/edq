@@ -8,9 +8,10 @@ import json
 import mimetypes
 import subprocess
 import threading
+from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, quote, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlencode, urlparse
 
 from PIL import Image
 
@@ -91,13 +92,34 @@ def toggle_favorite(root_key: str, name: str) -> bool:
 
 
 def safe_path(name: str, root: Path) -> Path | None:
-    rr = root.resolve()
-    p = (rr / name).resolve()
     try:
+        if Path(name).is_absolute() or '..' in Path(name).parts or '\x00' in name:
+            return None
+        rr = root.resolve()
+        p = (rr / name).resolve()
         p.relative_to(rr)
         return p
-    except ValueError:
+    except (ValueError, OSError, RuntimeError):
         return None
+
+
+def folder_url(root_key: str, subdir: str = '') -> str:
+    return '/?' + urlencode({'root': normalize_root_key(root_key), 'dir': subdir})
+
+
+def list_folders(root: Path, subdir: str = '') -> list[dict]:
+    current = safe_path(subdir, root)
+    if current is None or not current.is_dir():
+        return []
+    folders = []
+    for entry in current.iterdir():
+        if entry.name.startswith('.'):
+            continue
+        name = (Path(subdir) / entry.name).as_posix()
+        target = safe_path(name, root)
+        if target is not None and target.is_dir():
+            folders.append({'name': entry.name, 'dir': name})
+    return sorted(folders, key=lambda f: f['name'].casefold())
 
 
 def thumb_path(src: Path) -> Path:
@@ -135,7 +157,7 @@ def make_video_thumb(src: Path) -> Path | None:
     return tp if tp.exists() else None
 
 
-def list_media(root_key: str, root: Path, favs: set[tuple[str, str]]) -> list[dict]:
+def list_media(root_key: str, root: Path, favs: set[tuple[str, str]], subdir: str = '') -> list[dict]:
     """Media items for a page render. Each item carries its own 'root' so the
     favorites view can aggregate files that live under different roots."""
     if root_key == FAVORITES_KEY:
@@ -156,36 +178,43 @@ def list_media(root_key: str, root: Path, favs: set[tuple[str, str]]) -> list[di
             del m["_mtime"]
         return items
 
-    files = [
-        f for f in root.iterdir()
-        if f.is_file() and f.suffix.lower() in MEDIA_EXTS
-    ]
+    current = safe_path(subdir, root)
+    if current is None or not current.is_dir():
+        return []
+    files = [f for f in current.iterdir()
+             if not f.name.startswith('.') and f.is_file() and f.suffix.lower() in MEDIA_EXTS
+             and safe_path((Path(subdir) / f.name).as_posix(), root) is not None]
     files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
     return [
         {
-            "name": f.name, "video": f.suffix.lower() in VIDEO_EXTS,
-            "root": root_key, "fav": (root_key, f.name) in favs,
+            "name": (Path(subdir) / f.name).as_posix(), "video": f.suffix.lower() in VIDEO_EXTS,
+            "root": root_key, "fav": (root_key, (Path(subdir) / f.name).as_posix()) in favs,
         }
         for f in files
     ]
 
 
-def gallery_html(root_key: str, root: Path) -> bytes:
+def gallery_html(root_key: str, root: Path, subdir: str = '') -> bytes:
+    root_key = normalize_root_key(root_key)
     is_favorites = root_key == FAVORITES_KEY
     is_dl = (not is_favorites) and root == DOWNLOADS
     if is_favorites:
         title = "★ Favorites"
         where = "your favorites"
     else:
-        title = "Downloads Gallery" if is_dl else f"{root.name} — Gallery"
-        where = "~/Downloads" if is_dl else f"~/ai_generated/{root_key}"
+        title = f"{Path(subdir).name} — Gallery" if subdir else ("Downloads Gallery" if is_dl else f"{root_key} — Gallery")
+        where = ("~/Downloads" if is_dl else f"~/ai_generated/{root_key}") + (f"/{subdir}" if subdir else '')
+    title, where = escape(title), escape(where)
     favs = load_favorites()
-    media = list_media(root_key, root, favs)
-    media_json = json.dumps(media)
+    media = list_media(root_key, root, favs, subdir)
+    media_json = json.dumps(media).replace('<', '\\u003c')
+    folders = [] if is_favorites else list_folders(root, subdir)
     n_img = sum(1 for m in media if not m["video"])
     n_vid = sum(1 for m in media if m["video"])
 
     parts = []
+    if folders:
+        parts.append(f"{len(folders)} folder{'s' if len(folders) != 1 else ''}")
     if n_img:
         parts.append(f"{n_img} image{'s' if n_img != 1 else ''}")
     if n_vid:
@@ -195,19 +224,20 @@ def gallery_html(root_key: str, root: Path) -> bytes:
     cards = []
     for i, m in enumerate(media):
         name = m["name"]
-        esc = name.replace("&", "&amp;").replace('"', "&quot;")
-        rq = f"?root={quote(m['root'])}"
+        esc = escape(Path(name).name)
+        src_url = escape('/thumb/' + quote(name, safe='') + '?root=' + quote(m['root'], safe=''))
         star_cls = "star-btn favd" if m["fav"] else "star-btn"
         star_html = (
             f'<button class="{star_cls}" data-idx="{i}" '
+            f'aria-label="Favorite {esc}" aria-pressed="{str(m["fav"]).lower()}" '
             f'onclick="event.stopPropagation();toggleFav({i})">&#9733;</button>'
         )
         if m["video"]:
             cards.append(
-                f'<div class="card video-card" data-idx="{i}" onclick="openLb({i})">'
+                f'<div class="card video-card" data-idx="{i}" tabindex="0" aria-label="Open {esc}" onclick="openLb({i})">'
                 f'{star_html}'
                 f'<div class="thumb-wrap">'
-                f'<img src="/thumb/{esc}{rq}" loading="lazy" alt="{esc}">'
+                f'<img src="{src_url}" loading="lazy" alt="{esc}">'
                 f'<div class="play-icon">&#9654;</div>'
                 f'</div>'
                 f'<div class="label" title="{esc}">{esc}</div>'
@@ -215,19 +245,34 @@ def gallery_html(root_key: str, root: Path) -> bytes:
             )
         else:
             cards.append(
-                f'<div class="card" data-idx="{i}" onclick="openLb({i})">'
+                f'<div class="card" data-idx="{i}" tabindex="0" aria-label="Open {esc}" onclick="openLb({i})">'
                 f'{star_html}'
-                f'<img src="/thumb/{esc}{rq}" loading="lazy" alt="{esc}">'
+                f'<img src="{src_url}" loading="lazy" alt="{esc}">'
                 f'<div class="label" title="{esc}">{esc}</div>'
                 f'</div>'
             )
 
-    cards_html = "\n".join(cards) if cards else f"<p class='empty'>No media in {where}</p>"
+    cards_html = "\n".join(cards) if cards else ("" if folders else "<p class='empty'>No images, videos, or subfolders here.</p>")
+    folder_html = ''.join(
+        f'<a class="folder" href="{escape(folder_url(root_key, f["dir"]))}">'
+        f'<span aria-hidden="true">📁</span> {escape(f["name"])}</a>' for f in folders)
+    navigation = ''
+    if not is_favorites:
+        crumbs = [f'<a href="{escape(folder_url(root_key))}">{"Downloads" if is_dl else escape(root_key)}</a>']
+        trail = Path()
+        for part in Path(subdir).parts:
+            trail /= part
+            crumbs.append(f'<a href="{escape(folder_url(root_key, trail.as_posix()))}">{escape(part)}</a>')
+        up = ''
+        if subdir:
+            parent = Path(subdir).parent.as_posix()
+            up = f'<a class="btn" href="{escape(folder_url(root_key, "" if parent == "." else parent))}">↑ Up</a>'
+        navigation = f'<nav class="breadcrumbs" aria-label="Folder path">{up}' + '<span aria-hidden="true">/</span>'.join(crumbs) + f'</nav><p class="location">{where}</p>'
 
     switch_opts = [f'<option value="{FAVORITES_KEY}"{" selected" if root_key == FAVORITES_KEY else ""}>&#9733; Favorites</option>']
     switch_opts.append(f'<option value="downloads"{" selected" if root_key in ("downloads", "") else ""}>&#128193; Downloads</option>')
     for name in list_output_roots():
-        esc_name = name.replace("&", "&amp;").replace('"', "&quot;")
+        esc_name = escape(name)
         sel = " selected" if root_key == name else ""
         switch_opts.append(f'<option value="{esc_name}"{sel}>&#128193; {esc_name}</option>')
     switch_html = "\n".join(switch_opts)
@@ -238,6 +283,7 @@ def gallery_html(root_key: str, root: Path) -> bytes:
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
+<script>try {{ document.documentElement.dataset.theme = localStorage.getItem('app-theme') || 'dark'; }} catch (_) {{}}</script>
 <style>
   *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{ background: #1a1a1a; color: #e0e0e0; font-family: system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }}
@@ -255,6 +301,27 @@ def gallery_html(root_key: str, root: Path) -> bytes:
   .btn-ss:hover {{ background: #2a4a7a; }}
   .hidden {{ display: none !important; }}
   select.btn {{ appearance: none; }}
+  header {{ flex-wrap: wrap; }}
+  select.btn {{ max-width: min(100%, 260px); }}
+  a.btn {{ text-decoration: none; }}
+  .breadcrumbs {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 20px 6px; overflow-wrap: anywhere; }}
+  .breadcrumbs a {{ color: #9ac8f5; }}
+  .location {{ color: #aaa; font-size: .8rem; padding: 0 20px 8px; overflow-wrap: anywhere; }}
+  .folders {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; padding: 14px; }}
+  .folders:empty {{ display: none; }}
+  .folder {{ display: flex; align-items: center; gap: 10px; padding: 18px; border-radius: 8px; border: 1px solid #444; background: #242424; color: #e0e0e0; text-decoration: none; overflow-wrap: anywhere; }}
+  .folder:hover {{ background: #303844; border-color: #9ac8f5; }}
+  .folder span {{ font-size: 1.6rem; }}
+  :focus-visible {{ outline: 2px solid #9ac8f5; outline-offset: 3px; }}
+  .btn:disabled {{ opacity: .45; cursor: default; }}
+  #theme-toggle {{ border-radius: 50%; width: 34px; height: 34px; padding: 0; transition: transform .3s ease; }}
+  #theme-toggle:hover {{ transform: rotate(180deg); }}
+  body, header, .folder, .card, .btn, .label {{ transition: background-color .3s, color .3s, border-color .3s; }}
+  html[data-theme="light"] body {{ background: #f4f5f7; color: #222; }}
+  html[data-theme="light"] header, html[data-theme="light"] .card, html[data-theme="light"] .folder {{ background: #fff; color: #222; border-color: #bbb; }}
+  html[data-theme="light"] h1, html[data-theme="light"] .label, html[data-theme="light"] .location, html[data-theme="light"] .meta, html[data-theme="light"] .empty {{ color: #555; }}
+  html[data-theme="light"] .btn {{ background: #e6eaf0; color: #222; border-color: #aab; }}
+  html[data-theme="light"] .breadcrumbs a {{ color: #235886; }}
 
   /* grid */
   .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -327,14 +394,17 @@ def gallery_html(root_key: str, root: Path) -> bytes:
 
 <header>
   <h1>&#128193; {title}</h1>
-  <select class="btn" id="root-switch" onchange="switchRoot(this.value)">
+  <select class="btn" id="root-switch" aria-label="Gallery location" title="Downloads and folders in ai_generated; open subfolders below" onchange="switchRoot(this.value)">
 {switch_html}
   </select>
   <span class="meta" id="hdr-meta">{count_text}</span>
-  <button class="btn btn-ss" id="ss-btn" onclick="toggleSlideshow()">&#9654; Slideshow</button>
+  <button class="btn btn-ss" id="ss-btn" {'disabled' if not media else ''} onclick="toggleSlideshow()">&#9654; Slideshow</button>
   <button class="btn" onclick="location.reload()">&#8635; Refresh</button>
+  <button class="btn" id="theme-toggle" aria-label="Toggle light or dark theme" onclick="toggleTheme()">☀️</button>
 </header>
 
+{navigation}
+<div class="folders" aria-label="Subfolders">{folder_html}</div>
 <div class="grid" id="grid">
 {cards_html}
 </div>
@@ -360,6 +430,16 @@ def gallery_html(root_key: str, root: Path) -> bytes:
 
 <script>
   const mediaItems = {media_json};
+  function updateThemeButton() {{
+    document.getElementById('theme-toggle').textContent = document.documentElement.dataset.theme === 'light' ? '🌙' : '☀️';
+  }}
+  function toggleTheme() {{
+    const theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = theme;
+    try {{ localStorage.setItem('app-theme', theme); }} catch (_) {{}}
+    updateThemeButton();
+  }}
+  updateThemeButton();
   function rq(p, item) {{ return p + '?root=' + encodeURIComponent(item.root); }}
   function switchRoot(key) {{ location.href = '/?root=' + encodeURIComponent(key); }}
   let cur = 0;
@@ -435,6 +515,7 @@ def gallery_html(root_key: str, root: Path) -> bytes:
 
   /* ── slideshow ── */
   function toggleSlideshow() {{
+    if (!mediaItems.length) return;
     if (ssActive) stopSlideshow();
     else {{
       ssActive = true;
@@ -470,7 +551,10 @@ def gallery_html(root_key: str, root: Path) -> bytes:
     const data = await res.json();
     item.fav = data.favorited;
     const starBtn = document.querySelector('.star-btn[data-idx="' + idx + '"]');
-    if (starBtn) starBtn.classList.toggle('favd', item.fav);
+    if (starBtn) {{
+      starBtn.classList.toggle('favd', item.fav);
+      starBtn.setAttribute('aria-pressed', String(item.fav));
+    }}
     if (idx === cur) lbFav.classList.toggle('favd', item.fav);
   }}
 
@@ -544,12 +628,15 @@ def gallery_html(root_key: str, root: Path) -> bytes:
     if (nv) parts.push(nv + ' video' + (nv !== 1 ? 's' : ''));
     document.getElementById('hdr-meta').textContent = parts.join(', ') || 'Empty';
 
-    if (mediaItems.length === 0) {{ closeLb(); return; }}
+    if (mediaItems.length === 0) {{ ssBtn.disabled = true; closeLb(); return; }}
     if (cur >= mediaItems.length) cur = mediaItems.length - 1;
     render();
   }}
 
   document.addEventListener('keydown', function(e) {{
+    if (e.target.matches('.card') && (e.key === 'Enter' || e.key === ' ')) {{
+      e.preventDefault(); openLb(Number(e.target.dataset.idx)); return;
+    }}
     if (lb.classList.contains('hidden')) return;
     if (e.key === 'ArrowLeft')  navigate(-1);
     if (e.key === 'ArrowRight') navigate(1);
@@ -623,7 +710,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def root_for_request(self) -> tuple[str, Path] | None:
         parsed = urlparse(self.path)
-        root_key = parse_qs(parsed.query).get("root", [""])[0]
+        root_key = normalize_root_key(parse_qs(parsed.query).get("root", [""])[0])
         root = resolve_root(root_key)
         if root is None:
             return None
@@ -638,7 +725,20 @@ class Handler(BaseHTTPRequestHandler):
         root_key, root = rr
 
         if path in ("/", "/index.html"):
-            self.send_bytes(gallery_html(root_key, root), "text/html; charset=utf-8")
+            subdir = parse_qs(parsed.query).get('dir', [''])[0]
+            if root_key == FAVORITES_KEY:
+                if subdir:
+                    self.send_error(404); return
+            else:
+                current = safe_path(subdir, root)
+                if current is None or not current.is_dir():
+                    self.send_error(404); return
+                subdir = '' if not subdir or subdir == '.' else Path(subdir).as_posix()
+            try:
+                page = gallery_html(root_key, root, subdir)
+            except OSError:
+                self.send_error(404); return
+            self.send_bytes(page, "text/html; charset=utf-8")
             return
 
         if root_key == FAVORITES_KEY:
