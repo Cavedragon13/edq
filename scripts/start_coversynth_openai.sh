@@ -1,16 +1,24 @@
 #!/bin/bash
-# CoverSynth OpenAI - playlist analysis and cover generation
-# Port: 8053
 set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
-SERVICE_NAME="CoverSynth OpenAI"
+TOOL_NAME="coversynth-openai"
+REQ_VRAM_MIB=0
+REQ_RAM_MIB=512
+source scripts/vram_guard.sh
+SERVICE_NAME="coversynth-openai"
 PORT=8053
-PROJECT_DIR="$DRAGONSUITE_ROOT/projects/coversynth-openai"
-SERVER="$PROJECT_DIR/server.py"
 service_header "$SERVICE_NAME" "$PORT"
+PYTHON_BIN="$DRAGONSUITE_ROOT/venv_dragonsuite/bin/python"
+"$PYTHON_BIN" -c 'import openai; from google import genai; import dotenv'
+mkdir -p "$DRAGONSUITE_ROOT/logs/coversynth-openai" "/home/edq/ai_generated/coversynth-openai"
+vram_preflight || exit 1
 clear_port "$PORT"
-if [ ! -f "$SERVER" ]; then echo "ERROR: server.py not found at $SERVER"; exit 1; fi
-if ! grep -q "^OPENAI_API_KEY=" /srv/containers/edq/.env 2>/dev/null; then echo "NOTE: OPENAI_API_KEY not found - OpenAI calls will fail."; fi
-nohup env PORT="$PORT" "$DRAGONSUITE_ROOT/venv_dragonsuite/bin/python" "$SERVER" > /tmp/coversynth_openai.log 2>&1 &
-if wait_for_port "$PORT" 10; then echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"; else echo "❌ Service did not start in time — check /tmp/coversynth_openai.log"; tail -20 /tmp/coversynth_openai.log; exit 1; fi
+nohup "$PYTHON_BIN" "$DRAGONSUITE_ROOT/projects/coversynth-openai/server.py" > "$DRAGONSUITE_ROOT/logs/coversynth-openai/server.log" 2>&1 &
+register_tool $!
+if wait_for_port "$PORT" 30; then
+    echo "Ready: http://192.168.7.226:$PORT"
+else
+    tail -20 "$DRAGONSUITE_ROOT/logs/coversynth-openai/server.log"
+    exit 1
+fi

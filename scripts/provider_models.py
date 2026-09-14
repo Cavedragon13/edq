@@ -122,7 +122,7 @@ def _openai_discover() -> dict[str, Any]:
         from openai import OpenAI
         ids = sorted(model.id for model in OpenAI(api_key=os.getenv('OPENAI_API_KEY')).models.list().data)
         text = [m for m in ids if re.match(r'^gpt-(?:5(?:\.\d+)?(?:-(?:mini|nano|pro))?|4\.1(?:-(?:mini|nano))?)$', m)]
-        image = [m for m in ids if re.match(r'^gpt-image-(?:2|1\.5|1(?:-mini)?)$', m)]
+        image = [m for m in ids if re.match(r'^gpt-image-(?:2\.5-(?:sunburst|flare)|2|1\.5|1(?:-mini)?)$', m)]
         models = {
             'text': _ordered_subset(text, PREFERRED['openai']['text']),
             'image': _ordered_subset(image, PREFERRED['openai']['image']),
@@ -153,7 +153,7 @@ def _google_discover() -> dict[str, Any]:
             actions = set(getattr(model, 'supported_actions', None) or getattr(model, 'supported_generation_methods', None) or [])
             if 'generateContent' not in actions or not model_id.startswith('gemini-'):
                 continue
-            if ('image' in model_id and 'preview' in model_id) or model_id == 'gemini-2.5-flash-image':
+            if 'image' in model_id:
                 image.append(model_id)
             elif all(token not in model_id for token in ('image', 'tts', 'audio', 'live', 'robotics', 'computer-use', 'embedding', 'customtools')):
                 text.append(model_id)

@@ -50,7 +50,7 @@ python3 scripts/health_check.py --all        # structural check, all services
 
 ## API Keys
 
-Central `.env` at `/srv/containers/edq/.env` — load with `from dotenv import load_dotenv` (Python) or `source /srv/containers/edq/.env` (bash). Keys: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`. Google keys are from the **'vscode'** Cloud project — enable new APIs there.
+Central `.env` at `/srv/containers/edq/.env` — load with `from dotenv import load_dotenv` (Python) or `source /srv/containers/edq/.env` (bash). Keys: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`. `GOOGLE_API_KEY` currently uses the **AI_Studio** key in the **Gemini API** project (Tier 2 Prepay, verified 2026-09-13). `STREET_VIEW_API_KEY` is a separate key in VSCode. Match the actual key to its project before changing API enablement or billing; do not assume all Google keys share a project.
 
 **Browser SPAs must never expose keys.** Proxy via the Python server: Browser → `/api/proxy` → Python → external API.
 

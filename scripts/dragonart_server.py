@@ -20,21 +20,15 @@ from urllib.parse import urlparse, unquote
 sys.path.insert(0, '/srv/containers/edq')
 from scripts import provider_models
 
-# Load .env manually (dotenv not guaranteed to be installed in system Python)
-_env_path = Path('/srv/containers/edq/.env')
-if _env_path.exists():
-    for _line in _env_path.read_text().splitlines():
-        _line = _line.strip()
-        if _line and not _line.startswith('#') and '=' in _line:
-            _k, _, _v = _line.partition('=')
-            if _k not in os.environ:
-                os.environ[_k] = _v
+# Credentials are loaded only on the server.
+from dotenv import load_dotenv
+load_dotenv('/srv/containers/edq/.env')
 
 GOOGLE_API_KEY = os.environ.get('STREET_VIEW_API_KEY') or os.environ.get('GOOGLE_API_KEY', '')
 
-PORT = 8015
-DIST_DIR = Path("/srv/containers/edq/projects/dragonart-studio/dist")
-OUTPUT_DIR = Path(os.path.expanduser("~/ai_generated/dragonart-studio"))
+PORT = int(os.getenv('DRAGONART_PORT', '8015'))
+DIST_DIR = Path(os.getenv('DRAGONART_DIST_DIR', '/srv/containers/edq/projects/dragonart-studio/dist'))
+OUTPUT_DIR = Path(os.getenv('DRAGONART_OUTPUT_DIR', '/home/edq/ai_generated/dragonart-studio'))
 SESSIONS_DIR = OUTPUT_DIR / "sessions"
 
 
@@ -66,7 +60,10 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
         # Serve saved session ZIPs
         if path.startswith('/sessions/'):
             filename = path[len('/sessions/'):]
-            file_path = SESSIONS_DIR / filename
+            file_path = (SESSIONS_DIR / filename).resolve()
+            if not file_path.is_relative_to(SESSIONS_DIR.resolve()):
+                self.send_error(404)
+                return
             if not file_path.exists() or not file_path.is_file():
                 self.send_error(404, f"Session not found: {filename}")
                 return
@@ -93,7 +90,10 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
         if path == '/':
             path = '/index.html'
 
-        file_path = DIST_DIR / path.lstrip('/')
+        file_path = (DIST_DIR / unquote(path).lstrip('/')).resolve()
+        if not file_path.is_relative_to(DIST_DIR.resolve()):
+            self.send_error(404)
+            return
 
         # SPA fallback: serve index.html for non-asset routes
         if not file_path.exists() and not path.startswith('/assets/'):
@@ -126,8 +126,14 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
             self._save_session()
         elif self.path == '/api/sv_capture':
             self._sv_capture()
+        elif self.path == '/api/canny-edge':
+            self._canny_edge()
         elif self.path == '/api/gpt-image':
             self._gpt_image()
+        elif self.path == '/api/gemini-helper':
+            self._gemini_helper()
+        elif self.path == '/api/gemini-video':
+            self._gemini_video()
         elif self.path == '/api/gemini-image':
             self._gemini_image()
         else:
@@ -306,7 +312,8 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
     def _send_config(self):
         """Return server config including Maps API key."""
         result = provider_models.status_payload('DragonArt Studio', providers=['openai', 'google'], default_provider='openai')
-        result['mapsKey'] = GOOGLE_API_KEY
+        result['configured'] = {'google': bool(os.getenv('GOOGLE_API_KEY')), 'openai': bool(os.getenv('OPENAI_API_KEY'))}
+        result['defaults']['image_model'] = provider_models.resolve_model('openai', 'image_edit', preferred='gpt-image-2.5-flare')['model']
         response = json.dumps(result).encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -407,6 +414,32 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             self._send_error(500, f"Street View capture failed: {str(e)}")
 
+    def _canny_edge(self):
+        try:
+            import io
+            import cv2
+            import numpy as np
+            from PIL import Image
+            data = self._read_provider_request()
+            raw = base64.b64decode(data['image'].split(',', 1)[1])
+            source = Image.open(io.BytesIO(raw)).convert('RGBA')
+            # Composite alpha on white before filtering, preserving full dimensions.
+            canvas = Image.new('RGBA', source.size, 'white')
+            canvas.alpha_composite(source)
+            gray = cv2.cvtColor(np.asarray(canvas.convert('RGB')), cv2.COLOR_RGB2GRAY)
+            gray = cv2.GaussianBlur(gray, (5, 5), 1.0)
+            edges = cv2.Canny(gray, 80, 160, L2gradient=True)
+            buffer = io.BytesIO()
+            Image.fromarray(edges).save(buffer, format='PNG')
+            payload = json.dumps({'image': 'data:image/png;base64,' + base64.b64encode(buffer.getvalue()).decode()}).encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(payload))
+            self.end_headers()
+            self.wfile.write(payload)
+        except Exception as e:
+            self._send_error(500, f'Canny filter failed: {e}')
+
     def _gpt_image(self):
         """Proxy to OpenAI gpt-image-2. Keeps OPENAI_API_KEY server-side only."""
         try:
@@ -427,20 +460,25 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                 self._send_error(400, "image and prompt are required")
                 return
 
-            # gpt-image-2 has minimum pixel budget (~1MP); enforce via size
-            try:
-                w, h = map(int, size.split('x'))
-                if w * h < 1000000:  # ~1MP minimum
-                    self._send_error(400, f"Image size too small. gpt-image-2 requires at least ~1MP (e.g., 1024x1024). Got {w}x{h}={w*h:,} pixels")
+            if size != 'auto':
+                try:
+                    w, h = map(int, size.split('x'))
+                    valid = (w > 0 and h > 0 and w % 16 == 0 and h % 16 == 0
+                             and max(w, h) <= 3840 and max(w, h) <= 3 * min(w, h)
+                             and 655360 <= w * h <= 8294400)
+                    if not valid:
+                        raise ValueError('Unsupported image dimensions')
+                except (ValueError, AttributeError):
+                    self._send_error(400, 'Use auto or dimensions divisible by 16, up to 3840 per edge, 1:3–3:1, and 655360–8294400 pixels.')
                     return
-            except (ValueError, AttributeError):
-                self._send_error(400, f"Invalid size format: {size}. Use WIDTHxHEIGHT (e.g., 1024x1024)")
+            if quality not in {'auto', 'low', 'medium', 'high', 'xhigh', 'max'}:
+                self._send_error(400, 'Unsupported image quality')
                 return
 
             try:
                 from openai import OpenAI, BadRequestError
             except ImportError:
-                self._send_error(503, "OpenAI SDK not installed. Run: pip install --user openai")
+                self._send_error(503, "OpenAI SDK not installed. Install openai in venv_dragonsuite")
                 return
 
             import io
@@ -450,12 +488,17 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                 encoded = image_b64
             image_bytes = base64.b64decode(encoded)
 
+            background = data.get('background', 'auto')
+            if background not in {'auto', 'opaque', 'transparent'}:
+                self._send_error(400, 'Unsupported background mode')
+                return
             client = OpenAI(
                 api_key=os.environ.get('OPENAI_API_KEY', ''),
-                timeout=60.0,
+                timeout=300.0,
+                max_retries=0,
             )
 
-            image_model = data.get('model') if data.get('model') in provider_models.models_for('openai', 'image') else provider_models.resolve_model('openai', 'image_edit').get('model')
+            image_model = data.get('model') if data.get('model') in provider_models.models_for('openai', 'image') else provider_models.resolve_model('openai', 'image_edit', preferred='gpt-image-2.5-flare').get('model')
             fallback = False
             try:
                 result = client.images.edit(
@@ -465,6 +508,8 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                     size=size,
                     quality=quality,
                     n=n,
+                    background=background,
+                    output_format='png',
                 )
                 images_b64 = [item.b64_json for item in result.data]
             except BadRequestError:
@@ -477,6 +522,8 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                         size=size,
                         quality=quality,
                         n=1,
+                        background=background,
+                        output_format='png',
                     )
                     images_b64 = [result.data[0].b64_json]
                 else:
@@ -485,6 +532,12 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
             if images_b64 and not images_b64[0]:
                 raise ValueError(f"{image_model} returned empty image data")
 
+            if background == 'transparent':
+                from PIL import Image
+                for encoded_image in images_b64:
+                    with Image.open(io.BytesIO(base64.b64decode(encoded_image))) as im:
+                        if 'A' not in im.getbands() or im.getchannel('A').getextrema()[0] != 0:
+                            raise ValueError('Provider did not return genuine PNG transparency; please retry the sheet')
             response_data = json.dumps({'images': images_b64, 'fallback': fallback, 'model': image_model}).encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -509,7 +562,7 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
 
             images_b64 = data.get('images', [])  # [mainImage, ...referenceImages]
             prompt = data.get('prompt', '')
-            model = data.get('model') if data.get('model') in provider_models.models_for('google', 'image') else provider_models.resolve_model('google', 'image_generation').get('model')
+            model = data.get('model') if data.get('model') in provider_models.models_for('google', 'image') else provider_models.resolve_model('google', 'image_generation', preferred='gemini-3.1-flash-image').get('model')
 
             if not images_b64 or not prompt:
                 self._send_error(400, "images and prompt are required")
@@ -519,7 +572,7 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
                 from google import genai
                 from google.genai import types as genai_types
             except ImportError:
-                self._send_error(503, "google-genai SDK not installed. Run: pip install --user google-genai")
+                self._send_error(503, "google-genai SDK not installed. Install google-genai in venv_dragonsuite")
                 return
 
             client = genai.Client(api_key=os.environ.get('GOOGLE_API_KEY', ''))
@@ -572,7 +625,7 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
             result_b64 = base64.b64encode(image_inline.data).decode()
             mime_out = image_inline.mime_type
 
-            response_data = json.dumps({'image': f'data:{mime_out};base64,{result_b64}'}).encode('utf-8')
+            response_data = json.dumps({'image': f'data:{mime_out};base64,{result_b64}', 'model': model}).encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Content-Length', len(response_data))
@@ -584,9 +637,94 @@ class DragonArtHandler(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             self._send_error(500, f"Gemini image failed: {str(e)}")
 
+    def _read_provider_request(self):
+        length = int(self.headers.get('Content-Length', 0))
+        if not 0 < length <= 20 * 1024 * 1024:
+            raise ValueError('Request must be between 1 byte and 20MB')
+        return json.loads(self.rfile.read(length))
+
+    def _gemini_helper(self):
+        from google import genai
+        from google.genai import types
+        try:
+            data = self._read_provider_request()
+            task = data.get('task')
+            prompts = {
+                'names': "Suggest 3 distinct creative art session titles, each 5 words or less. Return JSON with suggestions: an array of 3 strings.",
+                'metadata': "Describe this image. Return JSON with string fields description (one sentence), altText (concise accessible description), seoKeywords (5-7 comma-separated keywords).",
+            }
+            if task not in prompts:
+                self._send_error(400, 'Unknown helper task')
+                return
+            header, encoded = data['image'].split(',', 1)
+            mime = header.split(':', 1)[1].split(';', 1)[0]
+            with genai.Client(api_key=os.environ['GOOGLE_API_KEY']) as client:
+                response = client.models.generate_content(
+                    model=provider_models.resolve_model('google', 'analysis', preferred='gemini-3.1-flash-lite')['model'],
+                    contents=[types.Part.from_bytes(data=base64.b64decode(encoded), mime_type=mime), prompts[task]],
+                    config=types.GenerateContentConfig(response_mime_type='application/json'),
+                )
+            result = json.loads(response.text)
+            if task == 'names':
+                suggestions = result if isinstance(result, list) else result.get('suggestions') if isinstance(result, dict) else None
+                if not isinstance(suggestions, list) or len(suggestions) != 3 or not all(isinstance(item, str) and item.strip() for item in suggestions):
+                    raise ValueError('Expected three nonempty session names')
+                result = {'suggestions': [item.strip() for item in suggestions]}
+            elif not isinstance(result, dict) or not all(isinstance(result.get(field), str) and result[field].strip() for field in ('description', 'altText', 'seoKeywords')):
+                raise ValueError('Expected image description, alt text and keywords')
+            payload = json.dumps(result).encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', len(payload))
+            self.end_headers()
+            self.wfile.write(payload)
+        except Exception as e:
+            self._send_error(500, f'Image helper failed: {e}')
+
+    def _gemini_video(self):
+        from google import genai
+        from google.genai import types
+        import time
+        try:
+            data = self._read_provider_request()
+            model = data.get('model', 'veo-3.1-lite-generate-preview')
+            if model not in {'veo-3.1-lite-generate-preview', 'veo-3.1-fast-generate-preview'}:
+                self._send_error(400, 'Unsupported video model')
+                return
+            header, encoded = data['image'].split(',', 1)
+            mime = header.split(':', 1)[1].split(';', 1)[0]
+            with genai.Client(api_key=os.environ['GOOGLE_API_KEY']) as client:
+                operation = client.models.generate_videos(
+                    model=model, prompt=data['prompt'],
+                    image=types.Image(image_bytes=base64.b64decode(encoded), mime_type=mime),
+                    config=types.GenerateVideosConfig(number_of_videos=1, resolution='720p', aspect_ratio='16:9'),
+                )
+                deadline = time.monotonic() + 600
+                while not operation.done:
+                    if time.monotonic() > deadline:
+                        raise TimeoutError('Video is still rendering; please check the provider before retrying')
+                    time.sleep(10)
+                    operation = client.operations.get(operation)
+                if operation.error:
+                    raise RuntimeError(operation.error)
+                video = operation.response.generated_videos[0].video
+                content = client.files.download(file=video)
+            self.send_response(200)
+            self.send_header('Content-Type', 'video/mp4')
+            self.send_header('Content-Length', len(content))
+            self.end_headers()
+            self.wfile.write(content)
+        except Exception as e:
+            self._send_error(500, f'Video generation failed: {e}')
+
     def _send_error(self, code, message):
         """Send JSON error response with CORS headers."""
+        if 'prepayment credits are depleted' in str(message):
+            message = 'Google prepaid credits are depleted. Add credits in the API key project at AI Studio, then retry. You can still use OpenAI and enter a session name manually.'
         payload = provider_models.error_payload(message) if 'provider_models' in globals() else {'error': message}
+        if str(message).startswith("Google prepaid credits are depleted"):
+            code = 402
+            payload["error_category"] = "quota_or_billing"
         response = json.dumps(payload).encode('utf-8')
         self.send_response(code)
         self.send_header('Content-Type', 'application/json')

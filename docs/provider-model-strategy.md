@@ -149,3 +149,7 @@ For each migrated app:
 - Internal calls resolve models by task intent.
 - Missing key or provider outage produces a visible fallback/error field.
 - One dry-run or non-destructive smoke test verifies the selected model path.
+
+## 2026-09-13 image refresh
+
+Discovery recognizes GPT Image 2.5 Sunburst/Flare and stable Gemini image model IDs, including Nano Banana 2 Lite. DragonArt prefers Sunburst for editing, CoverSynth prefers Flare for generation; these explicit task preferences leave other services' established default ranking intact. Both keys authenticated successfully during the refresh. Model listing is an availability check, not proof of a successful image generation; see the service docs for output verification.

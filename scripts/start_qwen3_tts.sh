@@ -46,7 +46,7 @@ if pgrep -f "qwen3-tts/app_local.py" > /dev/null; then
     echo "✓ Already running on port $PORT"
 else
     cd "$QWEN_TTS_DIR"
-    nohup python -u app_local.py > /tmp/qwen3_tts.log 2>&1 &
+    nohup python -u "$QWEN_TTS_DIR/app_local.py" > /tmp/qwen3_tts.log 2>&1 &
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 60; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"

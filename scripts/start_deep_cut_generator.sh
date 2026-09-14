@@ -29,4 +29,4 @@ echo "Deep Cut Generator"
 echo "  http://192.168.7.226:8055"
 echo ""
 
-exec python server.py
+exec python "$PROJECT_DIR/server.py"

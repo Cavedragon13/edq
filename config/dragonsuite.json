@@ -248,7 +248,7 @@
         {
             "id": "dragonart-studio",
             "name": "DragonArt Studio",
-            "description": "Gemini 3 Pro AI Editor + Veo 3.1 Video",
+            "description": "Gemini Nano Banana 2 / Pro + GPT Image 2.5 Sunburst editor",
             "category": "image",
             "port": 8015,
             "path": null,
@@ -257,7 +257,8 @@
             "project_path": "/srv/containers/edq/projects/dragonart-studio",
             "features": [
                 "72 Edit Modes",
-                "Style Transfer",
+                "GPT Image 2.5 Sunburst",
+                "Nano Banana 2 / Pro",
                 "Veo Video"
             ],
             "stop_command": "pkill -f \"dragonart_server.py\" || true",
@@ -266,7 +267,7 @@
         {
             "id": "coversynth-openai",
             "name": "CoverSynth OpenAI",
-            "description": "Playlist research, sentiment analysis, prompt synthesis, and GPT Image 2 cover art",
+            "description": "Playlist analysis and GPT Image 2.5 Flare cover art",
             "category": "image",
             "port": 8053,
             "path": "/",
@@ -276,8 +277,8 @@
             "features": [
                 "Playlist Analysis",
                 "Sentiment",
-                "GPT Image 2",
-                "Refinement"
+                "GPT Image 2.5 Flare",
+                "Saved PNGs"
             ],
             "stop_command": "pkill -f coversynth-openai/server.py || true",
             "output_dir": "/home/edq/ai_generated/coversynth-openai"
@@ -318,7 +319,7 @@
                 "Social Carousel",
                 "Dark Mode"
             ],
-            "stop_command": "pkill -f 'deep-cut-generator/server.py' || pkill -f 'uvicorn.*8055' || true",
+            "stop_command": "pkill -f 'deep-cut-generator/server[.]py' || true",
             "output_dir": "/home/edq/ai_generated/deep-cut-generator"
         },
         {
@@ -410,7 +411,7 @@
                 "Image to 3D",
                 "Texture"
             ],
-            "stop_command": "pkill -f 'venv_hunyuan3d.*gradio_app.py' || true",
+            "stop_command": "pkill -f 'hunyuan3d/gradio_app[.]py' || true",
             "vram_gb": 12,
             "output_dir": "/home/edq/ai_generated/hunyuan3d"
         },
@@ -429,7 +430,7 @@
                 "Voice Clone",
                 "Voice Design"
             ],
-            "stop_command": "pkill -f 'venv_qwen3_tts.*app_local.py' || true",
+            "stop_command": "pkill -f 'qwen3-tts/app_local[.]py' || true",
             "vram_gb": 6,
             "output_dir": "/home/edq/ai_generated/qwen3-tts"
         },
@@ -468,7 +469,7 @@
                 "50+ Languages",
                 "Inline Emotions"
             ],
-            "stop_command": "pkill -f 'fish.speech.*tools.run_webui' || pkill -f 'fish-speech.*run_webui' || true",
+            "stop_command": "pkill -f 'tools[.]run_webui' || true",
             "vram_gb": 4,
             "output_dir": "/home/edq/ai_generated/fish-speech"
         },
@@ -487,7 +488,7 @@
                 "Style Tags",
                 "Sections"
             ],
-            "stop_command": "pkill -f 'venv_heartmula.*app_local.py' || true",
+            "stop_command": "pkill -f 'heartmula/app_local[.]py' || true",
             "vram_gb": 12,
             "output_dir": "/home/edq/ai_generated/heartmula"
         },
@@ -1470,7 +1471,8 @@
                 "API-only for now \u2014 no dedicated UI yet",
                 "POST /v1/audio/music-generations"
             ],
-            "stop_command": "cd /srv/containers/edq && bash scripts/stop_minimax_music3_mlx.sh"
+            "stop_command": "cd /srv/containers/edq && bash scripts/stop_minimax_music3_mlx.sh",
+            "output_dir": "/home/edq/ai_generated/minimax-music3"
         },
         {
             "id": "sensenova",

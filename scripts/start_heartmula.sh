@@ -27,7 +27,7 @@ if pgrep -f "$HEARTMULA_DIR/app_local.py" > /dev/null && ss -ltn "( sport = :$PO
     echo "✓ Already running on port $PORT"
 else
     cd "$HEARTMULA_DIR"
-    nohup python app_local.py > /tmp/heartmula.log 2>&1 &
+    nohup python "$HEARTMULA_DIR/app_local.py" > /tmp/heartmula.log 2>&1 &
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 30; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"

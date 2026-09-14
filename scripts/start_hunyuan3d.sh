@@ -43,7 +43,7 @@ if pgrep -f "hunyuan3d.*gradio_app\.py\|gradio_app\.py.*hunyuan3d\|projects/huny
     echo "✓ Already running on port $PORT"
 else
     cd "$HUNYUAN3D_DIR"
-    nohup python gradio_app.py --host 0.0.0.0 --port "$PORT" --cache-path "$OUTPUT_DIR" \
+    nohup python "$HUNYUAN3D_DIR/gradio_app.py" --host 0.0.0.0 --port "$PORT" --cache-path "$OUTPUT_DIR" \
         > /tmp/hunyuan3d.log 2>&1 &
     cd /srv/containers/edq
     echo "⏳ Waiting for service..."

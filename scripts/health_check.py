@@ -30,6 +30,9 @@ ALWAYS_ON = {
     2283: ("minidragon", "Immich"),
     4533: ("minidragon", "Navidrome"),
     9000: ("minidragon", "Portainer"),
+    25600: ("minidragon", "Komga"),
+    8123: ("minidragon", "Home Assistant"),
+    8222: ("minidragon", "Vaultwarden"),
 }
 
 ALWAYS_ON_HOSTS = {

@@ -24,12 +24,14 @@ LOG_FILE="$PROJECT_DIR/logs/weekly_update.log"
 SCORECARD="$HOME/knowledge-base/Dragonsuite/service-versions.md"
 DRAGONSUITE_JSON="$PROJECT_DIR/config/dragonsuite.json"
 DATE=$(date '+%Y-%m-%d')
-TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
 mkdir -p "$PROJECT_DIR/logs"
 
+# Per-line timestamps (a single run spans many minutes). This function is the
+# only writer to LOG_FILE — cron must redirect stdout elsewhere
+# (logs/weekly_update_cron.log), otherwise every line lands twice.
 log() {
-    echo "[$TIMESTAMP] $*" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
 }
 
 log "======================================================"
@@ -148,14 +150,22 @@ while IFS=$'\t' read -r svc_id svc_name project_path port launch_cmd stop_cmd sv
         continue
     fi
 
-    behind=$(git -C "$project_path" rev-list HEAD..origin/HEAD --count 2>/dev/null || echo "?")
+    # Pinned checkouts (detached HEAD, e.g. ComfyUI managed by comfy-cli at a
+    # release tag) have no tracking branch and are not auto-updated here.
+    upstream_ref=$(git -C "$project_path" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+    if [ -z "$upstream_ref" ]; then
+        log "  ⏭️  $svc_name — pinned checkout (detached HEAD / no tracking branch), not auto-updated"
+        continue
+    fi
+
+    behind=$(git -C "$project_path" rev-list "HEAD..$upstream_ref" --count 2>/dev/null || echo "?")
     if [ "$behind" = "0" ] || [ "$behind" = "?" ]; then
         continue
     fi
 
     pre_sha=$(git -C "$project_path" rev-parse HEAD)
     dirty=""
-    [ -n "$(git -C "$project_path" status --porcelain 2>/dev/null)" ] && dirty=1
+    [ -n "$(git -C "$project_path" status --porcelain --untracked-files=no 2>/dev/null)" ] && dirty=1
 
     pull_ok=1
     stashed=""
@@ -164,8 +174,21 @@ while IFS=$'\t' read -r svc_id svc_name project_path port launch_cmd stop_cmd sv
         stashed=1
     fi
 
+    # Local patch commits (earlier auto-merges, manual fixes) make a plain
+    # --ff-only pull impossible forever after, so replay them on top of the
+    # new upstream instead. A rebase conflict is left for a human.
+    local_ahead=$(git -C "$project_path" rev-list --count "$upstream_ref..HEAD" 2>/dev/null || echo "0")
     if [ "$pull_ok" = "1" ]; then
-        git -C "$project_path" pull --ff-only --quiet 2>/dev/null || pull_ok=0
+        if [ "$local_ahead" = "0" ]; then
+            git -C "$project_path" pull --ff-only --quiet 2>/dev/null || pull_ok=0
+        elif ! git -C "$project_path" rebase --quiet "$upstream_ref" >/dev/null 2>&1; then
+            git -C "$project_path" rebase --abort >/dev/null 2>&1 || true
+            git -C "$project_path" reset --hard "$pre_sha" -q
+            [ -n "$stashed" ] && git -C "$project_path" stash pop -q 2>/dev/null
+            log "  ⚠️  $svc_name — $local_ahead local patch commit(s) conflict with upstream, needs manual rebase (left untouched)"
+            ATTENTION_ROWS+="| $svc_name | local patch commits conflict with upstream | manual rebase onto $upstream_ref — see projects/$(basename "$project_path") |\n"
+            continue
+        fi
     fi
 
     if [ "$pull_ok" = "1" ] && [ -n "$stashed" ]; then
@@ -183,8 +206,10 @@ while IFS=$'\t' read -r svc_id svc_name project_path port launch_cmd stop_cmd sv
         else
             # Clean merge of local patches onto the new upstream commit —
             # commit them so next week's run starts from a clean tree.
-            if [ -n "$(git -C "$project_path" status --porcelain 2>/dev/null)" ]; then
-                git -C "$project_path" add -A
+            # Tracked files only (-u): `add -A` once swept an untracked
+            # venv into the ai-toolkit repo.
+            if [ -n "$(git -C "$project_path" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+                git -C "$project_path" add -u
                 git -C "$project_path" commit -q -m "Auto-merge local patches after weekly update ($DATE)"
             fi
         fi
@@ -240,7 +265,8 @@ while IFS=$'\t' read -r svc_id svc_name project_path port launch_cmd stop_cmd sv
     # Launch-verify. GPU (one-shot) services get stopped again after a
     # successful check; persistent services (no vram_gb, e.g. Odysseus)
     # are left running.
-    verify_log=$(mktemp)
+    # Kept on disk (not a deleted mktemp) so the attention note can point at it.
+    verify_log="$PROJECT_DIR/logs/weekly_verify_${svc_id}.log"
     if [ -n "$launch_cmd" ]; then
         timeout 300 bash -c "$launch_cmd" > "$verify_log" 2>&1
         launch_rc=$?
@@ -260,9 +286,8 @@ while IFS=$'\t' read -r svc_id svc_name project_path port launch_cmd stop_cmd sv
         tail -15 "$verify_log" | while IFS= read -r l; do log "       $l"; done
         bash -c "$stop_cmd" >/dev/null 2>&1 || true
         git -C "$project_path" reset --hard "$pre_sha" -q
-        ATTENTION_ROWS+="| $svc_name | launch-verify failed, code rolled back to \`${pre_sha:0:7}\` | $dep_note — check /tmp for this service's log |\n"
+        ATTENTION_ROWS+="| $svc_name | launch-verify failed, code rolled back to \`${pre_sha:0:7}\` | $dep_note — see logs/weekly_verify_${svc_id}.log |\n"
     fi
-    rm -f "$verify_log"
 done < "$SERVICES_TSV"
 rm -f "$SERVICES_TSV"
 
