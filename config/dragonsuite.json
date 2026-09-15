@@ -1530,6 +1530,66 @@
             ],
             "stop_command": "pkill -f '/srv/containers/edq/venv_drivearchaeology/bin/uvicorn' || true",
             "vram_gb": 0
+        },
+        {
+            "id": "yue2",
+            "name": "YuE2",
+            "description": "Full-song music generation with editable ABC scores (m-a-p/YuE2-3B, 48 kHz stereo)",
+            "category": "music",
+            "port": 8064,
+            "path": "/",
+            "icon": "&#127932;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_yue2.sh",
+            "project_path": null,
+            "features": [
+                "Lyrics \u2192 song",
+                "Symbolic planning",
+                "Covers from ABC",
+                "Score editing"
+            ],
+            "stop_command": "pkill -f 'yue2_gradio[.]py' || true",
+            "vram_gb": 14.0,
+            "output_dir": "/home/edq/ai_generated/yue2"
+        },
+        {
+            "id": "auk",
+            "name": "AuK",
+            "description": "Tencent 1.5B speech generation + editing: TTS, content/pitch/speed edits, emotion, enhancement, separation",
+            "category": "audio",
+            "port": 8065,
+            "path": "/?__theme=dark",
+            "icon": "&#127897;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_auk.sh",
+            "project_path": "/srv/containers/edq/projects/AuK",
+            "features": [
+                "Zero-shot TTS",
+                "Content editing",
+                "Enhancement",
+                "Separation"
+            ],
+            "stop_command": "pkill -f 'auk_gradio[.]py' || true",
+            "vram_gb": 14.0,
+            "output_dir": "/home/edq/ai_generated/auk"
+        },
+        {
+            "id": "marigold-v2",
+            "name": "Marigold V2",
+            "description": "Depth, surface normals, and albedo from one image (Qwen-Image-Edit LoRA, single step) via ComfyUI",
+            "category": "vision",
+            "port": 8066,
+            "path": "/",
+            "icon": "&#127804;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_marigold_v2.sh",
+            "project_path": null,
+            "features": [
+                "Depth",
+                "Normals",
+                "Albedo",
+                "GGUF backbone"
+            ],
+            "stop_command": "pkill -f 'marigold_v2_gradio[.]py' || true",
+            "vram_gb": 14.0,
+            "output_dir": "/home/edq/ai_generated/marigold-v2"
         }
     ],
     "categories": {

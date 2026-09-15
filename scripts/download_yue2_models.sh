@@ -8,12 +8,21 @@
 #
 # Uses venv_dragonsuite's huggingface_hub so this can run while venv_yue2 is
 # still being built; either venv works.
+#
+# 2026-09-14: this network drops mid-transfer on large files (ChunkedEncodingError:
+# "Connection broken"). huggingface_hub does NOT auto-retry that at the
+# snapshot_download level — it just raises — but it DOES resume from the partial
+# blob on the next call. So retry the whole script a bounded number of times;
+# each retry only re-fetches the bytes actually lost, not the whole file.
 set -e
 cd /srv/containers/edq
 PY="/srv/containers/edq/venv_yue2/bin/python"
 [ -x "$PY" ] && "$PY" -c "import huggingface_hub" 2>/dev/null || PY="/srv/containers/edq/venv_dragonsuite/bin/python"
 
-"$PY" - <<'PYEOF'
+ATTEMPTS="${YUE2_DOWNLOAD_ATTEMPTS:-15}"
+for i in $(seq 1 "$ATTEMPTS"); do
+    echo "--- attempt $i/$ATTEMPTS ---"
+    if "$PY" - <<'PYEOF'
 from huggingface_hub import snapshot_download
 
 REPOS = [
@@ -28,3 +37,11 @@ for repo in REPOS:
     print(f"  ready at {path}")
 print("All YuE2 models ready. Launch with: bash scripts/start_yue2.sh")
 PYEOF
+    then
+        exit 0
+    fi
+    echo "  attempt $i failed (likely a dropped connection) — retrying, resuming from partial bytes"
+    sleep 5
+done
+echo "❌ YuE2 download did not complete after $ATTEMPTS attempts — check network"
+exit 1

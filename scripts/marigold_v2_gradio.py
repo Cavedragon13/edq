@@ -175,7 +175,8 @@ TOGGLE_JS = """
 }
 """
 
-with gr.Blocks(title="Marigold V2", js=DARK_JS) as demo:
+with gr.Blocks(title="Marigold V2", js=DARK_JS,
+               theme=gr.themes.Soft(primary_hue="orange", secondary_hue="green")) as demo:
     with gr.Row():
         gr.Markdown(
             "# 🌼 Marigold V2 — depth · normals · albedo\n"
@@ -213,5 +214,4 @@ if __name__ == "__main__":
     demo.queue(max_size=4, default_concurrency_limit=1)
     demo.launch(server_name="0.0.0.0", server_port=PORT, share=False, show_error=True,
                 favicon_path=FAVICON if Path(FAVICON).exists() else None,
-                allowed_paths=[str(OUTPUT_DIR)],
-                theme=gr.themes.Soft(primary_hue="orange", secondary_hue="green"))
+                allowed_paths=[str(OUTPUT_DIR)])

@@ -25,6 +25,21 @@ LOG_FILE="/tmp/auk.log"
 # so only one is exposed unless explicitly asked for.
 VARIANT="${AUK_VARIANT:-base}"
 
+# Optional "Prompt Enhancer" (use_pe in the UI): an LLM turns a loose instruction
+# into the structured task/params AuK's engine expects, and can auto-derive
+# gen_seconds instead of you setting it by hand. It needs an OpenAI-compatible
+# chat endpoint — pointed at local Ollama by default (2026-09-14), not a paid
+# API. Override with AUK_LLM_BASE_URL/AUK_LLM_MODEL_NAME/AUK_LLM_API_KEY for
+# LM Studio or a different model; Ollama ignores the API key's actual value.
+# GPU note: AuK's own --cpu_offload frees VRAM when idle between requests, and
+# the PE call happens before the AuK engine's own forward pass — but if a PE
+# call and an active AuK generation ever overlap, both compete for the same
+# 16GB card. Unset AUK_LLM_BASE_URL to disable PE cleanly instead of crashing
+# on missing config.
+export LLM_API_KEY="${AUK_LLM_API_KEY:-ollama}"
+export LLM_BASE_URL="${AUK_LLM_BASE_URL:-http://localhost:11434/v1}"
+export LLM_MODEL_NAME="${AUK_LLM_MODEL_NAME:-qwen3:8b}"
+
 service_header "$SERVICE_NAME" "$PORT"
 
 if [ ! -d "$APP_DIR/src/auk" ]; then

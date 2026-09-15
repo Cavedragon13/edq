@@ -16,13 +16,20 @@
 #   models/vae/          qwen_image_vae.safetensors                          (Comfy-Org repack)
 #   models/loras/        marigold-v2-{depth-Log-stage2,normals,albedo}.safetensors (huawei-bayerlab)
 #   models/marigold-v2/Marigold-V2/qwen_text_embeddings/*.pt              (huawei-bayerlab)
+# 2026-09-14: this network drops mid-transfer on large files (ChunkedEncodingError),
+# which snapshot_download/hf_hub_download do not retry on their own — see
+# docs/sop-model-downloads.md. Retry the whole script; the per-file "present" check
+# below makes already-finished files a no-op on each retry.
 set -e
 cd /srv/containers/edq
 COMFY_MODELS="/srv/containers/edq/projects/ComfyUI/models"
 PY="/srv/containers/edq/venv_comfyui/bin/python"
 "$PY" -c "import huggingface_hub" 2>/dev/null || PY="/srv/containers/edq/venv_dragonsuite/bin/python"
 
-COMFY_MODELS="$COMFY_MODELS" "$PY" - <<'PYEOF'
+ATTEMPTS="${MARIGOLD_DOWNLOAD_ATTEMPTS:-15}"
+for i in $(seq 1 "$ATTEMPTS"); do
+echo "--- attempt $i/$ATTEMPTS ---"
+if COMFY_MODELS="$COMFY_MODELS" "$PY" - <<'PYEOF'
 import os
 from huggingface_hub import hf_hub_download
 
@@ -57,3 +64,11 @@ for repo, filename, sub, rename in FILES:
     print("  done")
 print("All Marigold V2 files ready.")
 PYEOF
+then
+    exit 0
+fi
+echo "  attempt $i failed (likely a dropped connection) — retrying, existing files are skipped"
+sleep 5
+done
+echo "❌ Marigold V2 download did not complete after $ATTEMPTS attempts — check network"
+exit 1

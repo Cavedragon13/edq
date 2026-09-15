@@ -154,7 +154,8 @@ TOGGLE_JS = """
 }
 """
 
-with gr.Blocks(title="YuE2 — Music Generator", js=DARK_JS) as demo:
+with gr.Blocks(title="YuE2 — Music Generator", js=DARK_JS,
+               theme=gr.themes.Soft(primary_hue="amber", secondary_hue="violet")) as demo:
     with gr.Row():
         gr.Markdown(
             "# 🎼 YuE2 — full-song generation with editable scores\n"
@@ -242,5 +243,4 @@ if __name__ == "__main__":
         show_error=True,
         favicon_path=FAVICON if Path(FAVICON).exists() else None,
         allowed_paths=[str(OUTPUT_DIR)],
-        theme=gr.themes.Soft(primary_hue="amber", secondary_hue="violet"),
     )

@@ -140,24 +140,66 @@ hf download org/repo                # May not be available
 ### Why Python API?
 
 - ✅ Consistent across huggingface-hub versions
-- ✅ Automatic resume on failure
+- ✅ Resumes from partial bytes on the *next* call (not automatic within one call — see below)
 - ✅ Built-in progress bars
-- ✅ Checksum validation
 - ✅ Rate limiting handling
 
-### Error Handling
+### Error Handling: wrap every call in a bounded retry loop
 
-Always use try/except and provide resume instructions:
+**Corrected 2026-09-14.** `snapshot_download()`/`hf_hub_download()` do **not** retry a
+dropped connection automatically — a mid-transfer `ChunkedEncodingError` ("Connection
+broken") propagates as an uncaught exception and kills the script. What they *do* is
+resume from the partial blob on the **next** invocation. On this network (frequent
+mid-transfer resets), an unattended background download needs the retry loop to be
+in the script itself — "run again to resume" is not realistic when nobody is
+watching a `nohup` job.
 
-```python
-try:
-    snapshot_download(...)
-    print("✓ Download complete!")
-except Exception as e:
-    print(f"⚠️  Download failed: {e}")
-    print("Run again to resume - partial downloads are saved.")
-    exit(1)
+Bash template (see `scripts/download_yue2_models.sh` or `download_auk_models.sh`
+for a real example):
+
+```bash
+ATTEMPTS="${TOOLNAME_DOWNLOAD_ATTEMPTS:-15}"
+for i in $(seq 1 "$ATTEMPTS"); do
+    echo "--- attempt $i/$ATTEMPTS ---"
+    if python - <<'PYEOF'
+from huggingface_hub import snapshot_download
+snapshot_download(repo_id="org/repo", local_dir="/path/to/models")
+print("done")
+PYEOF
+    then
+        exit 0
+    fi
+    echo "  attempt $i failed — retrying, resuming from partial bytes"
+    sleep 5
+done
+echo "❌ download did not complete after $ATTEMPTS attempts — check network"
+exit 1
 ```
+
+### Xet transport can silently corrupt a file that reports 100% size
+
+**Found 2026-09-14.** `huggingface_hub`'s newer Xet transport can hang indefinitely
+in its finalization/reconstruction step — no error, no progress — *after* the target
+file has already reached its correct final byte count. One case surfaced the real
+error before hanging (`RuntimeError: File reconstruction error: CAS Client Error`);
+another silently produced a **corrupted file that still matched the expected size**,
+caught only later by the consuming library's own hash check on load. Do not treat
+"the file is the right size" as proof it downloaded correctly.
+
+- If a download hangs for an unreasonable time, compare the `.incomplete` blob's
+  live byte count (under `~/.cache/huggingface/hub/**/blobs/` or the model's
+  `local_dir`) against the file's known size from the Hub. If they already match
+  and the process is still "running," it's Xet finalization hanging — kill it.
+- Prefix the retry with `HF_HUB_DISABLE_XET=1` to force the plain HTTP transport,
+  which does not have this bug.
+- If a hang like this ever happened for a file before this variable was set, don't
+  trust that file: delete its blob (`rm` the file the snapshot symlink points to)
+  and redownload — a matching byte count is not sufficient evidence of integrity.
+  A cheap spot-check without a full redownload: open it with
+  `safetensors.safe_open(path, framework="pt")` and check that a random sample of
+  tensors have sane shapes and are finite — a truncated or corrupted safetensors
+  file usually fails to parse its header at all, or (rarely) parses with garbage
+  values.
 
 ### Directory Structure
 
