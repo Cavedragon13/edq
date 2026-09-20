@@ -269,7 +269,9 @@ def gallery_html(root_key: str, root: Path, subdir: str = '') -> bytes:
             up = f'<a class="btn" href="{escape(folder_url(root_key, "" if parent == "." else parent))}">↑ Up</a>'
         navigation = f'<nav class="breadcrumbs" aria-label="Folder path">{up}' + '<span aria-hidden="true">/</span>'.join(crumbs) + f'</nav><p class="location">{where}</p>'
 
-    switch_opts = [f'<option value="{FAVORITES_KEY}"{" selected" if root_key == FAVORITES_KEY else ""}>&#9733; Favorites</option>']
+    switch_opts = []
+    if is_favorites:
+        switch_opts.append('<option value="__favorites__" selected disabled>&#9733; Favorites (current)</option>')
     switch_opts.append(f'<option value="downloads"{" selected" if root_key in ("downloads", "") else ""}>&#128193; Downloads</option>')
     for name in list_output_roots():
         esc_name = escape(name)
@@ -388,12 +390,20 @@ def gallery_html(root_key: str, root: Path, subdir: str = '') -> bytes:
                border: none; color: #ccc; font-size: 1.4rem; cursor: pointer; z-index: 110;
                width: 36px; height: 36px; border-radius: 50%; line-height: 36px; text-align: center; }}
   #lb-close:hover {{ background: rgba(255,255,255,.2); color: #fff; }}
+
+  /* favorites view toggle */
+  .btn-fav {{ background: #2e2610; border-color: #7a6420; color: #ffd23f; }}
+  .btn-fav:hover {{ background: #3a3014; }}
+  .btn-fav.active {{ background: #ffd23f; border-color: #ffd23f; color: #1a1a1a; }}
+  html[data-theme="light"] .btn-fav {{ background: #fff6d8; border-color: #e0c34a; color: #8a6d00; }}
+  html[data-theme="light"] .btn-fav.active {{ background: #ffd23f; border-color: #e0c34a; color: #1a1a1a; }}
 </style>
 </head>
 <body>
 
 <header>
   <h1>&#128193; {title}</h1>
+  <a class="btn btn-fav{' active' if is_favorites else ''}" href="/?root={'downloads' if is_favorites else FAVORITES_KEY}" aria-pressed="{str(is_favorites).lower()}">{'&#10005; Exit Favorites' if is_favorites else '&#9733; Favorites'}</a>
   <select class="btn" id="root-switch" aria-label="Gallery location" title="Downloads and folders in ai_generated; open subfolders below" onchange="switchRoot(this.value)">
 {switch_html}
   </select>
