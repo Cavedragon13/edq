@@ -2,7 +2,7 @@
 # Backup all Claude Code critical files to ancalagon NAS
 # Includes: CLAUDE.md files, memory files, conversation history, plan files
 # Runs as part of nightly cron job at 0210 (2:10 AM)
-# Also scrubs known credentials from all agent transcripts (scrub_transcripts.py) and locks file permissions.
+# Also scrubs known credentials from conversation history and locks file permissions.
 
 set -e
 
@@ -12,13 +12,42 @@ BACKUP_DATE=$(date +%Y-%m-%d)
 BACKUP_ROOT="/mnt/ancalagon_backup/Cavedragon/Drive/sys/claude"
 BACKUP_DIR="$BACKUP_ROOT/$BACKUP_DATE"
 
-# --- Step 1: Scrub known credentials from all agent transcripts ---
-# Claude, Codex, Gemini/Antigravity, OpenCode, Grok, Kimi, Hermes.
-# See scrub_transcripts.py for paths; secrets list: ~/.claude/scrub-credentials.txt
-echo "[$(date)] Scrubbing credentials from agent transcripts..."
-python3 /srv/containers/edq/scripts/scrub_transcripts.py || echo "  WARNING: scrub failed; continuing with backup"
-echo "[$(date)] Scrubbing credentials from Mac transcripts (cdragon, odragon, adragon)..."
-/srv/containers/edq/scripts/scrub_remote_macs.sh || echo "  WARNING: Mac scrub failed; continuing with backup"
+# --- Step 1: Scrub known credentials from conversation history ---
+echo "[$(date)] Scrubbing credentials from conversation history..."
+python3 << 'PYEOF'
+import pathlib
+
+# Credentials list lives outside the repo to avoid committing secrets
+# File: ~/.claude/scrub-credentials.txt  (format: secret:placeholder, one per line)
+CREDS_FILE = pathlib.Path.home() / ".claude/scrub-credentials.txt"
+REPLACEMENTS = {}
+if CREDS_FILE.exists():
+    for line in CREDS_FILE.read_text().splitlines():
+        line = line.strip()
+        if line and ":" in line:
+            secret, placeholder = line.split(":", 1)
+            REPLACEMENTS[secret] = placeholder
+
+root = pathlib.Path.home() / ".claude/projects"
+changed = 0
+replacements = 0
+for f in root.rglob("*.jsonl"):
+    try:
+        text = f.read_text(errors="replace")
+        new_text = text
+        for cred, placeholder in REPLACEMENTS.items():
+            count = new_text.count(cred)
+            if count:
+                replacements += count
+                new_text = new_text.replace(cred, placeholder)
+        if new_text != text:
+            f.write_text(new_text)
+            changed += 1
+    except Exception as e:
+        print(f"  Warning: could not process {f}: {e}")
+
+print(f"  Scrubbed {changed} files, {replacements} replacements")
+PYEOF
 
 # --- Step 2: Lock down conversation file permissions ---
 echo "[$(date)] Setting conversation file permissions..."
