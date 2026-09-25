@@ -557,6 +557,19 @@ def get_vram_per_process() -> list:
         return []
 
 
+def launcher_has_vram_guard(launch_command: str) -> bool:
+    """True if the service's start script gates itself with vram_guard's vram_preflight."""
+    for token in (launch_command or "").split():
+        if token.endswith(".sh"):
+            path = Path(token) if token.startswith("/") else Path("/srv/containers/edq") / token
+            try:
+                if "vram_preflight" in path.read_text(errors="replace"):
+                    return True
+            except OSError:
+                pass
+    return False
+
+
 def get_competing_gpu_services(config: dict, needed_gb: float) -> list[dict]:
     """Return running GPU services that are eating into needed VRAM headroom."""
     competing = []
@@ -595,9 +608,11 @@ async def start_service(service_id: str, force: bool = False):
     if port and check_port(port, status_host):
         return {"status": "already_running", "message": f"{service['name']} is already running on {status_host}:{port}"}
 
-    # VRAM pre-check for GPU services
+    # VRAM pre-check for GPU services. Launchers on vram_guard make that decision
+    # themselves (and can politely stop other registered tools to make room), so
+    # this coarser check only applies to launchers not yet converted.
     vram_needed = service.get("vram_gb", 0)
-    if vram_needed and not force:
+    if vram_needed and not force and not launcher_has_vram_guard(launch_command):
         competing = get_competing_gpu_services(config, vram_needed)
         if competing:
             free_gb = get_vram_free_gb()

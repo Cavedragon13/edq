@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TripoSplat Studio</title>
+<script>
+  // Apply the saved theme before first paint (dark by default).
+  try { document.documentElement.dataset.theme = localStorage.getItem("triposplat-theme") || "dark"; } catch (e) {}
+</script>
+<style>
+  :root[data-theme="dark"] {
+    --bg: #1e1e1e; --panel: #2d2d2d; --panel2: #252525; --text: #e0e0e0; --muted: #9aa3ad;
+    --border: #4a5568; --accent: #8b5cf6; --accent-2: #a78bfa; --good: #34d399; --bad: #f87171;
+    --input: #1a1a1a;
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f4f6; --panel: #ffffff; --panel2: #f0f0f3; --text: #1f2328; --muted: #5b6470;
+    --border: #cfd4dc; --accent: #7c3aed; --accent-2: #6d28d9; --good: #059669; --bad: #dc2626;
+    --input: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    transition: background .3s ease, color .3s ease;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+    border-bottom: 1px solid var(--border); background: var(--panel);
+    transition: background .3s ease, border-color .3s ease;
+  }
+  header h1 { font-size: 18px; margin: 0; font-weight: 650; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  #theme {
+    margin-left: auto; width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid var(--border); background: var(--panel2); color: var(--text);
+    font-size: 18px; cursor: pointer; transition: transform .3s ease, background .3s ease;
+  }
+  #theme:hover { transform: rotate(25deg); }
+  main { padding: 16px 20px 40px; max-width: 1500px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+  @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+    transition: background .3s ease, border-color .3s ease;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 10px; display: flex; gap: 8px; align-items: baseline; }
+  .card h2 .step { color: var(--accent-2); font-weight: 700; }
+  .card h2 .hint { color: var(--muted); font-weight: 400; font-size: 12.5px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+  label { color: var(--muted); font-size: 12.5px; }
+  input[type=text], input[type=number], select {
+    background: var(--input); color: var(--text); border: 1px solid var(--border);
+    border-radius: 7px; padding: 6px 8px; font: inherit;
+    transition: background .3s ease, border-color .3s ease, color .3s ease;
+  }
+  input[type=number] { width: 90px; }
+  input[type=range] { accent-color: var(--accent); }
+  button {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer;
+    transition: background .2s ease, border-color .2s ease, opacity .2s ease;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.primary:hover:not(:disabled) { background: var(--accent-2); }
+  #drop {
+    border: 2px dashed var(--border); border-radius: 10px; padding: 26px; text-align: center;
+    color: var(--muted); cursor: pointer; transition: border-color .2s ease, background .2s ease;
+  }
+  #drop.over { border-color: var(--accent); background: var(--panel2); }
+  .stage { position: relative; display: flex; justify-content: center; background: var(--panel2); border-radius: 10px; padding: 8px; }
+  #canvas { max-width: 100%; max-height: 68vh; touch-action: none; cursor: none; border-radius: 6px; }
+  #prepared { width: 100%; aspect-ratio: 1; object-fit: contain; background: #000; border-radius: 8px; display: block; }
+  .muted { color: var(--muted); }
+  .status { min-height: 20px; font-size: 13px; }
+  .status.err { color: var(--bad); }
+  .status.ok { color: var(--good); }
+  .bar { height: 8px; background: var(--panel2); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+  .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  details summary { cursor: pointer; color: var(--muted); margin: 6px 0; }
+  .settings { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px 12px; }
+  .settings > div { display: flex; flex-direction: column; gap: 3px; }
+  #result iframe { width: 100%; height: 520px; border: 0; border-radius: 10px; background: #0a0b0e; }
+  #result img { max-width: 100%; border-radius: 8px; background: #262626; }
+  .files a { color: var(--accent-2); margin-right: 12px; }
+  .status a { color: var(--accent-2); }
+  #meshPreview { max-height: 520px; display: block; margin: 0 auto; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .tile {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    cursor: pointer; transition: border-color .2s ease, transform .2s ease;
+  }
+  .tile:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .tile img { width: 100%; aspect-ratio: 3 / 1; object-fit: cover; display: block; background: #262626; }
+  .tile .cap { padding: 6px 8px; font-size: 12px; word-break: break-all; }
+  .tile .badges { color: var(--muted); font-size: 11px; }
+  .hidden { display: none !important; }
+  kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>TripoSplat Studio</h1>
+  <span class="sub">image → 3D Gaussian splat · mask, preview, approve</span>
+  <button id="theme" title="Toggle theme" aria-label="Toggle theme">☾</button>
+</header>
+
+<main>
+  <div class="grid">
+    <!-- Step 1: source + mask -->
+    <section class="card">
+      <h2><span class="step">1</span> Source &amp; mask <span class="hint">paint what the model should keep</span></h2>
+      <div id="drop">Drop an image here or click to choose<input id="file" type="file" accept="image/*" hidden></div>
+      <div id="editor" class="hidden">
+        <div class="row">
+          <button id="keep" class="on" title="Paint areas to keep (K)">Keep brush</button>
+          <button id="erase" title="Paint areas to remove (E)">Erase brush</button>
+          <label>Size <input id="size" type="range" min="4" max="220" value="40"></label>
+          <button id="undo" title="Undo (Ctrl+Z)">Undo</button>
+          <button id="reset" title="Back to the automatic cutout">Reset to auto</button>
+          <button id="all" title="Keep the whole image">Keep all</button>
+          <span style="flex:1"></span>
+          <label>View
+            <select id="view">
+              <option value="overlay">Overlay</option>
+              <option value="cutout">Cutout</option>
+              <option value="mask">Mask</option>
+            </select>
+          </label>
+          <button id="another">New image</button>
+        </div>
+        <div class="stage"><canvas id="canvas"></canvas></div>
+        <div class="row muted" style="font-size:12px">
+          <span><kbd>K</kbd> keep · <kbd>E</kbd> erase · <kbd>[</kbd>/<kbd>]</kbd> size · <kbd>Ctrl+Z</kbd> undo</span>
+          <span id="alphaNote"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2-3: preview + approve -->
+    <section class="card">
+      <h2><span class="step">2</span> Model input <span class="hint">exactly what TripoSplat will see</span></h2>
+      <img id="prepared" alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+      <div class="row">
+        <label>Edge erode <input id="erode" type="range" min="0" max="6" value="1"></label>
+        <span id="erodeVal" class="muted">1 px</span>
+      </div>
+      <div class="status" id="prepStatus">Load an image to begin.</div>
+
+      <h2 style="margin-top:14px"><span class="step">3</span> Approve &amp; generate</h2>
+      <div class="row">
+        <label>Name <input id="name" type="text" placeholder="used in the output folder name" size="26"></label>
+      </div>
+      <details>
+        <summary>Sampling settings (defaults = upstream recommendations)</summary>
+        <div class="settings">
+          <div><label>Seed</label><input id="seed" type="number" value="42"></div>
+          <div><label>Steps (10–20 rec.)</label><input id="steps" type="number" value="20" min="1" max="50"></div>
+          <div><label>Guidance (3.0 rec.)</label><input id="guidance" type="number" value="3.0" step="0.5" min="1" max="10"></div>
+          <div><label>Shift (3.0 rec.)</label><input id="shift" type="number" value="3.0" step="0.5" min="1" max="10"></div>
+          <div><label>Gaussians</label>
+            <select id="gaussians">
+              <option>262144</option><option>131072</option><option>65536</option><option>32768</option>
+            </select>
+          </div>
+          <div><label>Also save .splat</label><input id="saveSplat" type="checkbox"></div>
+        </div>
+      </details>
+      <div class="row">
+        <button id="go" class="primary" disabled>Approve &amp; generate</button>
+      </div>
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="status" id="genStatus"></div>
+    </section>
+  </div>
+
+  <!-- Result -->
+  <section id="result" class="card hidden" style="margin-top:16px">
+    <h2><span class="step">4</span> Result <span class="hint" id="resFolder"></span></h2>
+    <div class="grid">
+      <div><iframe id="viewer" title="Splat viewer"></iframe></div>
+      <div>
+        <img id="resPreview" alt="front / side / back preview">
+        <div class="row files" id="resFiles"></div>
+        <h2 style="margin-top:12px">Blender mesh <span class="hint">headless Blender, ~1 min</span></h2>
+        <div class="row">
+          <button id="blender">Make Blender mesh</button>
+          <span class="status" id="blStatus"></span>
+        </div>
+        <img id="meshPreview" class="hidden" alt="Blender mesh render">
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery -->
+  <section class="card" style="margin-top:16px">
+    <h2>Gallery <span class="hint">~/ai_generated/triposplat — click to open</span></h2>
+    <div class="gallery" id="gallery"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  // ---------------------------------------------------------------- theme
+  const themeBtn = $("theme");
+  function paintThemeBtn() { themeBtn.textContent = document.documentElement.dataset.theme === "dark" ? "☾" : "☀"; }
+  themeBtn.onclick = () => {
+    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("triposplat-theme", next); } catch (e) {}
+    paintThemeBtn();
+  };
+  paintThemeBtn();
+
+  // ---------------------------------------------------------------- state
+  let sid = null, baseName = "";
+  let W = 0, H = 0;
+  const img = new Image();
+  const maskC = document.createElement("canvas");      // alpha = keep
+  const mctx = maskC.getContext("2d", { willReadFrequently: true });
+  let autoMask = null;                                  // ImageData of the automatic cutout
+  const undoStack = [];
+  let mode = "keep", brush = 40, view = "overlay";
+  let cursor = null, drawing = false, last = null;
+  let previewCurrent = false, prepInFlight = false, generating = false, prepTimer = null;
+  const canvas = $("canvas"), ctx = canvas.getContext("2d");
+  const tmp = document.createElement("canvas"), tctx = tmp.getContext("2d");
+
+  function setStatus(el, text, cls = "") { el.textContent = text; el.className = "status " + cls; }
+  function refreshGo() { $("go").disabled = !(sid && previewCurrent && !prepInFlight && !generating); }
+  function invalidate() {
+    previewCurrent = false; refreshGo();
+    setStatus($("prepStatus"), "Mask changed — preview updates when you stop painting…");
+  }
+
+  // ---------------------------------------------------------------- upload
+  const drop = $("drop"), fileIn = $("file");
+  drop.onclick = () => fileIn.click();
+  drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave = () => drop.classList.remove("over");
+  drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); };
+  fileIn.onchange = () => { if (fileIn.files[0]) upload(fileIn.files[0]); };
+  $("another").onclick = () => fileIn.click();
+
+  async function upload(file) {
+    setStatus($("prepStatus"), "Removing background…");
+    previewCurrent = false; refreshGo();
+    const fd = new FormData(); fd.append("file", file);
+    try {
+      const r = await fetch("api/cutout", { method: "POST", body: fd });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.detail || r.statusText);
+      sid = j.id; baseName = j.name; W = j.width; H = j.height;
+      $("name").value = baseName;
+      $("alphaNote").textContent = j.had_alpha ? "· using the image's own transparency" : "· auto cutout by BiRefNet";
+      await loadImage(img, j.image);
+      const m = new Image(); await loadImage(m, j.mask);
+      canvas.width = maskC.width = tmp.width = W;
+      canvas.height = maskC.height = tmp.height = H;
+      // grayscale mask -> alpha canvas
+      mctx.clearRect(0, 0, W, H); mctx.drawImage(m, 0, 0);
+      const d = mctx.getImageData(0, 0, W, H);
+      for (let i = 0; i < d.data.length; i += 4) { d.data[i + 3] = d.data[i]; d.data[i] = d.data[i + 1] = d.data[i + 2] = 255; }
+      mctx.putImageData(d, 0, 0);
+      autoMask = mctx.getImageData(0, 0, W, H);
+      undoStack.length = 0;
+      drop.classList.add("hidden"); $("editor").classList.remove("hidden");
+      brush = Math.round(Math.max(W, H) / 30); $("size").value = Math.min(220, brush);
+      render(); schedulePrepare(0);
+    } catch (e) { setStatus($("prepStatus"), "Upload failed: " + e.message, "err"); }
+  }
+  function loadImage(im, src) { return new Promise((ok, bad) => { im.onload = ok; im.onerror = bad; im.src = src; }); }
+
+  // ---------------------------------------------------------------- render
+  function checker() {
+    const s = 16;
+    for (let y = 0; y < H; y += s) for (let x = 0; x < W; x += s) {
+      ctx.fillStyle = ((x / s + y / s) & 1) ? "#3a3a3a" : "#2a2a2a"; ctx.fillRect(x, y, s, s);
+    }
+  }
+  function render() {
+    if (!W) return;
+    ctx.globalCompositeOperation = "source-over";
+    if (view === "mask") {
+      ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); ctx.drawImage(maskC, 0, 0);
+    } else if (view === "cutout") {
+      checker();
+      tctx.globalCompositeOperation = "source-over"; tctx.clearRect(0, 0, W, H); tctx.drawImage(img, 0, 0);
+      tctx.globalCompositeOperation = "destination-in"; tctx.drawImage(maskC, 0, 0);
+      ctx.drawImage(tmp, 0, 0);
+    } else {
+      ctx.drawImage(img, 0, 0);
+      tctx.globalCompositeOperation = "source-over"; tctx.clearRect(0, 0, W, H);
+      tctx.fillStyle = "rgba(255, 30, 80, 0.55)"; tctx.fillRect(0, 0, W, H);
+      tctx.globalCompositeOperation = "destination-out"; tctx.drawImage(maskC, 0, 0);
+      ctx.drawImage(tmp, 0, 0);
+    }
+    if (cursor) {
+      ctx.beginPath(); ctx.arc(cursor.x, cursor.y, brush / 2, 0, Math.PI * 2);
+      ctx.lineWidth = Math.max(2, W / 400);
+      ctx.strokeStyle = mode === "keep" ? "#34d399" : "#f87171"; ctx.stroke();
+    }
+  }
+
+  // ---------------------------------------------------------------- painting
+  function toImg(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+  }
+  function stamp(a, b) {
+    mctx.globalCompositeOperation = mode === "keep" ? "source-over" : "destination-out";
+    mctx.strokeStyle = mctx.fillStyle = "#fff";
+    mctx.lineCap = "round"; mctx.lineWidth = brush;
+    mctx.beginPath(); mctx.moveTo(a.x, a.y); mctx.lineTo(b.x, b.y); mctx.stroke();
+    mctx.globalCompositeOperation = "source-over";
+  }
+  function pushUndo() { undoStack.push(mctx.getImageData(0, 0, W, H)); if (undoStack.length > 25) undoStack.shift(); }
+  canvas.onpointerdown = (e) => {
+    canvas.setPointerCapture(e.pointerId); pushUndo();
+    drawing = true; last = toImg(e); stamp(last, last); invalidate(); render();
+  };
+  canvas.onpointermove = (e) => {
+    cursor = toImg(e);
+    if (drawing) { stamp(last, cursor); last = cursor; }
+    render();
+  };
+  canvas.onpointerup = canvas.onpointercancel = () => { if (drawing) { drawing = false; schedulePrepare(); } };
+  canvas.onpointerleave = () => { cursor = null; render(); };
+
+  function setMode(m) { mode = m; $("keep").classList.toggle("on", m === "keep"); $("erase").classList.toggle("on", m === "erase"); render(); }
+  $("keep").onclick = () => setMode("keep");
+  $("erase").onclick = () => setMode("erase");
+  $("size").oninput = (e) => { brush = +e.target.value; render(); };
+  $("view").onchange = (e) => { view = e.target.value; render(); };
+  $("undo").onclick = undo;
+  function undo() { if (!undoStack.length) return; mctx.putImageData(undoStack.pop(), 0, 0); render(); schedulePrepare(); }
+  $("reset").onclick = () => { if (!autoMask) return; pushUndo(); mctx.putImageData(autoMask, 0, 0); render(); schedulePrepare(); };
+  $("all").onclick = () => { if (!W) return; pushUndo(); mctx.globalCompositeOperation = "source-over"; mctx.fillStyle = "#fff"; mctx.fillRect(0, 0, W, H); render(); schedulePrepare(); };
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+    if (e.key === "k" || e.key === "K") setMode("keep");
+    else if (e.key === "e" || e.key === "E") setMode("erase");
+    else if (e.key === "[") { brush = Math.max(4, brush - 6); $("size").value = brush; render(); }
+    else if (e.key === "]") { brush = Math.min(400, brush + 6); $("size").value = Math.min(220, brush); render(); }
+    else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+  });
+
+  // ---------------------------------------------------------------- prepare (preview)
+  $("erode").oninput = (e) => { $("erodeVal").textContent = e.target.value + " px"; invalidate(); schedulePrepare(); };
+  function schedulePrepare(delay = 350) { invalidate(); clearTimeout(prepTimer); prepTimer = setTimeout(prepare, delay); }
+  function maskDataURL() {
+    const d = mctx.getImageData(0, 0, W, H);
+    const out = new ImageData(W, H);
+    for (let i = 0; i < d.data.length; i += 4) { const a = d.data[i + 3]; out.data[i] = out.data[i + 1] = out.data[i + 2] = a; out.data[i + 3] = 255; }
+    tctx.globalCompositeOperation = "source-over"; tctx.putImageData(out, 0, 0);
+    return tmp.toDataURL("image/png");
+  }
+  let prepSeq = 0;
+  async function prepare() {
+    if (!sid) return;
+    const seq = ++prepSeq;
+    prepInFlight = true; previewCurrent = false; refreshGo();
+    setStatus($("prepStatus"), "Updating preview…");
+    try {
+      const r = await fetch("api/prepare", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: sid, mask: maskDataURL(), erode: +$("erode").value }),
+      });
+      const j = await r.json();
+      if (seq !== prepSeq) return;               // a newer edit superseded this one
+      render();                                   // maskDataURL borrowed tmp
+      if (!r.ok) throw new Error(j.detail || r.statusText);
+      $("prepared").src = j.prepared;
+      previewCurrent = true;
+      setStatus($("prepStatus"), "Preview is current — approve when it looks right.", "ok");
+    } catch (e) {
+      if (seq === prepSeq) setStatus($("prepStatus"), e.message, "err");
+    } finally {
+      if (seq === prepSeq) { prepInFlight = false; refreshGo(); }
+    }
+  }
+
+  // ---------------------------------------------------------------- generate
+  $("go").onclick = async () => {
+    generating = true; refreshGo();
+    setStatus($("genStatus"), "Encoding…");
+    $("barFill").style.width = "2%";
+    const poll = setInterval(async () => {
+      try {
+        const p = await (await fetch("api/progress/" + sid)).json();
+        const pct = p.stage === "sampling" && p.total ? 5 + 85 * p.step / p.total
+                  : p.stage === "decoding" ? 92 : p.stage === "saving" ? 97 : p.stage === "done" ? 100 : 3;
+        $("barFill").style.width = pct + "%";
+        const label = { encoding: "Encoding image…", sampling: `Sampling ${p.step}/${p.total}…`, decoding: "Decoding gaussians…", saving: "Saving files + preview…" }[p.stage];
+        if (label) setStatus($("genStatus"), label);
+      } catch (e) {}
+    }, 500);
+    try {
+      const r = await fetch("api/generate", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: sid, name: $("name").value, seed: +$("seed").value, steps: +$("steps").value,
+          guidance: +$("guidance").value, shift: +$("shift").value,
+          num_gaussians: +$("gaussians").value, save_splat: $("saveSplat").checked,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.detail || r.statusText);
+      $("barFill").style.width = "100%";
+      setStatus($("genStatus"), `Done in ${j.seconds}s · ${j.gaussians.toLocaleString()} gaussians · ${j.folder}`, "ok");
+      showResult(j.folder); loadGallery();
+    } catch (e) {
+      setStatus($("genStatus"), "Generation failed: " + e.message, "err");
+    } finally {
+      clearInterval(poll); generating = false; refreshGo();
+    }
+  };
+
+  // ---------------------------------------------------------------- result + blender
+  let current = null, blPoll = null;
+  const fileURL = (folder, f) => "files/" + encodeURIComponent(folder) + "/" + f;
+  function showResult(folder) {
+    current = folder;
+    $("result").classList.remove("hidden");
+    $("resFolder").textContent = folder;
+    const ply = new URL(fileURL(folder, "splat.ply"), location.href).pathname;
+    $("viewer").src = "viewer/viewer.html?ply=" + encodeURIComponent(ply) + "&ts=" + Date.now();
+    $("resPreview").src = fileURL(folder, "preview.png") + "?ts=" + Date.now();
+    const files = ["splat.ply", "input.png", "mask.png", "prepared.png", "params.json"];
+    $("resFiles").innerHTML = "";
+    for (const f of files) { const a = document.createElement("a"); a.href = fileURL(folder, f); a.textContent = f; a.target = "_blank"; $("resFiles").appendChild(a); }
+    $("meshPreview").classList.add("hidden");
+    checkBlender();
+    $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showMesh(folder) {
+    $("meshPreview").src = fileURL(folder, "mesh_front.png") + "?ts=" + Date.now();
+    $("meshPreview").classList.remove("hidden");
+    setStatus($("blStatus"), "");
+    const a = document.createElement("a"); a.href = fileURL(folder, "mesh.blend"); a.textContent = "Download mesh.blend";
+    $("blStatus").appendChild(a);
+    $("blender").textContent = "Rebuild Blender mesh";
+  }
+  async function checkBlender() {
+    clearInterval(blPoll);
+    const folder = current;
+    $("blender").disabled = false; $("blender").textContent = "Make Blender mesh"; setStatus($("blStatus"), "");
+    try {
+      const j = await (await fetch("api/blender/" + encodeURIComponent(folder))).json();
+      if (folder !== current) return;
+      if (j.state === "done") showMesh(folder);
+      else if (j.state === "running") watchBlender(folder);
+      else if (j.state === "error") setStatus($("blStatus"), j.error, "err");
+    } catch (e) {}
+  }
+  function watchBlender(folder) {
+    $("blender").disabled = true; setStatus($("blStatus"), "Blender is building the mesh…");
+    const t0 = Date.now();
+    blPoll = setInterval(async () => {
+      const j = await (await fetch("api/blender/" + encodeURIComponent(folder))).json();
+      if (folder !== current) { clearInterval(blPoll); return; }
+      if (j.state === "running") { setStatus($("blStatus"), `Blender is building the mesh… ${Math.round((Date.now() - t0) / 1000)}s`); return; }
+      clearInterval(blPoll); $("blender").disabled = false;
+      if (j.state === "done") { showMesh(folder); loadGallery(); }
+      else setStatus($("blStatus"), j.error || "Blender failed", "err");
+    }, 2000);
+  }
+  $("blender").onclick = async () => {
+    const folder = current;
+    const r = await fetch("api/blender", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ folder }) });
+    if (!r.ok) { setStatus($("blStatus"), (await r.json()).detail || r.statusText, "err"); return; }
+    watchBlender(folder);
+  };
+
+  // ---------------------------------------------------------------- gallery
+  async function loadGallery() {
+    const items = await (await fetch("api/gallery")).json();
+    const g = $("gallery"); g.innerHTML = "";
+    for (const it of items) {
+      const t = document.createElement("div"); t.className = "tile";
+      const im = document.createElement("img"); im.loading = "lazy";
+      im.src = it.preview ? fileURL(it.folder, "preview.png") : "";
+      const cap = document.createElement("div"); cap.className = "cap"; cap.textContent = it.folder;
+      const b = document.createElement("div"); b.className = "badges";
+      b.textContent = [it.input ? "source saved" : "no source", it.mesh ? "Blender mesh" : ""].filter(Boolean).join(" · ");
+      cap.appendChild(b); t.append(im, cap);
+      t.onclick = () => showResult(it.folder);
+      g.appendChild(t);
+    }
+  }
+  loadGallery();
+})();
+</script>
+</body>
+</html>

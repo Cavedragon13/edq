@@ -71,16 +71,21 @@ def render(xyz, rgb, view: str, size: int = 256):
     return img, mask
 
 
+def write_preview(ply: Path) -> Path:
+    """Write preview.png (front | side | back) next to one splat.ply."""
+    out = ply.parent / "preview.png"
+    xyz, rgb = load_splat(ply)
+    tiles = [render(xyz, rgb, view, 384)[0] for view in ("front", "side", "back")]
+    Image.fromarray((np.concatenate(tiles, 1) * 255).astype(np.uint8)).save(out)
+    return out
+
+
 def write_previews(force: bool):
     made = 0
     for ply in sorted(ROOT.glob("*/splat.ply")):
-        out = ply.parent / "preview.png"
-        if out.exists() and not force:
+        if (ply.parent / "preview.png").exists() and not force:
             continue
-        xyz, rgb = load_splat(ply)
-        tiles = [render(xyz, rgb, view, 384)[0] for view in ("front", "side", "back")]
-        Image.fromarray((np.concatenate(tiles, 1) * 255).astype(np.uint8)).save(out)
-        print(f"wrote {out}")
+        print(f"wrote {write_preview(ply)}")
         made += 1
     print(f"{made} preview(s) written")
 

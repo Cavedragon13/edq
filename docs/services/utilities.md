@@ -1,38 +1,17 @@
 # Utility Services & Tools
 
-## Hunyuan3D-2 (Image to 3D)
+## Image to 3D
 
-**Port:** 8007
-**Purpose:** Tencent's image-to-3D model generation
+Both studios share one flow: upload → auto cutout → mask brushes → preview of the exact model input → approve → generate, with every run saved in `~/ai_generated/<service>/<YYYY-MM-DD_HHMMSS>_<name>/` and a headless-Blender button.
 
-### Launch
+| Service | Port | Output | Engine | Peak VRAM |
+| --- | --- | --- | --- | --- |
+| TripoSplat Studio | 8067 | Gaussian splat (`splat.ply`) → optional vertex-colored mesh | `projects/TripoSplat`, `venv_triposplat` | ~5GB, ~15s |
+| 3D Asset Studio | 8068 | PBR-textured mesh (`model.glb` + maps) | ComfyUI template `3d_pixal3d_trellis2_image_to_model` (Pixal3D / TRELLIS.2 int8) | ~12–13.5GB, 4–6 min |
 
-```bash
-cd /srv/containers/edq
-bash scripts/start_hunyuan3d.sh
-```
-
-**Access at:** `http://192.168.7.226:8007`
-
-### Configuration
-
-- **Location**: `projects/hunyuan3d/`
-- **Launcher**: `scripts/start_hunyuan3d.sh`
-- **Venv**: `venv_hunyuan3d`
-- **Requirements**: ~6GB VRAM (shape), ~16GB (with texture)
-
-### Features
-
-- Image to 3D mesh
-- Texture synthesis
-- GLB/OBJ export
-
-### Key Considerations
-
-- Upload image → generates 3D mesh
-- First launch downloads ~10GB of models
-- ~6GB VRAM for shape only, ~16GB for shape + texture
-- Exports GLB/OBJ formats
+- Launch: `bash scripts/start_triposplat.sh` / `bash scripts/start_asset3d.sh` (the latter starts ComfyUI if needed).
+- After a ComfyUI or template update, rebuild the 3D Asset Studio workflow: `venv_comfyui/bin/python scripts/asset3d_build_workflow.py`.
+- Hunyuan3D-2 (port 8007) was retired 2026-09-24: its texture stage never built on this machine, and newer Hunyuan releases are cloud-only or don't fit 16GB.
 
 ---
 

@@ -6,6 +6,14 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). RAM: the loader stages ~13.4GB in system RAM
+# (OOM-killed at that size 2026-09-24 under the old evict-everything preflight,
+# which never checked RAM). VRAM measured during a generation — see docs/venvs.md.
+TOOL_NAME="fish-speech"
+REQ_VRAM_MIB=12800          # measured peak ~12.4GB above desktop baseline (S2-Pro, max_seq_len 8192), 2026-09-24
+REQ_RAM_MIB=14000
+source scripts/vram_guard.sh
+
 SERVICE_NAME="Fish Speech TTS"
 PORT=8003
 VENV="venv_fish_speech"
@@ -23,7 +31,8 @@ if [ ! -d "$MODEL_DIR" ] || [ ! -f "$MODEL_DIR/codec.pth" ] || ! ls "$MODEL_DIR"
     exit 1
 fi
 
-gpu_preflight "$PORT"
+vram_preflight || exit 1   # refuses if VRAM/RAM short; relaunch with CLEAR=1 to stop other registered tools first
+clear_port "$PORT"
 activate_venv "$VENV"
 
 # Check if fish-speech is installed. Do not install on first launch.
@@ -62,8 +71,9 @@ else
         --decoder-checkpoint-path "$MODEL_DIR/codec.pth" \
         --decoder-config-name modded_dac_vq \
         > /tmp/fish_speech.log 2>&1 &
-    echo "⏳ Waiting for service..."
-    if wait_for_port "$PORT" 60; then
+    register_tool $!
+    echo "⏳ Waiting for service (S2-Pro load ~1-3 min)..."
+    if wait_for_port "$PORT" 300; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
     else
         echo "❌ Service did not start in time — check /tmp/fish_speech.log"

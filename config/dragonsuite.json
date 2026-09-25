@@ -398,24 +398,6 @@
             "output_dir": "/home/edq/ai_generated/liveportrait"
         },
         {
-            "id": "hunyuan3d",
-            "name": "Hunyuan3D-2",
-            "description": "Image to 3D + Texture Synthesis",
-            "category": "vision",
-            "port": 8007,
-            "path": null,
-            "icon": "&#129513;",
-            "launch_command": "cd /srv/containers/edq && bash scripts/start_hunyuan3d.sh",
-            "project_path": "/srv/containers/edq/projects/hunyuan3d",
-            "features": [
-                "Image to 3D",
-                "Texture"
-            ],
-            "stop_command": "pkill -f 'hunyuan3d/gradio_app[.]py' || true",
-            "vram_gb": 12,
-            "output_dir": "/home/edq/ai_generated/hunyuan3d"
-        },
-        {
             "id": "qwen3-tts",
             "name": "Qwen3-TTS",
             "description": "TTS + Voice Cloning + Voice Design (3 modes)",
@@ -470,7 +452,7 @@
                 "Inline Emotions"
             ],
             "stop_command": "pkill -f 'tools[.]run_webui' || true",
-            "vram_gb": 4,
+            "vram_gb": 12.5,
             "output_dir": "/home/edq/ai_generated/fish-speech"
         },
         {
@@ -1219,26 +1201,6 @@
             "stop_command": "pkill -f 'kalshi/server.py' || true"
         },
         {
-            "id": "omnivoice-studio",
-            "name": "OmniVoice Studio",
-            "description": "Cinematic video dubbing \u2014 transcribe, translate, re-voice, mux with timeline editor",
-            "category": "audio",
-            "port": 8051,
-            "path": "/",
-            "icon": "&#127909;",
-            "launch_command": "cd /srv/containers/edq && bash scripts/start_omnivoice_studio.sh",
-            "stop_command": "pkill -f 'uvicorn backend.main:app.*--port 8051' || true",
-            "project_path": "/srv/containers/edq/projects/omnivoice-studio",
-            "features": [
-                "Video Dub",
-                "Stem Split",
-                "Timeline Editor",
-                "600+ Languages"
-            ],
-            "vram_gb": 4,
-            "output_dir": "/home/edq/ai_generated/omnivoice"
-        },
-        {
             "id": "agentic-video",
             "name": "Agentic Video Editor",
             "description": "4-agent video ad pipeline \u2014 Director, Trim Refiner, Editor, Reviewer with Gemini + FFmpeg",
@@ -1475,25 +1437,6 @@
             "output_dir": "/home/edq/ai_generated/minimax-music3"
         },
         {
-            "id": "sensenova",
-            "name": "SenseNova-U1.5-8B-MoT",
-            "description": "Native unified multimodal (NEO-Unify, no separate vision encoder/VAE) \u2014 text-to-image, editing, VQA, interleaved gen",
-            "category": "image",
-            "port": 8048,
-            "path": "/",
-            "icon": "&#128300;",
-            "launch_command": "cd /srv/containers/edq && bash scripts/start_sensenova.sh",
-            "project_path": "/srv/containers/edq/projects/SenseNova-U1",
-            "features": [
-                "Text-to-image up to 2048x2048",
-                "Native unified understanding + generation",
-                "Q8 GGUF + balanced layer-offload for 16GB cards"
-            ],
-            "stop_command": "pkill -f 'sensenova_server.py' || true",
-            "vram_gb": 13.5,
-            "output_dir": "/home/edq/ai_generated/sensenova"
-        },
-        {
             "id": "comfyui",
             "name": "ComfyUI",
             "description": "Node-based generative media engine \u2014 driven directly by MCP agents (official comfy-mcp + community comfyui-mcp) or its own graph UI",
@@ -1590,6 +1533,49 @@
             "stop_command": "pkill -f 'marigold_v2_gradio[.]py' || true",
             "vram_gb": 14.0,
             "output_dir": "/home/edq/ai_generated/marigold-v2"
+        },
+        {
+            "id": "triposplat",
+            "name": "TripoSplat Studio",
+            "description": "Image to 3D Gaussian splat \u2014 mask, preview & approve before the GPU run, one-click Blender mesh",
+            "category": "vision",
+            "port": 8067,
+            "path": "/",
+            "icon": "&#129497;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_triposplat.sh",
+            "project_path": "/srv/containers/edq/projects/TripoSplat",
+            "features": [
+                "Image to splat",
+                "Mask editor",
+                "Approve before render",
+                "Blender mesh",
+                "Splat gallery"
+            ],
+            "stop_command": "pkill -f 'triposplat_server[.]py' || true",
+            "vram_gb": 6,
+            "output_dir": "/home/edq/ai_generated/triposplat"
+        },
+        {
+            "id": "asset3d",
+            "name": "3D Asset Studio",
+            "description": "Image to PBR-textured 3D mesh (GLB) \u2014 Pixal3D or TRELLIS.2 via ComfyUI, mask & approve before the GPU run, one-click Blender scene",
+            "category": "vision",
+            "port": 8068,
+            "path": "/",
+            "icon": "&#127918;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_asset3d.sh",
+            "project_path": null,
+            "features": [
+                "Pixal3D / TRELLIS.2",
+                "PBR textures",
+                "Mask editor",
+                "Approve before render",
+                "GLB viewer",
+                "Blender scene"
+            ],
+            "stop_command": "curl -s -X POST -H 'Content-Type: application/json' -d '{\"unload_models\":true,\"free_memory\":true}' http://127.0.0.1:8188/free >/dev/null; pkill -f 'python scripts/asset3d_server[.]py' || true",
+            "vram_gb": 13.5,
+            "output_dir": "/home/edq/ai_generated/asset3d"
         }
     ],
     "categories": {

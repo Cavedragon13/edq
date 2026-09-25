@@ -166,7 +166,6 @@ clear_gpu_memory()
 | Z-Image Base       | 13-14GB | Sequential            |
 | HeartMuLa          | ~12GB   | Model                 |
 | Fish Speech        | ~12GB   | Model                 |
-| Hunyuan3D (shape)  | ~6GB    | Model                 |
 | SAM 2.1            | ~6GB    | Model                 |
 | Real-ESRGAN        | ~4GB    | None needed           |
 | LivePortrait       | ~6GB    | Model                 |

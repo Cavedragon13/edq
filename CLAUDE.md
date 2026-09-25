@@ -87,6 +87,10 @@ Central `.env` at `/srv/containers/edq/.env` — load with `from dotenv import l
 
 **Weekly update flags:** at session start, check whether `logs/weekly_update_attention.md` exists — if so, Sunday's auto-update hit something needing a human decision (failed launch-verify, merge conflict, etc.). Mention it proactively without being asked. The file clears itself automatically once the underlying issue resolves.
 
+**Conformance:** `~/knowledge-base/Dragonsuite/Conformance.md` (Obsidian) is rewritten nightly (04:30) by `scripts/health_check.py --all`, with a trend line vs. yesterday / last week, and lists every service that is off the Dragonsuite standard (updatable, vram_guard launcher, download script, output wiring, venv). When touching a service, clear its entries; when adding a standard, add the rule to `health_check.py` rather than doing a manual sweep.
+
+**Overnight agent:** `scripts/overnight_agent.sh` runs at 05:00 (cron) — an unattended Claude Code session following `config/agent/overnight_runbook.md` that works up to 3 items off the conformance list per night (skips if the GPU is busy) and writes `~/knowledge-base/Dragonsuite/Overnight/<date>.md`. Improve the runbook, not individual nights.
+
 **New service checklist** (use `dragonsuite-add` skill):
 
 - Standalone-first by default. If the model sort-of fits into WanGP or another existing multi-model app, that's an option to _propose_, not a silent default — reuse is agent-convenient, not automatically user-convenient. Ask.

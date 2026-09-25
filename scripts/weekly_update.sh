@@ -141,8 +141,55 @@ for svc in services:
     print("\t".join(row))
 PYEOF
 
+# comfy-cli owns the ComfyUI checkout (a detached release tag, not a branch),
+# so it is updated with comfy-cli rather than git pull. VIRTUAL_ENV/PATH are
+# pinned explicitly: an inherited VIRTUAL_ENV once pointed comfy-cli's installs
+# at another service's venv (docs/venvs.md, 2026-08-23).
+comfy_update() {  # $1 = latest | a version number such as 0.37.2
+    env VIRTUAL_ENV="$PROJECT_DIR/venv_comfyui" PATH="$PROJECT_DIR/venv_comfyui/bin:/usr/bin:/bin" \
+        "$PROJECT_DIR/venv_comfyui/bin/comfy" --workspace "$PROJECT_DIR/projects/ComfyUI" --skip-prompt \
+        update comfy --version "$1" < /dev/null   # never eat the loop's service rows
+}
+
+# Launch-verify an updated service (uses the loop's svc_*/pre_sha/new_sha/
+# dep_note). On failure roll back: comfy-cli to $rollback_tag when set
+# (restores its requirements too), otherwise git reset to $pre_sha.
+# GPU (one-shot) services get stopped again after a successful check;
+# persistent services (no vram_gb, e.g. Odysseus) are left running.
+launch_verify() {
+    # Kept on disk (not a deleted mktemp) so the attention note can point at it.
+    local verify_log="$PROJECT_DIR/logs/weekly_verify_${svc_id}.log"
+    local launch_rc=1
+    if [ -n "$launch_cmd" ]; then
+        timeout 300 bash -c "$launch_cmd" > "$verify_log" 2>&1 < /dev/null
+        launch_rc=$?
+    fi
+
+    if [ "$launch_rc" -eq 0 ] && grep -qi "ready at\|already running" "$verify_log"; then
+        log "  ✅ $svc_name — updated $pre_sha -> $new_sha, launch-verified ($dep_note)"
+        UPDATED_ROWS+="| $svc_name | \`${pre_sha:0:7}\` -> \`$new_sha\` | $dep_note |\n"
+        if [ "$svc_kind" = "gpu" ] && [ -n "$stop_cmd" ]; then
+            bash -c "$stop_cmd" >/dev/null 2>&1 || true
+        fi
+        return
+    fi
+
+    tail -15 "$verify_log" | while IFS= read -r l; do log "       $l"; done
+    bash -c "$stop_cmd" >/dev/null 2>&1 || true
+    if [ -n "$rollback_tag" ] && comfy_update "$rollback_tag" >> "$PROJECT_DIR/logs/weekly_comfy_update.log" 2>&1; then
+        log "  ❌ $svc_name — launch-verify FAILED after update, rolled back to v$rollback_tag with comfy-cli"
+        ATTENTION_ROWS+="| $svc_name | launch-verify failed, rolled back to v$rollback_tag | see logs/weekly_verify_${svc_id}.log |\n"
+    else
+        log "  ❌ $svc_name — launch-verify FAILED after update, rolling back code to $pre_sha"
+        log "     ($dep_note — dependency changes are NOT auto-rolled-back; check the venv if this recurs)"
+        git -C "$project_path" reset --hard "$pre_sha" -q
+        ATTENTION_ROWS+="| $svc_name | launch-verify failed, code rolled back to \`${pre_sha:0:7}\` | $dep_note — see logs/weekly_verify_${svc_id}.log |\n"
+    fi
+}
+
 while IFS=$'\t' read -r svc_id svc_name project_path port launch_cmd stop_cmd svc_kind; do
     [ -d "$project_path/.git" ] || continue
+    rollback_tag=""
 
     if ! git -C "$project_path" fetch --quiet 2>/dev/null; then
         log "  ⚠️  $svc_name — fetch failed, skipping"
@@ -150,11 +197,33 @@ while IFS=$'\t' read -r svc_id svc_name project_path port launch_cmd stop_cmd sv
         continue
     fi
 
-    # Pinned checkouts (detached HEAD, e.g. ComfyUI managed by comfy-cli at a
-    # release tag) have no tracking branch and are not auto-updated here.
+    # Pinned checkouts (detached HEAD) have no tracking branch. ComfyUI is
+    # rolled forward to the newest stable tag with comfy-cli; any other pinned
+    # checkout is left alone on purpose.
     upstream_ref=$(git -C "$project_path" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
     if [ -z "$upstream_ref" ]; then
-        log "  ⏭️  $svc_name — pinned checkout (detached HEAD / no tracking branch), not auto-updated"
+        if [ "$svc_id" != "comfyui" ]; then
+            log "  ⏭️  $svc_name — pinned checkout (detached HEAD / no tracking branch), not auto-updated"
+            continue
+        fi
+        git -C "$project_path" fetch --tags --quiet 2>/dev/null || true
+        pre_sha=$(git -C "$project_path" rev-parse --short HEAD)
+        pre_tag=$(git -C "$project_path" describe --tags --exact-match 2>/dev/null || true)
+        latest_tag=$(git -C "$project_path" tag --list 'v[0-9]*' --sort=-v:refname | grep -v -- '-' | head -1)   # stable only, like --version latest
+        if [ -z "$latest_tag" ] || [ "$pre_tag" = "$latest_tag" ]; then
+            continue
+        fi
+        log "  🔄 $svc_name — ${pre_tag:-$pre_sha} -> $latest_tag via comfy-cli"
+        bash -c "$stop_cmd" >/dev/null 2>&1 || true   # verify the new code, not a still-running old process
+        if ! comfy_update latest > "$PROJECT_DIR/logs/weekly_comfy_update.log" 2>&1; then
+            log "  ⚠️  $svc_name — comfy-cli update failed, left at ${pre_tag:-$pre_sha}"
+            ATTENTION_ROWS+="| $svc_name | comfy-cli update to $latest_tag failed | see logs/weekly_comfy_update.log |\n"
+            continue
+        fi
+        new_sha="$(git -C "$project_path" rev-parse --short HEAD) ($latest_tag)"
+        dep_note="comfy-cli update (requirements reinstalled, torch untouched); custom nodes not updated"
+        rollback_tag="${pre_tag#v}"
+        launch_verify
         continue
     fi
 
@@ -262,32 +331,7 @@ while IFS=$'\t' read -r svc_id svc_name project_path port launch_cmd stop_cmd sv
         fi
     fi
 
-    # Launch-verify. GPU (one-shot) services get stopped again after a
-    # successful check; persistent services (no vram_gb, e.g. Odysseus)
-    # are left running.
-    # Kept on disk (not a deleted mktemp) so the attention note can point at it.
-    verify_log="$PROJECT_DIR/logs/weekly_verify_${svc_id}.log"
-    if [ -n "$launch_cmd" ]; then
-        timeout 300 bash -c "$launch_cmd" > "$verify_log" 2>&1
-        launch_rc=$?
-    else
-        launch_rc=1
-    fi
-
-    if [ "$launch_rc" -eq 0 ] && grep -qi "ready at\|already running" "$verify_log"; then
-        log "  ✅ $svc_name — updated $pre_sha -> $new_sha, launch-verified ($dep_note)"
-        UPDATED_ROWS+="| $svc_name | \`${pre_sha:0:7}\` -> \`$new_sha\` | $dep_note |\n"
-        if [ "$svc_kind" = "gpu" ] && [ -n "$stop_cmd" ]; then
-            bash -c "$stop_cmd" >/dev/null 2>&1 || true
-        fi
-    else
-        log "  ❌ $svc_name — launch-verify FAILED after update, rolling back code to $pre_sha"
-        log "     ($dep_note — dependency changes are NOT auto-rolled-back; check the venv if this recurs)"
-        tail -15 "$verify_log" | while IFS= read -r l; do log "       $l"; done
-        bash -c "$stop_cmd" >/dev/null 2>&1 || true
-        git -C "$project_path" reset --hard "$pre_sha" -q
-        ATTENTION_ROWS+="| $svc_name | launch-verify failed, code rolled back to \`${pre_sha:0:7}\` | $dep_note — see logs/weekly_verify_${svc_id}.log |\n"
-    fi
+    launch_verify
 done < "$SERVICES_TSV"
 rm -f "$SERVICES_TSV"
 
@@ -339,6 +383,44 @@ done
 # -------------------------------------------------------
 log ""
 log "--- Flagging attention items for the next Claude Code session ---"
+
+# Age each attention item. The flag file is rewritten every week, so without
+# this a problem that recurs for months reads like a fresh one-week warning
+# (OmniVoice Studio sat 5 weeks this way, 2026-08-23 → 09-20). First-seen
+# dates persist in weekly_update_stuck.json; resolved items drop out.
+if [ -n "$ATTENTION_ROWS" ]; then
+    ATTENTION_ROWS=$(ATTENTION_ROWS="$ATTENTION_ROWS" DATE="$DATE" STATE="$PROJECT_DIR/logs/weekly_update_stuck.json" python3 - <<'PYEOF'
+import datetime
+import json
+import os
+
+state_path, today = os.environ["STATE"], os.environ["DATE"]
+try:
+    with open(state_path) as fh:
+        state = json.load(fh)
+except (OSError, ValueError):
+    state = {}
+out, seen = [], {}
+for row in os.environ["ATTENTION_ROWS"].replace("\\n", "\n").split("\n"):
+    cells = row.split("|")
+    if len(cells) < 4:
+        continue
+    name = cells[1].strip()
+    first = state.get(name, today)
+    seen[name] = first
+    weeks = (datetime.date.fromisoformat(today) - datetime.date.fromisoformat(first)).days // 7
+    if weeks >= 1:
+        tag = f" — STUCK since {first} ({weeks} wk)" if weeks >= 2 else f" — since {first}"
+        cells[2] = cells[2].rstrip() + tag + " "
+    out.append("|".join(cells))
+with open(state_path, "w") as fh:
+    json.dump(seen, fh, indent=2)
+print("\\n".join(out) + "\\n", end="")
+PYEOF
+)
+else
+    rm -f "$PROJECT_DIR/logs/weekly_update_stuck.json"
+fi
 
 ATTENTION_FLAG="$PROJECT_DIR/logs/weekly_update_attention.md"
 if [ -n "$ATTENTION_ROWS" ]; then
