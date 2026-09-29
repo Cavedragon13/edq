@@ -1576,6 +1576,26 @@
             "stop_command": "curl -s -X POST -H 'Content-Type: application/json' -d '{\"unload_models\":true,\"free_memory\":true}' http://127.0.0.1:8188/free >/dev/null; pkill -f 'python scripts/asset3d_server[.]py' || true",
             "vram_gb": 13.5,
             "output_dir": "/home/edq/ai_generated/asset3d"
+        },
+        {
+            "id": "supra2-img",
+            "name": "Supra2-IMG",
+            "description": "Compact 256px text-to-image model with a focused local prompt UI",
+            "category": "image",
+            "port": 8070,
+            "path": "/",
+            "icon": "&#127912;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_supra2_img.sh",
+            "project_path": "/srv/containers/edq/projects/Supra2-IMG",
+            "features": [
+                "Text to image",
+                "Seed control",
+                "CFG and steps",
+                "Timestamped PNG gallery"
+            ],
+            "stop_command": "pkill -f '[s]upra2_server.py' || true",
+            "vram_gb": 6.0,
+            "output_dir": "/home/edq/ai_generated/supra2-img"
         }
     ],
     "categories": {

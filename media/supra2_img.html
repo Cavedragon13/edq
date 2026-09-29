@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Supra2-IMG</title>
+  <style>
+    :root { color-scheme: dark; --bg:#1e1e1e; --panel:#2d2d2d; --panel2:#252525; --text:#e0e0e0; --muted:#a7b0bf; --border:#4a5568; --accent:#9ec5ff; }
+    :root.light { color-scheme: light; --bg:#f2f4f8; --panel:#fff; --panel2:#eef1f6; --text:#172033; --muted:#526078; --border:#aeb8c8; --accent:#245ca8; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at top,#313b4a 0,var(--bg) 48%); color:var(--text); font:15px/1.5 system-ui,sans-serif; transition:background .3s ease,color .3s ease; }
+    main { width:min(980px,calc(100% - 32px)); margin:0 auto; padding:28px 0 48px; }
+    header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:22px; }
+    h1 { margin:0 0 4px; font-size:clamp(28px,5vw,44px); letter-spacing:-.04em; }
+    p { color:var(--muted); margin:0; }
+    .theme { width:42px; height:42px; border:1px solid var(--border); border-radius:50%; background:var(--panel); color:var(--text); cursor:pointer; font-size:19px; transition:transform .3s ease,background .3s ease; }
+    .theme:hover { transform:rotate(180deg); }
+    .grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; }
+    section { background:color-mix(in srgb,var(--panel) 94%,transparent); border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:0 18px 50px #0003; }
+    label { display:block; margin:0 0 8px; font-weight:650; }
+    textarea,input { width:100%; border:1px solid var(--border); border-radius:11px; background:var(--panel2); color:var(--text); padding:11px 12px; font:inherit; transition:border-color .3s ease,background .3s ease,color .3s ease; }
+    textarea { min-height:155px; resize:vertical; }
+    textarea:focus,input:focus { outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent); border-color:var(--accent); }
+    .fields { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+    button.generate { margin-top:16px; width:100%; border:1px solid var(--accent); border-radius:11px; padding:12px 14px; background:var(--accent); color:#102039; font-weight:750; cursor:pointer; }
+    button:disabled { opacity:.55; cursor:wait; }
+    .result { min-height:360px; display:grid; place-items:center; background:var(--panel2); border:1px dashed var(--border); border-radius:12px; overflow:hidden; }
+    .result img { display:block; width:100%; height:auto; }
+    .status { margin-top:12px; white-space:pre-wrap; color:var(--muted); font-size:13px; }
+    .note { margin-top:16px; padding:12px; border-left:3px solid var(--accent); background:var(--panel2); border-radius:8px; color:var(--muted); }
+    @media (max-width:700px) { main { width:min(100% - 20px,580px); padding-top:18px; } .grid { grid-template-columns:1fr; } .fields { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <header><div><h1>Supra2-IMG</h1><p>Small, fast 256px text-to-image generation.</p></div><button class="theme" id="theme" aria-label="Toggle light and dark mode">☀️</button></header>
+  <div class="grid">
+    <section>
+      <label for="prompt">Prompt</label>
+      <textarea id="prompt">a sea jellyfish floating in the pitch-black ocean depths</textarea>
+      <div class="fields">
+        <div><label for="seed">Seed</label><input id="seed" type="number" min="0" value="0"></div>
+        <div><label for="cfg">CFG</label><input id="cfg" type="number" min="1" max="10" step=".1" value="3"></div>
+        <div><label for="steps">Steps</label><input id="steps" type="number" min="1" max="100" value="50"></div>
+      </div>
+      <button class="generate" id="generate">Generate image</button>
+      <div class="note">This model produces 256×256 images. The checkpoint, Flan-T5 encoder, and VAE are local; each request starts the upstream inference process and writes a timestamped PNG.</div>
+      <div class="status" id="status">Ready.</div>
+    </section>
+    <section><div class="result" id="result"><p>Your generated image will appear here.</p></div></section>
+  </div>
+</main>
+<script>
+  const root=document.documentElement, theme=document.getElementById('theme');
+  const saved=localStorage.getItem('supra2-theme'); if(saved==='light') root.classList.add('light');
+  const updateTheme=()=>{const light=root.classList.toggle('light'); localStorage.setItem('supra2-theme',light?'light':'dark'); theme.textContent=light?'🌙':'☀️';};
+  theme.textContent=root.classList.contains('light')?'🌙':'☀️'; theme.addEventListener('click',updateTheme);
+  const status=document.getElementById('status'), button=document.getElementById('generate'), result=document.getElementById('result');
+  button.addEventListener('click',async()=>{button.disabled=true; status.textContent='Generating… the GPU may take a minute.'; result.innerHTML='<p>Working…</p>';
+    try { const response=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:document.getElementById('prompt').value,seed:Number(document.getElementById('seed').value),cfg:Number(document.getElementById('cfg').value),steps:Number(document.getElementById('steps').value)})}); const data=await response.json(); if(!response.ok) throw new Error(data.detail||'Generation failed'); result.innerHTML='<img alt="Generated by Supra2-IMG" src="'+data.url+'?t='+Date.now()+'">'; status.textContent='Saved as '+data.filename; }
+    catch(error){result.innerHTML='<p>Generation failed.</p>'; status.textContent=error.message;} finally {button.disabled=false;}
+  });
+</script>
+</body>
+</html>
