@@ -1596,6 +1596,26 @@
             "stop_command": "pkill -f '[s]upra2_server.py' || true",
             "vram_gb": 6.0,
             "output_dir": "/home/edq/ai_generated/supra2-img"
+        },
+        {
+            "id": "mira-scene",
+            "name": "Mira Scene",
+            "description": "Single image to full 3D scene: SAM3 + Gemini scene graph, depth, per-object meshes, floor, gravity-aware assembly, environment panorama",
+            "category": "image",
+            "port": 8071,
+            "path": "/",
+            "icon": "&#127968;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_mira_scene.sh",
+            "project_path": "/srv/containers/edq/projects/Mira-Scene",
+            "features": [
+                "Full upstream Mira-Scene pipeline",
+                "Gemini scene understanding",
+                "Scene GLB + floor + environment map",
+                "In-browser 3D viewer"
+            ],
+            "stop_command": "pkill -f '[m]ira_scene_server.py' || true; pkill -f '[M]ira-Scene/infer_scripts/' || true",
+            "vram_gb": 14.5,
+            "output_dir": "/home/edq/ai_generated/mira-scene"
         }
     ],
     "categories": {

@@ -318,9 +318,9 @@ function loadChat(id){
   chatEl.scrollTop=chatEl.scrollHeight; renderSidebar();
 }
 function getHistory(){if(!currentId)return[];const c=getConvo(currentId);return c?c.messages:[];}
-function pushMsg(msg){
-  if(!currentId)return;
-  const c=getConvo(currentId)||{id:currentId,title:'',created:Date.now(),messages:[]};
+function pushMsg(msg,id=currentId){
+  if(!id)return;
+  const c=getConvo(id)||{id:id,title:'',created:Date.now(),messages:[]};
   c.messages.push(msg); upsertConvo(c);
 }
 
@@ -353,15 +353,51 @@ document.getElementById('clear-img').onclick=()=>clearPendingImage();
 function clearPendingImage(){pendingImageB64=null;pendingImageType=null;pendingImg.style.display='none';pendingThumb.src='';}
 function setPendingImage(b64,type){pendingImageB64=b64;pendingImageType=type;pendingThumb.src='data:'+type+';base64,'+b64;pendingImg.style.display='block';}
 function readFileAsB64(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=e=>{res({b64:e.target.result.split(',')[1],type:file.type||'image/png'});};fr.onerror=rej;fr.readAsDataURL(file);});}
+function imageFilesFrom(dt){
+  if(!dt)return[];
+  // Blank type = extensionless file; takeImage() sniffs the real format from its bytes.
+  let f=[...(dt.files||[])].filter(x=>x.type.startsWith('image/')||!x.type||/\.(png|jpe?g|gif|webp|bmp|heic|avif)$/i.test(x.name||''));
+  if(!f.length&&dt.items)f=[...dt.items].filter(i=>i.kind==='file'&&i.type.startsWith('image/')).map(i=>i.getAsFile()).filter(Boolean);
+  return f;
+}
+async function sniffImageType(file){
+  const b=new Uint8Array(await file.slice(0,12).arrayBuffer());
+  const at=(i,s)=>[...s].every((c,k)=>b[i+k]===c.charCodeAt(0));
+  if(b[0]===0x89&&at(1,'PNG'))return'image/png';
+  if(b[0]===0xFF&&b[1]===0xD8)return'image/jpeg';
+  if(at(0,'GIF8'))return'image/gif';
+  if(at(0,'RIFF')&&at(8,'WEBP'))return'image/webp';
+  if(at(0,'BM'))return'image/bmp';
+  return null;
+}
+async function takeImage(file){
+  const type=file.type.startsWith('image/')?file.type:await sniffImageType(file);
+  if(!type){
+    const h=[...new Uint8Array(await file.slice(0,12).arrayBuffer())].map(x=>x.toString(16).padStart(2,'0')).join(' ');
+    dropNote('Not recognised as an image: "'+file.name+'" type="'+file.type+'" size='+file.size+' bytes='+h);
+    return;
+  }
+  const{b64}=await readFileAsB64(file);
+  setPendingImage(b64,type);inp.focus();
+}
+function dropNote(msg){console.warn(msg);const d=addMsg('bot',msg);setTimeout(()=>d.remove(),15000);}
 function handleDragOver(e){e.preventDefault();inp.classList.add('drag-over');}
 function handleDragLeave(){inp.classList.remove('drag-over');}
-async function handleDrop(e){e.preventDefault();inp.classList.remove('drag-over');const f=[...e.dataTransfer.files].filter(x=>x.type.startsWith('image/'));if(!f.length)return;const{b64,type}=await readFileAsB64(f[0]);setPendingImage(b64,type);}
+function noImageNote(dt){
+  dropNote('Drop had no image file. files='+(dt&&dt.files?dt.files.length:0)+' items='+(dt&&dt.items?[...dt.items].map(i=>i.kind+':'+i.type).join(','):'')+' types='+(dt?[...dt.types].join(','):''));
+}
+async function handleDrop(e){e.preventDefault();e.stopPropagation();inp.classList.remove('drag-over');const f=imageFilesFrom(e.dataTransfer);if(!f.length){noImageNote(e.dataTransfer);return;}await takeImage(f[0]);}
+// Drop anywhere on the page (not just the textarea); also stops the browser navigating to a dropped file.
+window.addEventListener('dragover',e=>{e.preventDefault();inp.classList.add('drag-over');});
+window.addEventListener('dragleave',e=>{if(!e.relatedTarget)inp.classList.remove('drag-over');});
+window.addEventListener('drop',async e=>{e.preventDefault();inp.classList.remove('drag-over');const f=imageFilesFrom(e.dataTransfer);if(f.length)await takeImage(f[0]);else noImageNote(e.dataTransfer);});
+inp.addEventListener('paste',async e=>{const f=imageFilesFrom(e.clipboardData);if(!f.length)return;e.preventDefault();await takeImage(f[0]);});
 async function handleFileSelect(e){const f=e.target.files[0];if(!f)return;const{b64,type}=await readFileAsB64(f);setPendingImage(b64,type);}
 
 // ── Chat rendering ───────────────────────────────────────────
 function addMsg(cls,text){const d=document.createElement('div');d.className='msg '+cls;d.textContent=text;chatEl.appendChild(d);chatEl.scrollTop=chatEl.scrollHeight;return d;}
 function addImgPreview(b64,type){const img=document.createElement('img');img.className='img-preview';img.src='data:'+type+';base64,'+b64;chatEl.appendChild(img);chatEl.scrollTop=chatEl.scrollHeight;}
-function addThinking(){const d=document.createElement('details');d.className='thinking';const s=document.createElement('summary');s.textContent='Thinking\u2026';d.appendChild(s);const p=document.createElement('span');d.appendChild(p);chatEl.appendChild(d);chatEl.scrollTop=chatEl.scrollHeight;return p;}
+function addThinking(){const d=document.createElement('details');d.className='thinking';d.open=true;const s=document.createElement('summary');s.textContent='Thinking\u2026';d.appendChild(s);const p=document.createElement('span');d.appendChild(p);chatEl.appendChild(d);chatEl.scrollTop=chatEl.scrollHeight;return p;}
 
 // ── Send ─────────────────────────────────────────────────────
 async function send(){
@@ -388,6 +424,12 @@ async function send(){
   const payload=hist.map((m,i)=>{const o={role:m.role,content:m.content};if(m.images&&i===hist.length-1)o.images=m.images;return o;});
   clearPendingImage();
 
+  // Visible "working" state: the first token can take 20-60s while the model loads / reads the image.
+  // sendId/live(): if the user switches chats mid-answer, keep saving to the original chat but stop drawing into the new one.
+  const sendId=currentId, live=()=>currentId===sendId;
+  const wait=addMsg('bot','Waiting for model…'); wait.classList.add('streaming');
+  const dropWait=()=>{if(wait.parentNode)wait.remove();};
+
   let thinkBuf='',responseBuf='',inThink=false,thinkEl=null,botBubble=null;
   try{
     const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:payload,model:modelSel.value})});
@@ -405,13 +447,13 @@ async function send(){
             const ti=buf.indexOf('<think>');
             if(ti===-1){
               responseBuf+=buf;
-              if(!botBubble){botBubble=addMsg('bot','');botBubble.classList.add('streaming');}
+              if(!botBubble){dropWait();botBubble=live()?addMsg('bot',''):document.createElement('div');botBubble.classList.add('streaming');}
               botBubble.textContent=responseBuf;
               chatEl.scrollTop=chatEl.scrollHeight; buf='';
             } else {
               const pre=buf.slice(0,ti);
               if(pre){responseBuf+=pre;
-                if(!botBubble){botBubble=addMsg('bot','');botBubble.classList.add('streaming');}
+                if(!botBubble){dropWait();botBubble=live()?addMsg('bot',''):document.createElement('div');botBubble.classList.add('streaming');}
                 botBubble.textContent=responseBuf;}
               inThink=true; buf=buf.slice(ti+7);
             }
@@ -419,12 +461,12 @@ async function send(){
             const te=buf.indexOf('</think>');
             if(te===-1){
               thinkBuf+=buf;
-              if(!thinkEl) thinkEl=addThinking();
+              if(!thinkEl){dropWait();thinkEl=live()?addThinking():document.createElement('span');}
               thinkEl.textContent=thinkBuf;
               chatEl.scrollTop=chatEl.scrollHeight; buf='';
             } else {
               thinkBuf+=buf.slice(0,te);
-              if(!thinkEl) thinkEl=addThinking();
+              if(!thinkEl){dropWait();thinkEl=live()?addThinking():document.createElement('span');}
               thinkEl.textContent=thinkBuf;
               inThink=false; buf=buf.slice(te+8);
             }
@@ -434,12 +476,17 @@ async function send(){
     }
   } catch(e){
     const m='[error: '+e.message+']';
-    if(botBubble) botBubble.textContent=m; else addMsg('bot',m);
+    dropWait();
+    if(botBubble) botBubble.textContent=m; else if(live()) addMsg('bot',m);
   }
+  dropWait();
   if(botBubble) botBubble.classList.remove('streaming');
-  pushMsg({role:'assistant',content:responseBuf});
+  pushMsg({role:'assistant',content:responseBuf},sendId);
   btn.disabled=false; inp.focus();
 }
+
+// ── Init ─────────────────────────────────────────────────────
+renderSidebar();
 </script></body></html>"""
 
 class Handler(http.server.BaseHTTPRequestHandler):
