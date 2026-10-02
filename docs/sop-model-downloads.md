@@ -140,7 +140,7 @@ hf download org/repo                # May not be available
 ### Why Python API?
 
 - ✅ Consistent across huggingface-hub versions
-- ✅ Resumes from partial bytes on the *next* call (not automatic within one call — see below)
+- ✅ Resumes from partial bytes on the _next_ call (not automatic within one call — see below)
 - ✅ Built-in progress bars
 - ✅ Rate limiting handling
 
@@ -148,7 +148,7 @@ hf download org/repo                # May not be available
 
 **Corrected 2026-09-14.** `snapshot_download()`/`hf_hub_download()` do **not** retry a
 dropped connection automatically — a mid-transfer `ChunkedEncodingError` ("Connection
-broken") propagates as an uncaught exception and kills the script. What they *do* is
+broken") propagates as an uncaught exception and kills the script. What they _do_ is
 resume from the partial blob on the **next** invocation. On this network (frequent
 mid-transfer resets), an unattended background download needs the retry loop to be
 in the script itself — "run again to resume" is not realistic when nobody is
@@ -179,7 +179,7 @@ exit 1
 ### Xet transport can silently corrupt a file that reports 100% size
 
 **Found 2026-09-14.** `huggingface_hub`'s newer Xet transport can hang indefinitely
-in its finalization/reconstruction step — no error, no progress — *after* the target
+in its finalization/reconstruction step — no error, no progress — _after_ the target
 file has already reached its correct final byte count. One case surfaced the real
 error before hanging (`RuntimeError: File reconstruction error: CAS Client Error`);
 another silently produced a **corrupted file that still matched the expected size**,

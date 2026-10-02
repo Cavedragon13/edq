@@ -2,16 +2,16 @@
 
 Added 2026-09-13. Port **8064**. Category: music. GPU (on-demand).
 
-| Item | Value |
-| --- | --- |
-| Model | [m-a-p/YuE2-3B](https://huggingface.co/m-a-p/YuE2-3B) (3.59B AR–NAR Mixture-of-Transformers) + [m-a-p/YuE2-Vae](https://huggingface.co/m-a-p/YuE2-Vae) (48 kHz stereo decoder) |
-| License | Weights CC BY-NC 4.0 (non-commercial) |
-| Inference package | `yue2_infer-0.1.5` wheel shipped inside the model repo (`from yue2 import YuE2Pipeline`) |
-| Venv | `venv_yue2` (Python 3.12, torch 2.10.0+cu128) |
-| Launcher | `scripts/start_yue2.sh` → `scripts/yue2_gradio.py` |
-| Models | `scripts/download_yue2_models.sh` → HF hub cache (the pipeline resolves repo ids through the cache) |
-| Output | `~/ai_generated/yue2/` — `yue2_<song|cover>_<stamp>.flac` + `.mp3`, `latest.flac/.mp3`, and a per-song folder with `score.abc`, `plan.json`, latents |
-| VRAM | Upstream: 11.2 GiB typical, 14.1 GiB max-context on a 4090 (BF16, no quantization). Launcher declares `REQ_VRAM_MIB=14500`. Measured here: see venvs.md history row. |
+| Item              | Value                                                                                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Model             | [m-a-p/YuE2-3B](https://huggingface.co/m-a-p/YuE2-3B) (3.59B AR–NAR Mixture-of-Transformers) + [m-a-p/YuE2-Vae](https://huggingface.co/m-a-p/YuE2-Vae) (48 kHz stereo decoder) |
+| License           | Weights CC BY-NC 4.0 (non-commercial)                                                                                                                                          |
+| Inference package | `yue2_infer-0.1.5` wheel shipped inside the model repo (`from yue2 import YuE2Pipeline`)                                                                                       |
+| Venv              | `venv_yue2` (Python 3.12, torch 2.10.0+cu128)                                                                                                                                  |
+| Launcher          | `scripts/start_yue2.sh` → `scripts/yue2_gradio.py`                                                                                                                             |
+| Models            | `scripts/download_yue2_models.sh` → HF hub cache (the pipeline resolves repo ids through the cache)                                                                            |
+| Output            | `~/ai_generated/yue2/` — `yue2\_<song                                                                                                                                          | cover>\_<stamp>.flac`+`.mp3`, `latest.flac/.mp3`, and a per-song folder with `score.abc`, `plan.json`, latents |
+| VRAM              | Upstream: 11.2 GiB typical, 14.1 GiB max-context on a 4090 (BF16, no quantization). Launcher declares `REQ_VRAM_MIB=14500`. Measured here: see venvs.md history row.           |
 
 ## What it does
 

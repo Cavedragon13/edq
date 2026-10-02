@@ -4,10 +4,10 @@
 
 Both studios share one flow: upload → auto cutout → mask brushes → preview of the exact model input → approve → generate, with every run saved in `~/ai_generated/<service>/<YYYY-MM-DD_HHMMSS>_<name>/` and a headless-Blender button.
 
-| Service | Port | Output | Engine | Peak VRAM |
-| --- | --- | --- | --- | --- |
-| TripoSplat Studio | 8067 | Gaussian splat (`splat.ply`) → optional vertex-colored mesh | `projects/TripoSplat`, `venv_triposplat` | ~5GB, ~15s |
-| 3D Asset Studio | 8068 | PBR-textured mesh (`model.glb` + maps) | ComfyUI template `3d_pixal3d_trellis2_image_to_model` (Pixal3D / TRELLIS.2 int8) | ~12–13.5GB, 4–6 min |
+| Service           | Port | Output                                                      | Engine                                                                           | Peak VRAM           |
+| ----------------- | ---- | ----------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------- |
+| TripoSplat Studio | 8067 | Gaussian splat (`splat.ply`) → optional vertex-colored mesh | `projects/TripoSplat`, `venv_triposplat`                                         | ~5GB, ~15s          |
+| 3D Asset Studio   | 8068 | PBR-textured mesh (`model.glb` + maps)                      | ComfyUI template `3d_pixal3d_trellis2_image_to_model` (Pixal3D / TRELLIS.2 int8) | ~12–13.5GB, 4–6 min |
 
 - Launch: `bash scripts/start_triposplat.sh` / `bash scripts/start_asset3d.sh` (the latter starts ComfyUI if needed).
 - After a ComfyUI or template update, rebuild the 3D Asset Studio workflow: `venv_comfyui/bin/python scripts/asset3d_build_workflow.py`.

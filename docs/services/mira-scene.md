@@ -13,15 +13,15 @@ Dashboard card `mira-scene`, launcher `scripts/start_mira_scene.sh`, web server
 
 Seven stages (upstream `infer_scripts/pipeline.py`), run by `scripts/run_mira_pipeline.sh`:
 
-| Stage | Env (`conda_envs/`) | Notes |
-| --- | --- | --- |
-| segmentation | `mira-segmentation` | SAM3 masks + agentic **Gemini** object naming, verification, support-relation scene graph |
-| depth | `mira-geometry` | Pixel-Perfect Depth (+ MoGe-2, Depth-Anything-V2) |
-| ccm | `mira-ccm` | Canonical coordinate maps + voxels (Mira-CCM Stage 2 checkpoint = `models/mira-scene/pipeline`) |
-| mesh | `mira-sam3d` | SAM-3D Objects stage 2, textured (baking on) |
-| floor | `mira-geometry` | Floor plane; texture extended with Gemini image edit |
-| scene | `mira-geometry` | Gravity-aware joint placement → `scene.glb`, `scene_with_floor.glb` |
-| environment | `mira-geometry` | Environment panorama via Gemini image edit (see limits) |
+| Stage        | Env (`conda_envs/`) | Notes                                                                                           |
+| ------------ | ------------------- | ----------------------------------------------------------------------------------------------- |
+| segmentation | `mira-segmentation` | SAM3 masks + agentic **Gemini** object naming, verification, support-relation scene graph       |
+| depth        | `mira-geometry`     | Pixel-Perfect Depth (+ MoGe-2, Depth-Anything-V2)                                               |
+| ccm          | `mira-ccm`          | Canonical coordinate maps + voxels (Mira-CCM Stage 2 checkpoint = `models/mira-scene/pipeline`) |
+| mesh         | `mira-sam3d`        | SAM-3D Objects stage 2, textured (baking on)                                                    |
+| floor        | `mira-geometry`     | Floor plane; texture extended with Gemini image edit                                            |
+| scene        | `mira-geometry`     | Gravity-aware joint placement → `scene.glb`, `scene_with_floor.glb`                             |
+| environment  | `mira-geometry`     | Environment panorama via Gemini image edit (see limits)                                         |
 
 Typical run: roughly 25–35 min on the RTX 5070 Ti for a 9-object scene (segmentation is the longest stage). One job at a time; the server holds no VRAM
 itself (the launcher gate reserves ~14.5 GB for a running job).

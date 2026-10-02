@@ -2,17 +2,17 @@
 
 Added 2026-09-13. Port **8066** (front-end); ComfyUI backend on 8188. Category: vision. GPU.
 
-| Item | Value |
-| --- | --- |
-| Model | [huawei-bayerlab/marigold-v2-0](https://huggingface.co/huawei-bayerlab/marigold-v2-0) — rank-128 LoRA + fine-tuned VAE decoder per modality over Qwen-Image-Edit-2509 (20B DiT). SIGGRAPH Asia 2026 / ACM TOG. |
-| License | Weights Apache-2.0; base model keeps the Qwen-Image-Edit license (Apache-2.0) |
-| Backbone here | [QuantStack/Qwen-Image-Edit-2509-GGUF](https://huggingface.co/QuantStack/Qwen-Image-Edit-2509-GGUF) **Q4_K_S** (12.2 GB) through ComfyUI-GGUF |
-| Nodes | `custom_nodes/ComfyUI-Marigold-v2` (visualbruno) + `custom_nodes/ComfyUI-GGUF` (city96); ComfyUI updated v0.33.3 → **v0.35.1** for this |
-| Venv | `venv_marigold_v2` (front-end only: gradio + requests). Model deps (peft, bitsandbytes, diffusers, opencv) live in `venv_comfyui` |
-| Launcher | `scripts/start_marigold_v2.sh` (starts ComfyUI if needed) → `scripts/marigold_v2_gradio.py` |
-| Models | `scripts/download_marigold_v2_models.sh` → `projects/ComfyUI/models/{unet,vae,loras,marigold-v2/…}` |
-| Output | `~/ai_generated/marigold-v2/marigold_v2_<depth|normals|albedo|color>_<stamp>.png`, optional `_raw_<stamp>.npy`, `latest_<modality>.png` |
-| VRAM | Official code: ~17 GB at 1024², 29 GB at 2048² — **does not fit 16 GB**, which is why this runs as a GGUF workflow inside ComfyUI. Measured here: see venvs.md history row. |
+| Item          | Value                                                                                                                                                                                                          |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------ | --------------------------------------------------------------------------- |
+| Model         | [huawei-bayerlab/marigold-v2-0](https://huggingface.co/huawei-bayerlab/marigold-v2-0) — rank-128 LoRA + fine-tuned VAE decoder per modality over Qwen-Image-Edit-2509 (20B DiT). SIGGRAPH Asia 2026 / ACM TOG. |
+| License       | Weights Apache-2.0; base model keeps the Qwen-Image-Edit license (Apache-2.0)                                                                                                                                  |
+| Backbone here | [QuantStack/Qwen-Image-Edit-2509-GGUF](https://huggingface.co/QuantStack/Qwen-Image-Edit-2509-GGUF) **Q4_K_S** (12.2 GB) through ComfyUI-GGUF                                                                  |
+| Nodes         | `custom_nodes/ComfyUI-Marigold-v2` (visualbruno) + `custom_nodes/ComfyUI-GGUF` (city96); ComfyUI updated v0.33.3 → **v0.35.1** for this                                                                        |
+| Venv          | `venv_marigold_v2` (front-end only: gradio + requests). Model deps (peft, bitsandbytes, diffusers, opencv) live in `venv_comfyui`                                                                              |
+| Launcher      | `scripts/start_marigold_v2.sh` (starts ComfyUI if needed) → `scripts/marigold_v2_gradio.py`                                                                                                                    |
+| Models        | `scripts/download_marigold_v2_models.sh` → `projects/ComfyUI/models/{unet,vae,loras,marigold-v2/…}`                                                                                                            |
+| Output        | `~/ai*generated/marigold-v2/marigold_v2*<depth                                                                                                                                                                 | normals | albedo | color>_<stamp>.png`, optional `\_raw_<stamp>.npy`, `latest\_<modality>.png` |
+| VRAM          | Official code: ~17 GB at 1024², 29 GB at 2048² — **does not fit 16 GB**, which is why this runs as a GGUF workflow inside ComfyUI. Measured here: see venvs.md history row.                                    |
 
 ## Why ComfyUI and not a standalone service
 

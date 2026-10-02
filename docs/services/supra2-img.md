@@ -7,7 +7,7 @@ timestamped names. The checkpoint, Flan-T5-Base encoder, and SD VAE are
 downloaded explicitly by `scripts/download_supra2_img_models.sh`; the service
 does not fetch model files on first launch. Generation is serialized because
 the model uses the shared 16GB GPU, and the launcher declares its measured
-    resource gate in `scripts/start_supra2_img.sh`.
+resource gate in `scripts/start_supra2_img.sh`.
 
 Verification on 2026-09-28: the Dashboard launch gate passed, `/health` reported
 `models_ready: true`, and both the API and browser UI generated valid 256×256
