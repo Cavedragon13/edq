@@ -5,6 +5,14 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). hiera_large checkpoint, bf16 autocast —
+# measured peak ~3047MiB VRAM, ~2.1GB RSS on a single-point segment request,
+# 2026-10-02.
+TOOL_NAME="sam2"
+REQ_VRAM_MIB=3300
+REQ_RAM_MIB=2500
+source scripts/vram_guard.sh
+
 SERVICE_NAME="SAM 2.1"
 PORT=8005
 VENV="venv_sam2"
@@ -14,7 +22,8 @@ CHECKPOINTS_DIR="$SAM2_DIR/checkpoints"
 OUTPUT_DIR="$HOME/ai_generated/sam2"
 
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1   # refuses if VRAM/RAM short; relaunch with CLEAR=1 to free registered tools
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -90,6 +99,8 @@ else
     nohup bash -c "cd '$DEMO_DIR' && python gradio_app.py" > /tmp/sam2.log 2>&1 &
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 60; then
+        server_pid=$(ss -tlnp "sport = :$PORT" | grep -oP 'pid=\K[0-9]+' | head -1)
+        [ -n "$server_pid" ] && register_tool "$server_pid"
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
     else
         echo "❌ Service did not start in time — check /tmp/sam2.log"

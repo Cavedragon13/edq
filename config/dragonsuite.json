@@ -546,7 +546,7 @@
                 "Auto Mask"
             ],
             "stop_command": "pkill -f 'sam2/demo/gradio_app.py|sam2.*gradio_app' || true",
-            "vram_gb": 6,
+            "vram_gb": 3,
             "output_dir": "/home/edq/ai_generated/sam2"
         },
         {
