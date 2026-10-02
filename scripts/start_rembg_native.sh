@@ -5,13 +5,22 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). onnxruntime runs this on CPU, not the GPU —
+# measured peak was ~1064MiB VRAM (desktop baseline, no real GPU use) and
+# ~1050MiB RSS, 2026-10-02.
+TOOL_NAME="rembg"
+REQ_VRAM_MIB=500
+REQ_RAM_MIB=1300
+source scripts/vram_guard.sh
+
 SERVICE_NAME="Rembg"
 PORT=8012
 VENV="venv_rembg"
 SCRIPT="scripts/rembg_server.py"
 
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1   # refuses if VRAM/RAM short; relaunch with CLEAR=1 to free registered tools
+clear_port "$PORT"
 activate_venv "$VENV"
 export NUMBA_CACHE_DIR="/tmp/numba-rembg"
 mkdir -p "$NUMBA_CACHE_DIR"
@@ -26,24 +35,10 @@ mkdir -p "$HOME/ai_generated/rembg"
 echo "🚀 Starting $SERVICE_NAME..."
 
 if pgrep -f "rembg_server.py" > /dev/null; then
-    if curl -s --max-time 2 "http://127.0.0.1:$PORT/" > /dev/null 2>&1; then
-        echo "✓ Already running on port $PORT"
-    else
-        echo "⚠️  Found stale Rembg process without a listening port; stopping it..."
-        pkill -f "rembg_server.py" || true
-        sleep 2
-        nohup python "$SCRIPT" > /tmp/rembg.log 2>&1 &
-        echo "⏳ Waiting for service..."
-        if wait_for_port "$PORT" 30; then
-            echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
-        else
-            echo "❌ Service did not start in time — check /tmp/rembg.log"
-            tail -10 /tmp/rembg.log
-            exit 1
-        fi
-    fi
+    echo "✓ Already running on port $PORT"
 else
     nohup python "$SCRIPT" > /tmp/rembg.log 2>&1 &
+    register_tool $!
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 30; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"

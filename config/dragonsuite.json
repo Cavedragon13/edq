@@ -565,7 +565,7 @@
                 "Multi-Model"
             ],
             "stop_command": "pkill -f \"rembg_server.py\" || true",
-            "vram_gb": 2,
+            "vram_gb": 1,
             "output_dir": "/home/edq/ai_generated/rembg"
         },
         {
