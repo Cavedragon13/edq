@@ -62,19 +62,34 @@ PENDING_ROWS=""
 report_repo_status() {
     local repo_dir="$1" repo_name="$2" pull_hint="$3"
     if git -C "$repo_dir" fetch --quiet 2>/dev/null; then
-        local behind current_sha
+        local behind ahead current_sha dirty
         behind=$(git -C "$repo_dir" rev-list HEAD..origin/HEAD --count 2>/dev/null || echo "?")
+        ahead=$(git -C "$repo_dir" rev-list origin/HEAD..HEAD --count 2>/dev/null || echo "?")
         current_sha=$(git -C "$repo_dir" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+        dirty=$(git -C "$repo_dir" status --porcelain --untracked-files=all 2>/dev/null)
 
         if [ "$behind" = "0" ]; then
-            log "  ✅ $repo_name — up to date ($current_sha)"
-            PENDING_ROWS+="| $repo_name | \`$current_sha\` | up to date | — |\n"
+            if [ -n "$dirty" ]; then
+                log "  ⚠️  $repo_name — upstream current ($current_sha), but worktree is dirty"
+                PENDING_ROWS+="| $repo_name | \`$current_sha\` | upstream current; **dirty worktree** | nightly checkpoint / review |\n"
+            elif [ "$ahead" != "0" ] && [ "$ahead" != "?" ]; then
+                log "  📝 $repo_name — upstream current ($current_sha), $ahead local commit(s) ahead"
+                PENDING_ROWS+="| $repo_name | \`$current_sha\` | upstream current; $ahead local commit(s) ahead | push when intended |\n"
+            else
+                log "  ✅ $repo_name — clean and up to date ($current_sha)"
+                PENDING_ROWS+="| $repo_name | \`$current_sha\` | clean and up to date | — |\n"
+            fi
         elif [ "$behind" = "?" ]; then
-            log "  ⚠️  $repo_name — could not determine update status"
-            PENDING_ROWS+="| $repo_name | \`$current_sha\` | unknown | check manually |\n"
+            log "  ⚠️  $repo_name — could not determine upstream status ($current_sha)"
+            PENDING_ROWS+="| $repo_name | \`$current_sha\` | upstream status unknown | check manually |\n"
         else
-            log "  🔄 $repo_name — $behind commit(s) available (current: $current_sha)"
-            PENDING_ROWS+="| $repo_name | \`$current_sha\` | **$behind commit(s) available** | $pull_hint |\n"
+            if [ -n "$dirty" ]; then
+                log "  ⚠️  $repo_name — $behind upstream commit(s) available; worktree is dirty (current: $current_sha)"
+                PENDING_ROWS+="| $repo_name | \`$current_sha\` | $behind upstream commit(s) available; **dirty worktree** | $pull_hint |\n"
+            else
+                log "  🔄 $repo_name — $behind commit(s) available (current: $current_sha)"
+                PENDING_ROWS+="| $repo_name | \`$current_sha\` | **$behind commit(s) available** | $pull_hint |\n"
+            fi
         fi
     else
         log "  ⚠️  $repo_name — fetch failed (no remote or network issue)"
