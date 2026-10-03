@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import cgi
+import base64
 import json
 import os
 import re
@@ -18,18 +19,22 @@ sys.path.insert(0, '/srv/containers/edq')
 from scripts import provider_models
 
 ROOT = Path(__file__).resolve().parent
-LOG_DIR = Path("/home/edq/ai_generated/coversynth-openai")
+OUTPUT_DIR = Path(os.getenv("COVERSYNTH_OUTPUT_DIR", "/home/edq/ai_generated/coversynth-openai"))
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+LOG_DIR = Path("/srv/containers/edq/logs/coversynth-openai")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 load_dotenv("/srv/containers/edq/.env")
-load_dotenv(ROOT / ".env", override=False)
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=120)
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=300, max_retries=0)
 ANALYSIS_MODELS = ["gpt-5.4-mini", "gpt-5.4-nano", "gpt-5.2", "gpt-5", "gpt-4.1-mini"]
 
 
 def status_payload():
-    return provider_models.status_payload("CoverSynth OpenAI", providers=["openai"], default_provider="openai")
+    payload = provider_models.status_payload("CoverSynth OpenAI", providers=["openai"], default_provider="openai")
+    payload["defaults"]["image_model"] = provider_models.resolve_model("openai", "image_generation", preferred="gpt-image-2.5-flare")["model"]
+    return payload
 
 
 def analysis_models():
@@ -114,6 +119,8 @@ class Handler(BaseHTTPRequestHandler):
             path = "/index.html"
         if path == "/api/status":
             return self._json(200, status_payload())
+        if path not in {"/index.html", "/app.js", "/styles.css"}:
+            return self._json(404, {"error": "Not found"})
         file_path = (ROOT / path.lstrip("/")).resolve()
         if not str(file_path).startswith(str(ROOT)) or not file_path.exists():
             return self._json(404, {"error": "Not found"})
@@ -170,7 +177,7 @@ class Handler(BaseHTTPRequestHandler):
 
 Return compact JSON with keys: title, summary, dominant_moods, sentiment, genres, visual_motifs, color_palette, avoid, cover_prompt, track_notes.
 
-The cover_prompt must describe a square Apple Music style playlist cover, no text/logos, suitable for GPT Image 2.
+The cover_prompt must describe a square Apple Music style playlist cover, no text/logos, suitable for GPT Image 2.5.
 
 Playlist:
 {playlist[:24000]}"""
@@ -183,12 +190,12 @@ Playlist:
     def generate(self, data):
         prompt = (data.get("prompt") or "").strip()
         refinement = (data.get("refinement") or "").strip()
-        quality = data.get("quality") if data.get("quality") in {"low", "medium", "high"} else "medium"
+        quality = data.get("quality") if data.get("quality") in {"low", "medium", "high", "xhigh", "max", "auto"} else "medium"
         if refinement:
             prompt = f"{prompt}\n\nRefinement request: {refinement}\nKeep the same playlist-cover concept unless the refinement says otherwise."
         if not prompt:
             return self._json(400, {"error": "Image prompt is required"})
-        image_model = data.get("model") if data.get("model") in image_models() else provider_models.resolve_model("openai", "image_generation").get("model")
+        image_model = data.get("model") if data.get("model") in image_models() else provider_models.resolve_model("openai", "image_generation", preferred="gpt-image-2.5-flare").get("model")
         result = client.images.generate(
             model=image_model,
             prompt=prompt,
@@ -197,8 +204,13 @@ Playlist:
             output_format="png",
         )
         image_b64 = result.data[0].b64_json
-        log_event("image", {"model": image_model, "quality": quality, "prompt": prompt})
-        self._json(200, {"model": image_model, "image": image_b64, "prompt": prompt})
+        if not image_b64:
+            raise ValueError("The provider returned no image")
+        filename = "cover_" + datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f") + ".png"
+        output_path = OUTPUT_DIR / filename
+        output_path.write_bytes(base64.b64decode(image_b64, validate=True))
+        log_event("image", {"model": image_model, "quality": quality, "prompt": prompt, "file": str(output_path)})
+        self._json(200, {"model": image_model, "image": image_b64, "prompt": prompt, "file": str(output_path)})
 
 
 if __name__ == "__main__":

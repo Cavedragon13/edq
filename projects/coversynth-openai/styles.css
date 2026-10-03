@@ -205,3 +205,8 @@ button:disabled { opacity: 0.45; cursor: default; }
   .result-panel { grid-template-rows: auto; }
   .cover-wrap { width: min(100%, 520px); max-height: none; }
 }
+
+:root[data-theme="light"] { color-scheme:light; --bg:#f3f4f6; --panel:#fff; --panel-2:#e5eaf0; --line:#a6b2c2; --text:#17202b; --muted:#485b6f; --accent:#176d59; --danger:#a32240; }
+body, .panel, input, textarea, select, button { transition:background-color .3s,color .3s,border-color .3s; }
+#theme-toggle { border-radius:50%; width:36px; height:36px; padding:0; transition:transform .3s; }
+#theme-toggle:hover { transform:rotate(180deg); }

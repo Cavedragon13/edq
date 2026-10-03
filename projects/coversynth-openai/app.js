@@ -120,7 +120,7 @@ $("analyze").addEventListener("click", async () => {
 });
 
 async function generate(refinement = "") {
-  setStatus(refinement ? "Refining cover with GPT Image 2..." : "Generating cover with GPT Image 2...");
+  setStatus(refinement ? "Refining cover with GPT Image 2.5..." : "Generating cover with GPT Image 2.5...");
   const data = await postJson("/api/generate", {
     prompt: $("prompt").value,
     refinement,
@@ -133,7 +133,7 @@ async function generate(refinement = "") {
   $("downloadCover").disabled = false;
   lastRun = { ...lastRun, imageModel: data.model, imagePrompt: data.prompt, image: data.image };
   localStorage.setItem("coversynth:lastRun", JSON.stringify({ ...lastRun, image: "[base64 omitted]" }));
-  setStatus(`Cover ready from ${data.model}.`);
+  setStatus(`Cover ready from ${data.model}. PNG saved on udragon.`);
 }
 
 $("generate").addEventListener("click", () => generate().catch((err) => setStatus(err.message, "error")));
@@ -166,3 +166,12 @@ $("saveLog").addEventListener("click", () => {
 });
 
 loadStatus();
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem('coversynth-theme', theme);
+  $('theme-toggle').textContent = theme === 'light' ? '🌙' : '☀️';
+}
+applyTheme(localStorage.getItem('coversynth-theme') || 'dark');
+$('theme-toggle').onclick = () => applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+$('prompt').addEventListener('input', () => { $('generate').disabled = !$('prompt').value.trim(); });
