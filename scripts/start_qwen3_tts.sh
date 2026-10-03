@@ -5,6 +5,13 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). Measured 2026-10-03 via a real /generate_tts
+# call (Ryan voice, English, ~110 chars): process VRAM peaked 4572MiB, RSS ~2.0GB.
+TOOL_NAME="qwen3-tts"
+REQ_VRAM_MIB=5000
+REQ_RAM_MIB=2500
+source scripts/vram_guard.sh
+
 SERVICE_NAME="Qwen3-TTS"
 PORT=8009
 VENV="venv_qwen3_tts"
@@ -15,7 +22,8 @@ export NUMBA_CACHE_DIR="/tmp/numba-qwen3-tts"
 mkdir -p "$NUMBA_CACHE_DIR"
 
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1
+clear_port "$PORT"
 activate_venv "$VENV"
 
 # Check if qwen-tts is installed
@@ -47,6 +55,7 @@ if pgrep -f "qwen3-tts/app_local.py" > /dev/null; then
 else
     cd "$QWEN_TTS_DIR"
     nohup python -u "$QWEN_TTS_DIR/app_local.py" > /tmp/qwen3_tts.log 2>&1 &
+    register_tool $!
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 60; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
