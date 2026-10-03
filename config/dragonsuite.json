@@ -584,7 +584,7 @@
                 "GPU Accel"
             ],
             "stop_command": "pkill -f \"facefusion.py\" || true",
-            "vram_gb": 6,
+            "vram_gb": 1,
             "output_dir": "/home/edq/ai_generated/facefusion"
         },
         {

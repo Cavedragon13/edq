@@ -242,7 +242,7 @@ def check_output_wiring(svc: dict) -> list[str]:
     for d in projects:
         if d.is_dir():
             try:
-                r = subprocess.run(["grep", "-rlEq", "--include=*.py", "--exclude-dir=.venv", "--exclude-dir=venv",
+                r = subprocess.run(["grep", "-rlEq", "--include=*.py", "--include=*.ini", "--exclude-dir=.venv", "--exclude-dir=venv",
                                     "--exclude-dir=node_modules", "--exclude-dir=site-packages", pattern, str(d)],
                                    capture_output=True, timeout=60)
             except subprocess.TimeoutExpired:

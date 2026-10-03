@@ -5,12 +5,23 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). Measured 2026-10-03 via a real headless
+# face-swap (source.jpg -> target-240p.mp4, 270 frames): onnxruntime-gpu's
+# CUDAExecutionProvider fails to load here (libcublasLt.so.13 missing, same
+# root cause as Rembg 2026-10-02) and silently falls back to CPU — peak VRAM
+# was desktop baseline (~1100MiB total GPU use), not a real GPU footprint.
+TOOL_NAME="facefusion"
+REQ_VRAM_MIB=500
+REQ_RAM_MIB=2000
+source scripts/vram_guard.sh
+
 SERVICE_NAME="FaceFusion"
 PORT=8017
 VENV="venv_facefusion"
 
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -37,6 +48,7 @@ else
         --execution-providers "$EXECUTION_PROVIDER" \
         --ui-layouts default webcam \
         > /tmp/facefusion.log 2>&1 &
+    register_tool $!
     if wait_for_port "$PORT" 60; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
     else
