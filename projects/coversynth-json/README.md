@@ -20,7 +20,9 @@ Core behavior:
 - Browser runs are executed one image at a time so completed images appear as the batch progresses.
 - Legacy CoverSynth endpoints are still present for older callers.
 
-Output projects are saved under `/home/edq/ai_generated/<project_name>/` with:
+**Character reference:** "Character reference…" (or dropping an image on the file row) uploads a PNG/JPEG/WebP to `/home/edq/ai_generated/frameforge/_references/` and attaches it to every job as reference id `character`. Each prompt then tells the model to keep that character's face, hair, skin tone, and build while taking pose, clothing, and background from the prompt. OpenAI receives it via `images.edit`; Gemini receives it as an image part. A head-and-shoulders crop works better than a full cover. Prompt cleanup runs automatically before each run ("Clean before run", on by default).
+
+Output projects are saved under `/home/edq/ai_generated/frameforge/<project_name>/`. A relative `output_path` in a manifest only supplies the project folder name; an absolute path is used as-is. Each project folder holds:
 
 ```text
 manifest.json

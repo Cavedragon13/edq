@@ -3,6 +3,9 @@ const $ = (id) => document.getElementById(id);
 let currentManifest = null;
 let currentOutputs = [];
 let statusData = null;
+let characterRef = null;
+
+const CHARACTER_REF_ID = "character";
 
 function setStatus(text, tone = "") {
   const status = $("status");
@@ -57,7 +60,28 @@ function parseManifestInput(required = true) {
   return JSON.parse(raw);
 }
 
+function applyCharacterRef(manifest) {
+  const refs = (manifest.reference_images || []).filter((ref) => ref?.id !== CHARACTER_REF_ID);
+  if (characterRef) refs.push({ id: CHARACTER_REF_ID, path: characterRef.path, description: "Main character reference" });
+  manifest.reference_images = refs;
+  for (const job of manifest.jobs || []) {
+    const ids = (job.reference_image_ids || []).filter((id) => id !== CHARACTER_REF_ID);
+    if (characterRef) ids.push(CHARACTER_REF_ID);
+    job.reference_image_ids = ids;
+  }
+  return manifest;
+}
+
 function writeManifest(manifest) {
+  const savedRef = (manifest.reference_images || []).find((ref) => ref?.id === CHARACTER_REF_ID && ref.path);
+  if (!characterRef && savedRef) {
+    showCharacterRef({
+      path: savedRef.path,
+      filename: savedRef.path.split("/").pop(),
+      previewUrl: `/api/reference-image?path=${encodeURIComponent(savedRef.path)}`,
+    });
+  }
+  applyCharacterRef(manifest);
   currentManifest = manifest;
   $("manifest").value = JSON.stringify(manifest, null, 2);
   renderJobs(manifest.jobs || []);
@@ -214,7 +238,7 @@ function stageOutputs(ids, manifest) {
 }
 
 function setButtonsDisabled(disabled) {
-  ["generateManifest", "validateManifest", "sanitizeManifest", "dryRun", "runSelected", "runAll", "retryFailed", "formatJson", "loadExample"].forEach((id) => {
+  ["generateManifest", "validateManifest", "dryRun", "runSelected", "runAll", "retryFailed", "formatJson", "loadExample", "clearAll"].forEach((id) => {
     const button = $(id);
     if (button) button.disabled = disabled;
   });
@@ -253,7 +277,12 @@ function applyProviderChoiceToManifest() {
 function updateProviderUi() {
   const provider = $("imageProvider").value;
   const models = statusData?.image_models?.[provider] || (provider === "google" ? ["gemini-3.1-flash-image-preview", "gemini-3-pro-image-preview", "gemini-2.5-flash-image"] : ["gpt-image-2"]);
-  const promptModels = statusData?.prompt_models?.[provider] || (provider === "google" ? ["gemini-3.5-flash", "gemini-3.1-pro-preview", "gemini-3.1-flash-lite", "gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.5-pro"] : ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5.2", "gpt-5-mini", "gpt-5-nano", "gpt-4.1-mini"]);
+  const listedPromptModels = statusData?.prompt_models?.[provider] || (provider === "google" ? ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash"] : ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra", "gpt-5.5"]);
+  const defaultPrompt = statusData?.default_prompt_models?.[provider];
+  // The provider's cheap default goes first so it is selected whenever the current choice doesn't apply.
+  const promptModels = listedPromptModels.includes(defaultPrompt)
+    ? [defaultPrompt, ...listedPromptModels.filter((model) => model !== defaultPrompt)]
+    : listedPromptModels;
   const current = $("imageModel").value;
   const currentPrompt = $("promptModel").value;
   $("imageModel").innerHTML = models.map((model) => `<option value="${escapeAttr(model)}" ${model === current ? "selected" : ""}>${escapeHtml(model)}</option>`).join("");
@@ -368,8 +397,51 @@ async function uploadFile(file) {
   setStatus(`Loaded ${data.filename}.`);
 }
 
+function refreshManifestRefs() {
+  if (!currentManifest) return;
+  syncJobCardsToManifest();
+  // Strip or attach first, so writeManifest doesn't re-adopt a reference that was just removed.
+  applyCharacterRef(currentManifest);
+  writeManifest(currentManifest);
+}
+
+function showCharacterRef(ref) {
+  if (characterRef?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(characterRef.previewUrl);
+  characterRef = ref;
+  $("refThumb").hidden = !ref;
+  $("refRemove").hidden = !ref;
+  if (ref) $("refThumb").src = ref.previewUrl;
+  else $("refThumb").removeAttribute("src");
+  $("refMeta").textContent = ref ? `${ref.filename} · used for every job` : "Optional: keeps one character consistent across jobs";
+  $("refFile").value = "";
+}
+
+function setCharacterRef(ref) {
+  showCharacterRef(ref);
+  refreshManifestRefs();
+}
+
+async function uploadCharacterRef(file) {
+  if (!file) return;
+  setStatus(`Uploading reference ${file.name}...`);
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch("/api/upload-reference", { method: "POST", body: form });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Could not upload reference image.");
+  setCharacterRef({ path: data.path, filename: data.filename, previewUrl: URL.createObjectURL(file) });
+  setStatus(`Character reference set: ${data.filename}.`);
+}
+
 $("file").addEventListener("change", (event) => {
   uploadFile(event.target.files[0]).catch((err) => setStatus(err.message, "error"));
+});
+$("refFile").addEventListener("change", (event) => {
+  uploadCharacterRef(event.target.files[0]).catch((err) => setStatus(err.message, "error"));
+});
+$("refRemove").addEventListener("click", () => {
+  setCharacterRef(null);
+  setStatus("Character reference removed.");
 });
 
 const dropZone = $("dropZone");
@@ -384,7 +456,9 @@ const dropZone = $("dropZone");
 });
 dropZone.addEventListener("drop", (event) => {
   event.preventDefault();
-  uploadFile(event.dataTransfer.files[0]).catch((err) => setStatus(err.message, "error"));
+  const file = event.dataTransfer.files[0];
+  const upload = file?.type.startsWith("image/") ? uploadCharacterRef(file) : uploadFile(file);
+  upload.catch((err) => setStatus(err.message, "error"));
 });
 
 $("imageProvider").addEventListener("change", () => {
@@ -404,14 +478,6 @@ $("generateManifest").addEventListener("click", async () => {
     renderValidation(data.validation);
     renderPlan(data.validation.plan);
     setStatus(`Manifest ready: ${data.manifest.jobs.length} jobs.`);
-  } catch (err) {
-    setStatus(err.message, "error");
-  }
-});
-
-$("sanitizeManifest").addEventListener("click", async () => {
-  try {
-    await sanitizeCurrentManifest("Cleaning prompts...", true);
   } catch (err) {
     setStatus(err.message, "error");
   }
@@ -494,7 +560,7 @@ $("loadExample").addEventListener("click", () => {
     allow_text_in_image: true,
     continue_on_error: true,
     max_jobs: 10,
-    output_path: "ai_generated/seed_13_launch_set",
+    output_path: "ai_generated/frameforge/seed_13_launch_set",
     reference_images: [],
     jobs: [
       {
@@ -528,4 +594,42 @@ $("loadExample").addEventListener("click", () => {
   setStatus("Example loaded.");
 });
 
-loadStatus();
+const SETTING_IDS = ["project", "jobCount", "imageProvider", "promptModel", "imageModel", "size", "quality", "allowText", "autoClean"];
+let defaultSettings = null;
+
+function captureDefaultSettings() {
+  defaultSettings = Object.fromEntries(SETTING_IDS.map((id) => {
+    const el = $(id);
+    return [id, el.type === "checkbox" ? el.checked : el.value];
+  }));
+}
+
+function clearAll() {
+  const hasWork = $("idea").value.trim() || $("manifest").value.trim();
+  if (hasWork && !confirm("Clear the idea, manifest, jobs, and gallery, and reset all settings?")) return;
+  // Provider first: it rebuilds the model lists the model defaults are chosen from.
+  $("imageProvider").value = defaultSettings.imageProvider;
+  updateProviderUi();
+  for (const id of SETTING_IDS) {
+    const el = $(id);
+    if (el.type === "checkbox") el.checked = defaultSettings[id];
+    else el.value = defaultSettings[id];
+  }
+  updateProviderUi();
+  $("idea").value = "";
+  $("manifest").value = "";
+  $("file").value = "";
+  $("fileMeta").textContent = "JSON, text, markdown, or PDF";
+  currentManifest = null;
+  setCharacterRef(null);
+  renderJobs([]);
+  renderPlan([]);
+  renderGallery([]);
+  $("validation").innerHTML = `<li data-tone="muted">No manifest loaded.</li>`;
+  updateCleanState(null);
+  setStatus("Ready.");
+}
+
+$("clearAll").addEventListener("click", clearAll);
+
+loadStatus().then(captureDefaultSettings);

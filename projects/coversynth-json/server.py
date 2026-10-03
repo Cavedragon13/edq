@@ -12,7 +12,7 @@ import tempfile
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -27,10 +27,11 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 APP_NAME = "FrameForge"
 BRAND_NAME = "Seed 13 Productions"
-DEFAULT_PROMPT_MODEL = "gpt-5.4-mini"
+# Prompt writing/cleanup is a light text pass: default to each provider's small, cheap model.
+DEFAULT_PROMPT_MODELS = {"openai": "gpt-6-luna", "google": "gemini-3.5-flash-lite"}
 DEFAULT_IMAGE_MODEL = "gpt-image-2"
-OPENAI_PROMPT_MODELS = ["gpt-5.4-mini", "gpt-5.4-nano", "gpt-5.2", "gpt-5", "gpt-4.1-mini"]
-GEMINI_PROMPT_MODELS = ["gemini-3.5-flash", "gemini-3.1-pro-preview", "gemini-3.1-flash-lite", "gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.5-pro"]
+OPENAI_PROMPT_MODELS = ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra", "gpt-5.5", "gpt-5.4-mini"]
+GEMINI_PROMPT_MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash"]
 PROMPT_MODELS = OPENAI_PROMPT_MODELS + GEMINI_PROMPT_MODELS
 PROMPT_PROVIDER_MODELS = {"openai": OPENAI_PROMPT_MODELS, "google": GEMINI_PROMPT_MODELS}
 OPENAI_IMAGE_MODELS = ["gpt-image-2"]
@@ -53,6 +54,15 @@ Preserve exact requested text if required_text exists.
 
 Do not add random text, signatures, watermarks, or logos unless explicitly requested."""
 
+CHARACTER_REF_ID = "character"
+CHARACTER_REF_PROMPT = (
+    "Character reference: the attached reference image shows the main character. "
+    "Keep the same face, hair color and hairstyle, skin tone, and build so the character is recognizably the same person. "
+    "Do not copy the reference image's pose, framing, clothing, or background; follow this prompt for those."
+)
+REFERENCE_DIR = LOG_DIR / "_references"
+REFERENCE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+
 load_dotenv("/srv/containers/edq/.env")
 load_dotenv(ROOT / ".env", override=False)
 
@@ -60,7 +70,9 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=180)
 
 
 def status_payload():
-    return provider_models.status_payload(APP_NAME, BRAND_NAME, providers=PROVIDERS, default_provider='openai')
+    payload = provider_models.status_payload(APP_NAME, BRAND_NAME, providers=PROVIDERS, default_provider='openai')
+    payload["default_prompt_models"] = DEFAULT_PROMPT_MODELS
+    return payload
 
 
 def clean_json(text):
@@ -204,8 +216,12 @@ def normalize_provider(value, default="openai"):
 def normalize_prompt_model(provider, value):
     provider = normalize_provider(provider)
     models = provider_models.models_for(provider, 'text') or PROMPT_PROVIDER_MODELS.get(provider, OPENAI_PROMPT_MODELS)
+    if str(value or '') in models:
+        return str(value)
+    if DEFAULT_PROMPT_MODELS.get(provider) in models:
+        return DEFAULT_PROMPT_MODELS[provider]
     resolved = provider_models.resolve_model(provider, 'analysis', preferred=str(value or ''))
-    return str(value) if str(value or '') in models else (resolved.get('model') or models[0])
+    return resolved.get('model') or models[0]
 
 
 def normalize_image_model(provider, value):
@@ -249,7 +265,7 @@ def normalize_manifest(value, options=None):
         "cleanup_model": source.get("cleanup_model"),
         "continue_on_error": source.get("continue_on_error", True) is not False,
         "max_jobs": max_jobs,
-        "output_path": source.get("output_path") or f"ai_generated/{slugify(project, 'frameforge_project')}",
+        "output_path": source.get("output_path") or f"ai_generated/frameforge/{slugify(project, 'frameforge_project')}",
         "reference_images": source.get("reference_images") if isinstance(source.get("reference_images"), list) else [],
         "jobs": [],
     }
@@ -340,10 +356,11 @@ def validate_manifest_data(manifest):
 
 
 def resolve_output_path(manifest):
-    output_path = Path(manifest.get("output_path") or f"ai_generated/{slugify(manifest.get('project'))}")
+    output_path = Path(manifest.get("output_path") or "")
     if output_path.is_absolute():
         return output_path
-    return HOME / output_path
+    # Relative paths (often LLM-written, e.g. "ai_generated/foo") collapse to one project folder under LOG_DIR.
+    return LOG_DIR / slugify(output_path.name or manifest.get("project"), "frameforge_project")
 
 
 def resolve_reference_path(path):
@@ -375,6 +392,8 @@ def build_generation_prompt(manifest, job):
         parts.append("No extra text or random lettering.")
     if job.get("negative_instructions"):
         parts.append("Negative instructions: " + job["negative_instructions"])
+    if CHARACTER_REF_ID in job.get("reference_image_ids", []):
+        parts.append(CHARACTER_REF_PROMPT)
     return "\n\n".join(part for part in parts if part)
 
 
@@ -450,6 +469,8 @@ class Handler(BaseHTTPRequestHandler):
             path = "/index.html"
         if path == "/api/status":
             return self._json(200, status_payload())
+        if path == "/api/reference-image":
+            return self.reference_image()
         file_path = (ROOT / path.lstrip("/")).resolve()
         if not str(file_path).startswith(str(ROOT)) or not file_path.exists():
             return self._json(404, {"error": "Not found"})
@@ -468,6 +489,8 @@ class Handler(BaseHTTPRequestHandler):
             path = urlparse(self.path).path
             if path == "/api/upload":
                 return self.upload()
+            if path == "/api/upload-reference":
+                return self.upload_reference()
             data = json.loads(self._body().decode("utf-8") or "{}")
             if path == "/api/analyze":
                 return self.analyze(data)
@@ -504,6 +527,36 @@ class Handler(BaseHTTPRequestHandler):
         if not text.strip():
             return self._json(422, {"error": "I could not extract readable text from that file."})
         self._json(200, {"text": text, "filename": item.filename, "characters": len(text)})
+
+    def reference_image(self):
+        requested = parse_qs(urlparse(self.path).query).get("path", [""])[0]
+        ref_path = Path(requested).resolve()
+        # Only serve files that were uploaded as references, never arbitrary paths.
+        if not ref_path.is_relative_to(REFERENCE_DIR.resolve()) or not ref_path.is_file() or ref_path.suffix.lower() not in REFERENCE_TYPES:
+            return self._json(404, {"error": "Not found"})
+        self._headers(200, REFERENCE_TYPES[ref_path.suffix.lower()])
+        self.wfile.write(ref_path.read_bytes())
+
+    def upload_reference(self):
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={"REQUEST_METHOD": "POST", "CONTENT_TYPE": self.headers.get("Content-Type")},
+        )
+        item = form["file"] if "file" in form else None
+        if isinstance(item, list):
+            item = item[0] if item else None
+        if item is None or not getattr(item, "filename", ""):
+            return self._json(400, {"error": "No image uploaded"})
+        suffix = Path(item.filename).suffix.lower()
+        if suffix not in REFERENCE_TYPES:
+            return self._json(415, {"error": "Reference must be a PNG, JPEG, or WebP image."})
+        REFERENCE_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        dest = unique_path(REFERENCE_DIR / f"{stamp}_{slugify(Path(item.filename).stem, 'reference')}{suffix}")
+        dest.write_bytes(item.file.read())
+        log_event("reference-upload", {"filename": item.filename, "path": str(dest)})
+        self._json(200, {"path": str(dest), "filename": item.filename})
 
     def analyze(self, data):
         playlist = (data.get("playlist") or "").strip()
@@ -628,13 +681,17 @@ User idea:
         prompt_model = normalize_prompt_model(prompt_provider, data.get("prompt_model") or manifest.get("default_prompt_model"))
         instruction = f"""Rewrite this {APP_NAME} image manifest as JSON only.
 
-Goal: make every image prompt more likely to pass image API moderation while preserving the intended visual direction and sequence.
+Goal: a light sanity pass. Make every image prompt fit within image API content policy while preserving the intended visual direction, genre, mood, and sequence. Change as little as possible; leave prompts that are already fine untouched.
 
 Rules:
 - Preserve the canonical manifest structure, ids, titles, filenames, sizes, quality, required_text, provider, model, and output_path.
 - Rewrite prompt_body and negative_instructions only when useful.
-- Remove direct artist names, celebrity names, living-artist style requests, copyrighted character names, and phrases like "in the style of".
+- Remove direct artist names, celebrity names, real people, living-artist style requests, copyrighted character names, trademarked publication titles, and phrases like "in the style of" or "inspired by <name>".
 - Replace those references with observable visual language: era, medium, composition, camera, palette, lighting, texture, mood, genre, art movement, production design, typography style if text is allowed.
+- Sexualized depiction: remove words that sexualize a person (scantily-clad, ripped/torn clothing, leering, temptation, teasing, saucy, seductive posing). Keep glamour through period-appropriate costume, confident posture, styling, and color.
+- Never combine a person with sexualized framing AND danger, captivity, or restraint in the same image. For peril scenes, show the character as alert, defiant, or escaping, with the threat carried by the villain, setting, shadows, and composition.
+- Violence and horror: keep menace and atmosphere, but remove torture, torture devices, whips, bondage/chains on a person, sadism, gore, mutilation, and graphic injury. Imply danger instead of depicting harm.
+- Every person must read as a clearly adult character.
 - Keep each job as ONE standalone image, not a collage or contact sheet, unless a job explicitly requests a collage as the subject.
 - Keep policy/safety language out of the prompt bodies; make them read like natural art direction.
 
@@ -712,10 +769,11 @@ def generate_openai_image(job, prompt, ref_path=None):
         with ref_path.open("rb") as image_file:
             result = client.images.edit(
                 model=job["model"],
-                image=(ref_path.name, BytesIO(image_file.read()), "image/png"),
+                image=(ref_path.name, BytesIO(image_file.read()), REFERENCE_TYPES.get(ref_path.suffix.lower(), "image/png")),
                 prompt=prompt,
                 size=job["size"],
                 quality=job["quality"],
+                output_format="png",
             )
     else:
         result = client.images.generate(
@@ -740,7 +798,7 @@ def generate_google_image(job, prompt, ref_path=None):
     google_client = genai.Client(api_key=api_key)
     parts = []
     if ref_path:
-        mime = "image/jpeg" if ref_path.suffix.lower() in {".jpg", ".jpeg"} else "image/png"
+        mime = REFERENCE_TYPES.get(ref_path.suffix.lower(), "image/png")
         parts.append(genai_types.Part.from_bytes(data=ref_path.read_bytes(), mime_type=mime))
     parts.append(genai_types.Part.from_text(text=prompt))
     response = google_client.models.generate_content(

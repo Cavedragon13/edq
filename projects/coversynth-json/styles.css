@@ -182,6 +182,31 @@ textarea {
   background: var(--bg);
 }
 
+.action-group {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  min-width: 0;
+}
+
+.clear-button {
+  flex: none;
+  align-self: flex-start;
+  width: 88px;
+  height: 88px;
+  padding: 8px;
+}
+
+.clear-button:hover { border-color: var(--red); }
+
 button {
   min-height: 38px;
   border: 1px solid var(--line);
@@ -219,37 +244,79 @@ button:disabled { opacity: 0.48; cursor: default; }
 .clean-state[data-tone="ok"] { color: var(--accent); }
 .clean-state[data-tone="warn"] { color: var(--gold); }
 
-.drop-zone {
-  display: grid;
-  place-items: center;
-  min-height: 90px;
-  padding: 14px;
+.file-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
   border: 1px dashed #58615f;
   border-radius: 8px;
   background: #151817;
-  cursor: pointer;
-  text-align: center;
 }
 
-.drop-zone:hover,
-.drop-zone.is-dragging {
+.file-row.is-dragging {
   border-color: var(--accent);
   background: #16201d;
 }
 
-.drop-zone input { display: none; }
-
-.drop-title {
-  color: var(--text);
-  font-size: 16px;
-  font-weight: 800;
+.file-slot {
+  flex: 1 1 240px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
-.drop-meta {
-  margin-top: 5px;
+.ref-slot { justify-content: flex-end; }
+
+.file-button {
+  flex: none;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.file-button:hover { border-color: var(--accent); }
+
+.file-meta {
   color: var(--muted);
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.ref-text {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-width: 0;
+}
+
+.ref-thumb {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+}
+
+.ref-remove {
+  flex: none;
+  min-height: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  line-height: 1;
+}
+
+.ref-remove:hover { border-color: var(--red); }
 
 .right-rail {
   display: grid;

@@ -38,11 +38,7 @@
           </label>
           <label>Prompt model
             <select id="promptModel">
-              <option>gpt-5.4-mini</option>
-              <option>gpt-5.4-nano</option>
-              <option>gpt-5.2</option>
-              <option>gpt-5</option>
-              <option>gpt-4.1-mini</option>
+              <option>gpt-6-luna</option>
             </select>
           </label>
           <label>Image model
@@ -70,7 +66,7 @@
             <span>Text</span>
           </label>
           <label class="toggle-line">
-            <input id="autoClean" type="checkbox">
+            <input id="autoClean" type="checkbox" checked>
             <span>Clean before run</span>
           </label>
         </div>
@@ -79,24 +75,39 @@
         <textarea id="idea" class="idea-box" spellcheck="true"></textarea>
 
         <div class="action-bar">
-          <button id="generateManifest">Generate Manifest</button>
-          <button id="validateManifest">Validate Manifest</button>
-          <button id="sanitizeManifest">Clean Prompts</button>
-          <button id="dryRun">Dry Run</button>
-          <button id="runSelected">Run Selected</button>
-          <button id="runAll">Run All</button>
-          <button id="retryFailed">Retry Failed</button>
-          <button id="formatJson">Format JSON</button>
-          <button id="loadExample">Example</button>
+          <div class="action-group">
+            <div class="action-buttons">
+              <button id="generateManifest">Generate Manifest</button>
+              <button id="validateManifest">Validate Manifest</button>
+              <button id="dryRun">Dry Run</button>
+              <button id="runSelected">Run Selected</button>
+              <button id="runAll">Run All</button>
+              <button id="retryFailed">Retry Failed</button>
+              <button id="formatJson">Format JSON</button>
+              <button id="loadExample">Example</button>
+            </div>
+            <button id="clearAll" class="clear-button" title="Clear all fields and reset settings to defaults">Clear</button>
+          </div>
           <p id="status">Ready.</p>
           <p id="cleanState" class="clean-state">Cleanup: not run</p>
         </div>
 
-        <label id="dropZone" class="drop-zone" for="file">
-          <input id="file" type="file" accept=".json,.txt,.csv,.pdf,.md">
-          <span class="drop-title">Manifest</span>
-          <span id="fileMeta" class="drop-meta">JSON, text, markdown, or PDF</span>
-        </label>
+        <div id="dropZone" class="file-row">
+          <div class="file-slot">
+            <label class="file-button" for="file">Open manifest…</label>
+            <input id="file" type="file" accept=".json,.txt,.csv,.pdf,.md" hidden>
+            <span id="fileMeta" class="file-meta">JSON, text, markdown, or PDF</span>
+          </div>
+          <div class="file-slot ref-slot">
+            <img id="refThumb" class="ref-thumb" alt="Character reference" hidden>
+            <div class="ref-text">
+              <label class="file-button" for="refFile">Character reference…</label>
+              <span id="refMeta" class="file-meta">Optional: keeps one character consistent across jobs</span>
+            </div>
+            <input id="refFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+            <button id="refRemove" class="ref-remove" title="Remove character reference" hidden>×</button>
+          </div>
+        </div>
 
         <label class="text-label" for="manifest">JSON</label>
         <textarea id="manifest" class="manifest-box" spellcheck="false"></textarea>
