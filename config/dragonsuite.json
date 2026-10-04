@@ -205,7 +205,7 @@
                 "Anime"
             ],
             "stop_command": "pkill -f \"realesrgan_server.py\" || true",
-            "vram_gb": 4,
+            "vram_gb": 2,
             "output_dir": "/home/edq/ai_generated/realesrgan"
         },
         {
