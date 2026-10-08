@@ -1636,6 +1636,26 @@
                 "Approval gateway"
             ],
             "stop_command": "cd /srv/containers/edq && bash scripts/stop_open_dots.sh"
+        },
+        {
+            "id": "battle-cars",
+            "name": "Battle Cars",
+            "description": "3D post-apocalyptic car combat racer. 9 levels, 18 tracks, bosses, upgrades, 2-player split screen",
+            "category": "game",
+            "port": 8069,
+            "path": "/",
+            "icon": "&#127950;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_battle_cars.sh",
+            "project_path": "/srv/containers/edq/projects/battle-cars",
+            "features": [
+                "Three.js 3D",
+                "Missiles, Disks, Grenades",
+                "Boss races",
+                "2-Player Split Screen",
+                "Car & weapon upgrades"
+            ],
+            "stop_command": "cd /srv/containers/edq && bash scripts/stop_battle_cars.sh",
+            "output_dir": "/home/edq/ai_generated/battle-cars"
         }
     ],
     "categories": {
