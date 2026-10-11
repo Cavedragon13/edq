@@ -1656,6 +1656,26 @@
             ],
             "stop_command": "cd /srv/containers/edq && bash scripts/stop_battle_cars.sh",
             "output_dir": "/home/edq/ai_generated/battle-cars"
+        },
+        {
+            "id": "rogue-gauntlet",
+            "name": "Rogue Gauntlet",
+            "description": "Top-down roguelike dungeon crawler. 4 classes with male and female heroes, 5 floors, bosses, leveling, weapon/armor/healing/magic upgrades, shops, soul-shard progression",
+            "category": "game",
+            "port": 8072,
+            "path": "/",
+            "icon": "&#9876;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_rogue_gauntlet.sh",
+            "project_path": "/srv/containers/edq/projects/rogue-gauntlet",
+            "features": [
+                "Canvas 2D pixel art",
+                "Warrior, Ranger, Wizard, Paladin",
+                "Procedural dungeons and bosses",
+                "Level-ups and gear upgrades",
+                "Soul Forge meta-progression"
+            ],
+            "stop_command": "cd /srv/containers/edq && bash scripts/stop_rogue_gauntlet.sh",
+            "output_dir": "/home/edq/ai_generated/rogue-gauntlet"
         }
     ],
     "categories": {
