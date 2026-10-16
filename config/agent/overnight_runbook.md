@@ -13,16 +13,7 @@ service at least as good as you found it, and write the morning report.
 
 ## Queue — do at most 3 units of work tonight, in this priority order
 
-1. **Pending link tests.** If `find /srv/containers/edq/models /srv/containers/edq/projects -name '*.dedupe-bak'`
-   finds backups, launch the owning service (AuK → `models/auk/`, MiniMax Music 3 →
-   `models/minimax-music3/`), run one real generation at default settings, check the output
-   is real (ffprobe duration, volumedetect not silent). Release backups with
-   `python3 scripts/dedupe_models.py finalize backups/dedupe_plan_20260924.json [KEEP ...]` —
-   the extra arguments name backups to KEEP (services that have NOT passed yet):
-   both passed → no extra arguments; only AuK passed → `minimax-music3/`; only MiniMax
-   passed → `models/auk/`; neither → don't run finalize.
-   If the launcher is refused for lack of RAM, record it and move on — do not force.
-2. **[vram] launchers still on `gpu_preflight`.** Convert one service = one unit, exactly like
+1. **[vram] launchers still on `gpu_preflight`.** Convert one service = one unit, exactly like
    `start_fish_speech.sh`: add `TOOL_NAME` / `REQ_VRAM_MIB` / `REQ_RAM_MIB` + `source scripts/vram_guard.sh`,
    replace `gpu_preflight "$PORT"` with `vram_preflight || exit 1` + `clear_port "$PORT"`,
    `register_tool` the PID that actually holds the GPU (the server itself, not a wrapper —
@@ -32,30 +23,44 @@ service at least as good as you found it, and write the morning report.
    measured peak above the ~1GB desktop baseline + ~5% headroom, REQ_RAM_MIB likewise, and
    update that service's `vram_gb` in `config/dragonsuite.json` (preserve file formatting:
    json.dumps indent=4, ensure_ascii=True; diff must touch only that line).
-3. **[download] missing download scripts** for GPU services: write
+2. **[download] missing download scripts** for GPU services: write
    `scripts/download_<service>_models.sh` from what the code actually loads (read it; HF repo ids
    verified against the model card), run it, confirm it's a no-op when weights exist.
-4. **[output] wiring**: only when the fix is unambiguous (the app has a documented output
+3. **[output] wiring**: only when the fix is unambiguous (the app has a documented output
    setting). Otherwise report it for Ed.
 
 ## Never (report instead)
 
+- AuK and MiniMax Music 3 dedupe tests are deferred to a supervised session with Ed.
+  Do not launch these services or finalize their backups during unattended runs.
+- Preserve all services running at entry, especially Krea2. Krea2 may remain running
+  during downloads and other maintenance. If a test needs competing GPU memory,
+  defer that unit; never close Krea2 to make room. Nightly checkpoints and weekly
+  updates remain separate jobs and are not disabled by this policy.
+- All test launches MUST use `python3 scripts/overnight_services.py start
+  "$OVERNIGHT_SERVICE_JOURNAL" <service-id>` (on one command line). This records
+  ownership before the dashboard launch so the external supervisor can clean up.
+  Do not launch via raw dashboard start requests or direct launcher commands.
+- The supervisor enforces 90 minutes for the run and 20 minutes per test service.
+  Never finish a one-shot session saying you are waiting for a background task:
+  complete the test or stop it, record the deferral, and write the report.
 - Krea 2 (`krea2*`) — do not touch its launcher, files or LoRAs.
 - `[update]` items (Ed's own code, uncommitted edits, git-ignored projects), ComfyUI
   migrations, retiring/deleting services, deleting model data, anything requiring sudo,
   systemd, crontab, fstab, network or firewall changes, `git push`, installing new services.
-- Never run a model launcher as a child of your shell (a memory spike OOM-kills your session):
-  always `setsid nohup bash scripts/start_X.sh > <log> 2>&1 < /dev/null &` and poll the port.
+- Test launches go through the journal helper above; the dashboard detaches launchers.
 - Only one GPU service at a time; stop it via `curl -s -X POST http://127.0.0.1:8100/api/stop/<id>`
   and confirm VRAM returns to baseline before starting the next.
-- If Ed's own work appears (a GPU process you didn't start, besides idle ComfyUI), stop your
-  run, leave everything stopped/clean, and write the report.
+- If Ed starts new GPU work during a test, stop only your own test services and
+  write the report. Services already running at entry (including Krea2) may stay
+  running while you do non-GPU maintenance; never interpret cleanup as permission
+  to stop Ed's services.
 
 ## Verify every unit
 
 - `bash -n` / `python3 -m py_compile` every file you changed.
-- Launch-verify from the dashboard path too: `curl -s -X POST http://127.0.0.1:8100/api/start/<id>`
-  and print the JSON reply (a "vram_warning" reply means the dashboard didn't run the launcher).
+- Launch-verify through the journal helper (which uses the dashboard path) and
+  print its JSON reply (a "vram_warning" reply means the launcher did not run).
 - Real generation at defaults, inspect the output file (image: look at it; audio/video: ffprobe +
   a frame/volume check). Test outputs go to `~/ai_generated/test-artifacts/<type>/`, never the
   service's gallery — move them out if the app wrote them there.

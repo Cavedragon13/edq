@@ -19,16 +19,10 @@ mkdir -p "$LOG_DIR" "$REPORT_DIR"
 exec 9>"$LOG_DIR/.lock"
 flock -n 9 || { echo "$(date '+%F %T') already running — skip" >> "$LOG"; exit 0; }
 
-# Don't compete with Ed: skip the night if anything besides idle ComfyUI / the desktop
-# holds real GPU memory.
-busy="$(nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader,nounits 2>/dev/null \
-        | awk -F', *' '$2 > 1500 {print $1}')"
-if [[ -n "$busy" ]]; then
-    echo "$(date '+%F %T') GPU in use (pids: $busy) — skipping tonight" >> "$LOG"
-    printf '# Overnight %s\n\nSkipped: the GPU was in use (pids %s), so nothing was touched.\n' \
-        "$DATE" "$busy" > "$REPORT_DIR/$DATE.md"
-    exit 0
-fi
+# The supervisor snapshots running services and refuses unknown GPU state.
+# Running Krea2 is preserved; the agent may do work that needs no GPU.
+export OVERNIGHT_SERVICE_JOURNAL="$LOG_DIR/$DATE.services.json"
+export OVERNIGHT_REPORT="$REPORT_DIR/$DATE.md"
 
 PROMPT="$(cat "$RUNBOOK")"
 if [[ "${DRY_RUN:-0}" == 1 ]]; then
@@ -40,7 +34,7 @@ $PROMPT"
 fi
 
 echo "$(date '+%F %T') starting (dry_run=${DRY_RUN:-0})" >> "$LOG"
-timeout 5h claude -p "$PROMPT" \
+python3 scripts/overnight_supervisor.py claude -p "$PROMPT" \
     --permission-mode dontAsk \
     --allowedTools "Read" "Edit" "Write" "Glob" "Grep" "Bash" \
     --disallowedTools "Bash(sudo:*)" "Bash(rm -rf:*)" "Bash(git push:*)" "Bash(crontab:*)" \
@@ -49,6 +43,10 @@ timeout 5h claude -p "$PROMPT" \
     --output-format text >> "$LOG" 2>&1
 rc=$?
 echo "$(date '+%F %T') finished rc=$rc" >> "$LOG"
+if [[ "$rc" != 0 ]]; then
+    printf '\nOvernight wrapper failed (rc=%s); inspect %s before retrying.\n' \
+        "$rc" "$LOG" >> "$REPORT_DIR/$DATE.md"
+fi
 [[ -f "$REPORT_DIR/$DATE.md" ]] || printf '# Overnight %s\n\nThe agent exited (rc=%s) without writing a report — see %s\n' \
     "$DATE" "$rc" "$LOG" > "$REPORT_DIR/$DATE.md"
-exit 0
+exit "$rc"

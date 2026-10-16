@@ -7,6 +7,8 @@ Format: `- YYYY-MM-DD: [what failed] → [rule going forward]`
 
 ---
 
+- 2026-10-16: The one-shot overnight agent exited while claiming to wait for MiniMax generation, leaving a detached model server resident each morning and retrying stale dedupe tests daily → keep AuK/MiniMax dedupe tests supervised-only; journal test ownership before launch and enforce cleanup/time limits outside the AI session. Preserve pre-existing Krea2 while non-GPU maintenance continues; defer competing GPU tests instead of closing it.
+
 - 2026-03-31: Pointer-driven board rotation was shifting DOM targets between click-down and click-up, breaking hit detection on interactive elements → When overlaying pointermove animations on clickable elements, either disable animation during pointer-down, use pointer-events:none on the animated element, or perform hit tests in unanticipated coordinate space
 - 2026-05-24: Health check script initially included Linkding (8039) as always-on, but it is on-demand → only include a service in ALWAYS_ON if it has no launch_command in dragonsuite.json (infrastructure services) or is documented as always-on in CLAUDE.md
 - 2026-05-24: output_dir JSON update used wrong service IDs (wangp2, omnivoice, dragonart, unsloth) — needed a second pass with correct IDs (wan2gp, omnivoice-studio, dragonart-studio, unsloth-studio) → before patching dragonsuite.json programmatically, always print the actual id fields first with a dry-run query
