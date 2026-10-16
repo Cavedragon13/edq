@@ -49,7 +49,8 @@ historyDialog.innerHTML=`<div class="actions" style="justify-content:space-betwe
 <p id="historyNote" role="status"></p><div id="historyRows"></div>`;
 document.body.appendChild(historyDialog);
 qs('closeHistory').onclick=()=>historyDialog.close();
-qs('sessionName').addEventListener('input',()=>{sessionName=qs('sessionName').value.trim()||'Untitled session';scheduleDraft();});
+qs('sessionName').addEventListener('input',()=>{sessionName=qs('sessionName').value.trim()||'Untitled session';qs('sessionTitle').value=qs('sessionName').value;scheduleDraft();});
+qs('sessionTitle').addEventListener('input',()=>{sessionName=qs('sessionTitle').value.trim()||'Untitled session';scheduleDraft();});
 
 async function showHistory(){
   qs('sessionName').value=sessionName==='Untitled session'?'':sessionName;
@@ -102,6 +103,7 @@ async function restoreHistory(id){
     }
     renderSourcePreview();syncAspect();qs('strengthValue').textContent=Number(qs('strength').value).toFixed(2);
     promptSession=entry.session_id;sessionName=entry.name;
+    qs('sessionTitle').value=sessionName==='Untitled session'?'':sessionName;
     sessionStorage.setItem('krea2-session',promptSession);
     const urls=entry.result.image_urls||[];
     qs('preview').replaceChildren();
@@ -120,7 +122,7 @@ qs('newSession').onclick=async()=>{
     await saveDraft();
     promptSession=Date.now().toString(36)+Math.random().toString(36).slice(2);
     sessionName='Untitled session';sessionStorage.setItem('krea2-session',promptSession);
-    qs('sessionName').value='';qs('prompt').value='';
+    qs('sessionName').value='';qs('sessionTitle').value='';qs('prompt').value='';
     historyDialog.close();qs('prompt').focus();
   }catch(e){qs('historyNote').textContent=e.message;}
 };

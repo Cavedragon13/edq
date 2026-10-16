@@ -56,3 +56,17 @@ class History:
         result["payload"] = json.loads(result["payload"])
         result["result"] = json.loads(result["result"])
         return result
+
+    def reserve_outputs(self, prefix, count, output_dir):
+        """Reserve stable per-name numbers, across tabs and restarts, without overwrites."""
+        with closing(self.connect()) as db, db:
+            db.execute('CREATE TABLE IF NOT EXISTS output_counters (prefix TEXT PRIMARY KEY, next INTEGER NOT NULL)')
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT next FROM output_counters WHERE prefix=?', (prefix,)).fetchone()
+            start = row[0] if row else 1
+            while any((Path(output_dir) / f'{prefix}-{number:04d}.png').exists()
+                      for number in range(start, start + count)):
+                start += count
+            db.execute('INSERT INTO output_counters VALUES (?,?) ON CONFLICT(prefix) DO UPDATE SET next=excluded.next',
+                       (prefix, start + count))
+        return [Path(output_dir) / f'{prefix}-{number:04d}.png' for number in range(start, start + count)]

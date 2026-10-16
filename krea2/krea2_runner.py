@@ -21,6 +21,7 @@ import base64
 import binascii
 import hashlib
 from krea2_history import History
+from krea2_library import Library
 from html import escape as html_escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -71,6 +72,7 @@ MAX_INIT_IMAGE_BYTES = 20 * 1024 * 1024
 GENERATE_LOCK = threading.Lock()
 LAST_RUN: dict = {}
 HISTORY = History(LOG_DIR / "prompt-history.sqlite3")
+LIBRARY = Library(LORA_DIR, LOG_DIR, LORA_MANIFEST, GENERATE_LOCK)
 
 signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
@@ -144,16 +146,23 @@ def list_loras() -> list[dict]:
             continue
         rel = path.relative_to(LORA_DIR).as_posix()
         tag = lora_tag_for_path(path)
-        meta = known_by_file.get(rel) or known_by_file.get(path.name) or known_by_tag.get(tag) or {}
+        official_stem = re.sub(r'^z_sfw_', '', path.stem)
+        meta = known_by_file.get(rel) or known_by_file.get(path.name) or known_by_tag.get(tag) or known_by_tag.get(official_stem) or {}
+        saved_meta = LIBRARY.snapshot()['files'].get(rel, {})
         loras.append(
             {
-                "name": str(meta.get("name") or Path(rel).stem),
+                "name": str(saved_meta.get("name") or meta.get("name") or Path(rel).stem),
                 "tag": tag,
                 "filename": rel,
                 "path": str(path),
                 "size": human_size(path),
                 "repo_id": meta.get("repo_id"),
-                "trigger": meta.get("trigger", ""),
+                "trigger": saved_meta.get("trigger", meta.get("trigger", "")),
+                "source_url": saved_meta.get("source_url") or ("https://huggingface.co/" + meta['repo_id'] if meta.get('repo_id') else None),
+                "update_status": saved_meta.get("status", "Not checked"),
+                "installed_version": saved_meta.get("installed", ""),
+                "latest_version": saved_meta.get("latest", ""),
+                "can_restore": bool(saved_meta.get('backup') and Path(saved_meta['backup']).is_file()),
             }
         )
     return loras
@@ -383,7 +392,7 @@ def run_generation(payload: dict) -> dict:
         started = time.time()
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         LOG_DIR.mkdir(parents=True, exist_ok=True)
-        stamp = time.strftime("%Y%m%d-%H%M%S")
+        stamp = time.strftime("%Y%m%d-%H%M%S") + '-' + str(time.time_ns())[-6:]
         init_image_path = save_init_image(payload, stamp)
         img2img = init_image_path is not None
         batch_count = batch_count_for_payload(payload, img2img=img2img)
@@ -443,6 +452,16 @@ def run_generation(payload: dict) -> dict:
         output_paths = [path for path in expected_output_paths(out_path, batch_count) if path.exists()]
         if not output_paths:
             raise RuntimeError("sd-cli completed but no output image was written.")
+        name = str(payload.get('session_name') or '').strip()
+        if not name or name == 'Untitled session':
+            name = 'session-' + time.strftime('%Y%m%d')
+        prefix = sanitize_filename_token(name)
+        named_paths = HISTORY.reserve_outputs(prefix, len(output_paths), OUTPUT_DIR)
+        for original, named in zip(output_paths, named_paths):
+            # Hard-link with exclusive creation: never overwrite an existing output.
+            os.link(original, named)
+            original.unlink()
+        output_paths = named_paths
         image_urls = ["/outputs/" + path.name for path in output_paths]
         LAST_RUN = {
             "status": "ok",
@@ -482,10 +501,17 @@ INDEX_HTML = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Krea 2 Turbo</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('krea2-theme')||'dark'}catch{}</script>
 <style>
 :root{color-scheme:dark;--bg:#080e1c;--panel:#0e1828;--line:rgba(34,211,238,.16);--text:#d8e8f4;--muted:#7b9bb2;--accent:#22d3ee;--ok:#34d399;--bad:#f87171}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Manrope,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-main{max-width:1180px;margin:0 auto;padding:28px}header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px}
+[hidden]{display:none!important}
+:root[data-theme="light"]{color-scheme:light;--bg:#f2f5f8;--panel:#fff;--line:#c5d3df;--text:#183044;--muted:#486278;--accent:#0c8295;--ok:#087e57;--bad:#b91c1c}
+:root[data-theme="light"] textarea,:root[data-theme="light"] input,:root[data-theme="light"] select{background:#fff;color:var(--text)}
+:root[data-theme="light"] button.secondary,:root[data-theme="light"] .link-button.secondary{background:#e5edf4;color:var(--text)}
+:root[data-theme="light"] .preview{background:#e5edf4}
+#themeToggle{border-radius:50%;width:40px;padding:8px;transition:transform .3s}#themeToggle:hover{transform:rotate(180deg)}
+main{max-width:1180px;margin:0 auto;padding:28px}header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px}
 h1{font-size:22px;letter-spacing:.08em;text-transform:uppercase;margin:0}p{color:var(--muted);margin:6px 0 0}
 .grid{display:grid;grid-template-columns:minmax(360px,460px) 1fr;gap:16px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
 label{display:block;color:var(--muted);font-size:12px;margin:12px 0 6px}textarea,input,select{width:100%;background:#08111f;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit}
@@ -505,22 +531,21 @@ button,.link-button{background:var(--accent);color:#041018;border:0;border-radiu
   <header>
     <div>
       <h1>Krea 2 Turbo</h1>
-      <p>Local runner via stable-diffusion.cpp.</p>
     </div>
-    <div class="actions"><button id="historyButton" class="secondary" type="button">History</button><button id="refresh">Refresh</button></div>
+    <div class="actions"><button id="historyButton" class="secondary" type="button">History</button><button id="libraryButton" class="secondary" type="button">LoRA Library</button><button id="themeToggle" class="secondary" type="button" aria-label="Toggle light and dark theme">☀️</button></div>
   </header>
   <div class="grid">
     <section class="panel">
-      <div class="status" id="status">Loading status...</div>
+      <label for="sessionTitle">Session name</label>
+      <input id="sessionTitle" maxlength="150" placeholder="e.g. Moonlit Harbor → Moonlit-Harbor-0001.png">
       <label for="prompt">Prompt</label>
       <textarea id="prompt">a luminous glass dragon-shaped observatory above a moonlit harbor, precise architectural detail, cinematic realism</textarea>
       <div class="actions">
         <button id="generate">Generate</button>
-        <button id="refreshLoras" class="secondary" type="button">Refresh LoRAs</button>
-        <button id="copyLoraPath" class="secondary" type="button">Copy LoRAs Path</button>
       </div>
       <div class="msg" id="msg"></div>
       <div class="section-title">Source Image</div>
+      <p class="mini">One PNG, JPEG or WebP · up to 20 MB · image-to-image, maximum 2 outputs.</p>
       <div class="row">
         <div><label for="initImage">Image</label><input id="initImage" type="file" accept="image/png,image/jpeg,image/webp"></div>
         <div><label for="strength">Strength</label><div class="range-row"><input id="strength" type="range" value="0.55" min="0" max="1" step="0.05"><output id="strengthValue">0.55</output></div></div>
@@ -533,7 +558,6 @@ button,.link-button{background:var(--accent);color:#041018;border:0;border-radiu
       <div class="section-title">LoRAs</div>
       <div id="loraRows"></div>
       <button id="addLora" class="secondary compact" type="button">Add LoRA</button>
-      <div class="mini" id="loraStatus"></div>
       <label for="aspect">Aspect ratio</label>
       <select id="aspect">
         <option value="1024x1024">Square 1:1 · 1024x1024</option>
@@ -579,12 +603,15 @@ button,.link-button{background:var(--accent);color:#041018;border:0;border-radiu
 async function json(url, opts){ const r=await fetch(url,opts); const t=await r.text(); let d={}; try{d=JSON.parse(t)}catch{d={error:t}} if(!r.ok) throw new Error(d.error||d.detail||t||r.statusText); return d; }
 function qs(id){ return document.getElementById(id); }
 function esc(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function showTheme(){qs('themeToggle').textContent=document.documentElement.dataset.theme==='light'?'🌙':'☀️';}
+qs('themeToggle').onclick=()=>{const theme=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=theme;try{localStorage.setItem('krea2-theme',theme)}catch{}showTheme();};showTheme();
 let loraCatalog=[];
 let selectedLoras=[];
 let sourceImage=null;
 let loraDirPath='';
 async function refresh(){
   const d=await json('/api/status');
+  if(!qs('status')) return;
   const missing=d.models.filter(m=>!m.exists).map(m=>m.label);
   qs('status').innerHTML='<div>Ready: <b class="'+(d.ready?'ok':'bad')+'">'+d.ready+'</b> · Busy: <b>'+d.busy+'</b> · LoRAs: <b>'+d.lora_count+'</b></div>'+
     (missing.length?'<div class="bad">Missing: '+esc(missing.join(', '))+'</div>':'')+
@@ -693,7 +720,7 @@ async function refreshLoras(){
   renderLoraRows();
   loraDirPath=d.lora_dir||'';
   const known=d.known_loras?.length||0;
-  qs('loraStatus').innerHTML=(d.loras.length?d.loras.length+' installed':'No installed LoRAs')+' · '+known+' official entries · <code>'+esc(loraDirPath)+'</code>';
+  if(qs('loraStatus')) qs('loraStatus').innerHTML=(d.loras.length?d.loras.length+' installed':'No installed LoRAs')+' · '+known+' official entries · <code>'+esc(loraDirPath)+'</code>';
 }
 async function copyLoraPath(){
   if(!loraDirPath) return;
@@ -733,9 +760,6 @@ async function generate(){
   }catch(e){ qs('msg').textContent='Error: '+e.message; await refresh().catch(()=>{}); }
   finally{ qs('generate').disabled=false; }
 }
-qs('refresh').onclick=()=>{ refresh(); refreshLoras(); };
-qs('refreshLoras').onclick=refreshLoras;
-qs('copyLoraPath').onclick=copyLoraPath;
 qs('addLora').onclick=addLora;
 qs('generate').onclick=generate;
 qs('aspect').onchange=applyAspect;
@@ -763,6 +787,7 @@ qs('shift').addEventListener('blur',()=>{
 refresh();
 </script>
 <script src="/history.js"></script>
+<script src="/library.js"></script>
 </body>
 </html>"""
 
@@ -806,6 +831,13 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/history.js":
             self._headers(200, "text/javascript; charset=utf-8")
             self._write(Path(__file__).with_name("krea2_history.js").read_bytes())
+            return
+        if path == "/library.js":
+            self._headers(200, "text/javascript; charset=utf-8")
+            self._write(Path(__file__).with_name("krea2_library.js").read_bytes())
+            return
+        if path == "/api/library":
+            self._json(LIBRARY.snapshot())
             return
         if path in ("/health", "/api/status"):
             self._json(status_payload())
@@ -891,6 +923,32 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if path in ('/api/library/check', '/api/library/update'):
+            self._json(LIBRARY.start(apply=path.endswith('/update')))
+            return
+        if path == '/api/library/restore':
+            try:
+                length = int(self.headers.get('Content-Length', '0'))
+                if not 0 < length <= 8192:
+                    raise ValueError('Invalid restore request')
+                payload = json.loads(self.rfile.read(length))
+                LIBRARY.restore(str(payload.get('filename','')))
+                self._json({'ok':True})
+            except Exception as exc:
+                self._json({'error':str(exc)},400)
+            return
+        if path == '/api/library/open-folder':
+            try:
+                env = dict(os.environ)
+                env.setdefault('DBUS_SESSION_BUS_ADDRESS', f'unix:path=/run/user/{os.getuid()}/bus')
+                subprocess.run(['gdbus', 'call', '--session', '--dest', 'org.freedesktop.FileManager1',
+                                '--object-path', '/org/freedesktop/FileManager1', '--method',
+                                'org.freedesktop.FileManager1.ShowFolders', json.dumps([LORA_DIR.resolve().as_uri()]), ''],
+                               env=env, capture_output=True, text=True, timeout=10, check=True)
+                self._json({'ok':True, 'message':'LoRA folder opened on udragon.'})
+            except Exception:
+                self._json({'error':'Could not open the desktop folder. Use Browse files or the Finder link.'}, 500)
+            return
         if path not in ("/api/generate", "/api/history/draft"):
             self._json({"error": "Not found."}, 404)
             return
@@ -916,6 +974,11 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv('/srv/containers/edq/.env')
+    except ImportError:
+        pass
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"Krea 2 runner -> http://{HOST}:{PORT}")
     print(json.dumps(status_payload(), indent=2))

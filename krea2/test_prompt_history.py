@@ -44,6 +44,14 @@ class HistoryTests(unittest.TestCase):
         self.history.put({**self.payload,"session_name":"Renamed"})
         self.assertEqual(self.history.get(entry)["name"], "Renamed")
 
+    def test_sequential_outputs_persist_and_do_not_overwrite(self):
+        (self.root / 'Harbor-0001.png').write_bytes(b'existing')
+        paths = self.history.reserve_outputs('Harbor', 2, self.root)
+        self.assertEqual([p.name for p in paths], ['Harbor-0003.png','Harbor-0004.png'])
+        other = History(self.history.path)
+        self.assertEqual(other.reserve_outputs('Harbor', 1, self.root)[0].name,'Harbor-0005.png')
+        self.assertEqual((self.root/'Harbor-0001.png').read_bytes(),b'existing')
+
     def test_validation_error_releases_generation_lock(self):
         with patch.object(runner,"status_payload",return_value={"ready":True}), \
              patch.object(runner,"OUTPUT_DIR",self.root), patch.object(runner,"LOG_DIR",self.root), \
