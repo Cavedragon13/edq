@@ -1676,6 +1676,28 @@
             ],
             "stop_command": "cd /srv/containers/edq && bash scripts/stop_rogue_gauntlet.sh",
             "output_dir": "/home/edq/ai_generated/rogue-gauntlet"
+        },
+        {
+            "id": "dragonstage",
+            "name": "DragonStage (odragon desktop)",
+            "description": "Native 3D scene composer. Start opens the app on the office Mac; editable CSG, materials, lighting, PNG and GLB export.",
+            "category": "utility",
+            "port": 8073,
+            "path": "/",
+            "status_host": "192.168.7.133",
+            "url_host": "192.168.7.133",
+            "icon": "&#127984;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonstage.sh",
+            "stop_command": "cd /srv/containers/edq && bash scripts/stop_dragonstage.sh",
+            "project_path": "/srv/containers/edq/projects/dragonstage",
+            "output_dir": "/home/edq/ai_generated/dragonstage",
+            "features": [
+                "Native application on odragon",
+                "Editable Boolean geometry",
+                "Inherited group materials",
+                "PNG alpha and GLB exports",
+                "Standalone macOS and Linux builds"
+            ]
         }
     ],
     "categories": {
