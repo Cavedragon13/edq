@@ -19,10 +19,12 @@ import threading
 import time
 import base64
 import binascii
+import hashlib
+from krea2_history import History
 from html import escape as html_escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import unquote, urlparse, parse_qs
 
 
 APP_ROOT = Path(os.environ.get("KREA2_HOME", Path.home() / ".local/share/krea2"))
@@ -68,6 +70,7 @@ MAX_INIT_IMAGE_BYTES = 20 * 1024 * 1024
 
 GENERATE_LOCK = threading.Lock()
 LAST_RUN: dict = {}
+HISTORY = History(LOG_DIR / "prompt-history.sqlite3")
 
 signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
@@ -374,36 +377,42 @@ def run_generation(payload: dict) -> dict:
     if not GENERATE_LOCK.acquire(blocking=False):
         raise RuntimeError("A generation is already running.")
 
-    started = time.time()
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    init_image_path = save_init_image(payload, stamp)
-    img2img = init_image_path is not None
-    batch_count = batch_count_for_payload(payload, img2img=img2img)
-    _prompt_with_loras, loras_used = lora_prompt(payload, str(payload.get("prompt") or "").strip())
-    lora_suffix = ""
-    if loras_used:
-        suffix_tags = "-".join(sanitize_filename_token(item["tag"]) for item in loras_used[:3])
-        lora_suffix = "-lora-" + suffix_tags
-    if img2img:
-        lora_suffix += "-i2i"
-    out_path = OUTPUT_DIR / f"krea2-{stamp}{lora_suffix}.png"
-    log_path = LOG_DIR / f"krea2-{stamp}.log"
-    cmd = build_command(payload, out_path, init_image_path)
-
-    LAST_RUN = {
-        "status": "running",
-        "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(started)),
-        "output": str(out_path),
-        "log": str(log_path),
-        "loras": loras_used,
-        "mode": "img2img" if img2img else "txt2img",
-        "init_image": str(init_image_path) if init_image_path else None,
-        "batch_count": batch_count,
-    }
-
+    entry_id = None
+    history_payload = dict(payload)
     try:
+        started = time.time()
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        init_image_path = save_init_image(payload, stamp)
+        img2img = init_image_path is not None
+        batch_count = batch_count_for_payload(payload, img2img=img2img)
+        _prompt_with_loras, loras_used = lora_prompt(payload, str(payload.get("prompt") or "").strip())
+        lora_suffix = ""
+        if loras_used:
+            suffix_tags = "-".join(sanitize_filename_token(item["tag"]) for item in loras_used[:3])
+            lora_suffix = "-lora-" + suffix_tags
+        if img2img:
+            lora_suffix += "-i2i"
+        out_path = OUTPUT_DIR / f"krea2-{stamp}{lora_suffix}.png"
+        log_path = LOG_DIR / f"krea2-{stamp}.log"
+        cmd = build_command(payload, out_path, init_image_path)
+
+        LAST_RUN = {
+            "status": "running",
+            "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(started)),
+            "output": str(out_path),
+            "log": str(log_path),
+            "loras": loras_used,
+            "mode": "img2img" if img2img else "txt2img",
+            "init_image": str(init_image_path) if init_image_path else None,
+            "batch_count": batch_count,
+        }
+
+        history_payload.pop("init_image", None)
+        if init_image_path:
+            history_payload["saved_init_image"] = init_image_path.name
+        entry_id = HISTORY.put(history_payload, "running", LAST_RUN)
         proc = subprocess.run(
             cmd,
             cwd=str(APP_ROOT),
@@ -427,7 +436,10 @@ def run_generation(payload: dict) -> dict:
                 "mode": "img2img" if img2img else "txt2img",
                 "init_image": str(init_image_path) if init_image_path else None,
             }
-            raise RuntimeError(f"sd-cli failed with exit code {proc.returncode}.")
+            detail = ""
+            if "out of memory" in (proc.stderr + proc.stdout).lower():
+                detail = " GPU memory ran out. Close other GPU tests or reduce image size/batch, then retry; the web server is still running."
+            raise RuntimeError(f"sd-cli failed with exit code {proc.returncode}.{detail} Log: {log_path}")
         output_paths = [path for path in expected_output_paths(out_path, batch_count) if path.exists()]
         if not output_paths:
             raise RuntimeError("sd-cli completed but no output image was written.")
@@ -443,7 +455,7 @@ def run_generation(payload: dict) -> dict:
             "mode": "img2img" if img2img else "txt2img",
             "init_image": str(init_image_path) if init_image_path else None,
         }
-        return {
+        result = {
             "ok": True,
             "elapsed_seconds": elapsed,
             "image_url": image_urls[0],
@@ -453,6 +465,13 @@ def run_generation(payload: dict) -> dict:
             "batch_count": batch_count,
             "mode": "img2img" if img2img else "txt2img",
         }
+        HISTORY.put(history_payload, "ok", result, entry_id)
+        return result
+    except Exception as exc:
+        LAST_RUN = {**LAST_RUN, "status": "error", "error": str(exc)}
+        if entry_id:
+            HISTORY.put(history_payload, "error", LAST_RUN, entry_id)
+        raise
     finally:
         GENERATE_LOCK.release()
 
@@ -488,7 +507,7 @@ button,.link-button{background:var(--accent);color:#041018;border:0;border-radiu
       <h1>Krea 2 Turbo</h1>
       <p>Local runner via stable-diffusion.cpp.</p>
     </div>
-    <button id="refresh">Refresh</button>
+    <div class="actions"><button id="historyButton" class="secondary" type="button">History</button><button id="refresh">Refresh</button></div>
   </header>
   <div class="grid">
     <section class="panel">
@@ -703,9 +722,8 @@ async function copyLoraPath(){
 async function generate(){
   qs('generate').disabled=true; qs('msg').textContent='Starting generation...';
   try{
-    const loras=selectedLoras.filter(item=>item.tag).map(item=>({tag:item.tag,weight:item.weight || 1}));
-    const payload={prompt:qs('prompt').value,width:qs('width').value,height:qs('height').value,steps:qs('steps').value,batch_count:qs('batchCount').value,seed:qs('seed').value,cfg_scale:qs('cfg').value,flow_shift:qs('shift').value,sampler:qs('sampler').value,lora_apply_mode:qs('loraMode').value,custom_lora_tags:qs('customLora').value,loras,strength:qs('strength').value};
-    if(sourceImage) payload.init_image={data_url:sourceImage.data_url,name:sourceImage.name,width:sourceImage.width,height:sourceImage.height};
+    const payload=historyPayload();
+    await saveDraft();
     const d=await json('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const urls=d.image_urls||[d.image_url];
     qs('preview').className='preview'+(urls.length===1?' single':'');
@@ -742,8 +760,9 @@ qs('shift').addEventListener('blur',()=>{
   const v=Math.min(3,Math.max(0,Number(qs('shift').value)||1.15));
   qs('shift').value=v.toFixed(2);
 });
-refreshLoras().finally(refresh);
+refresh();
 </script>
+<script src="/history.js"></script>
 </body>
 </html>"""
 
@@ -784,8 +803,34 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/favicon.ico":
             self._headers(204, "image/x-icon")
             return
+        if path == "/history.js":
+            self._headers(200, "text/javascript; charset=utf-8")
+            self._write(Path(__file__).with_name("krea2_history.js").read_bytes())
+            return
         if path in ("/health", "/api/status"):
             self._json(status_payload())
+            return
+        if path == "/api/history":
+            search = parse_qs(urlparse(self.path).query).get("q", [""])[0]
+            self._json({"entries": HISTORY.list(search)})
+            return
+        if path.startswith("/api/history/"):
+            try:
+                entry = HISTORY.get(unquote(path[len("/api/history/"):]))
+                saved = entry["payload"].get("saved_init_image")
+                if saved:
+                    source = (INIT_IMAGE_DIR / saved).resolve()
+                    if source.parent == INIT_IMAGE_DIR.resolve() and source.is_file():
+                        kind = "jpeg" if source.suffix == ".jpg" else source.suffix[1:]
+                        entry["payload"]["init_image"] = {
+                            "name": source.name,
+                            "data_url": "data:image/" + kind + ";base64," + base64.b64encode(source.read_bytes()).decode(),
+                        }
+                    else:
+                        entry["source_missing"] = True
+                self._json(entry)
+            except KeyError:
+                self._json({"error": "History entry not found."}, 404)
             return
         if path == "/api/loras":
             self._json(
@@ -846,7 +891,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
-        if path != "/api/generate":
+        if path not in ("/api/generate", "/api/history/draft"):
             self._json({"error": "Not found."}, 404)
             return
         try:
@@ -855,6 +900,16 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": "Request is too large. Source image limit is 20 MB."}, 413)
                 return
             payload = json.loads(self.rfile.read(length) or b"{}")
+            if path == "/api/history/draft":
+                if payload.get("init_image"):
+                    digest = hashlib.sha256(json.dumps(payload["init_image"], sort_keys=True).encode()).hexdigest()[:24]
+                    source = save_init_image(payload, "draft-" + digest)
+                    payload.pop("init_image", None)
+                    if source:
+                        payload["saved_init_image"] = source.name
+                entry_id = HISTORY.put(payload)
+                self._json({"ok": True, "id": entry_id})
+                return
             self._json(run_generation(payload))
         except Exception as exc:
             self._json({"ok": False, "error": str(exc), "last_run": LAST_RUN}, 500)
