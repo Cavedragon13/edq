@@ -394,7 +394,7 @@
                 "Animals"
             ],
             "stop_command": "pkill -f 'LivePortrait.*app.py|liveportrait.*app.py' || true",
-            "vram_gb": 6,
+            "vram_gb": 1.8,
             "output_dir": "/home/edq/ai_generated/liveportrait"
         },
         {
