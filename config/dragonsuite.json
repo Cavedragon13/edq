@@ -1139,7 +1139,7 @@
                 "Ultimate Clone"
             ],
             "stop_command": "pkill -f 'voxcpm2_server.py' || true",
-            "vram_gb": 8,
+            "vram_gb": 6.8,
             "output_dir": "/home/edq/ai_generated/voxcpm2"
         },
         {

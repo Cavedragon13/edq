@@ -5,6 +5,14 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). Measured during a real generation (TTS /
+# Voice Design mode, default cfg/steps, ~6s output) 2026-10-18: peak 7351MiB
+# total used vs ~950MiB desktop baseline -> ~6400MiB; steady-state RSS ~4146MiB.
+TOOL_NAME="voxcpm2"
+REQ_VRAM_MIB=6800           # measured peak ~6400MiB above desktop baseline, 2026-10-18
+REQ_RAM_MIB=4400            # measured steady-state RSS ~4146MiB, 2026-10-18
+source scripts/vram_guard.sh
+
 SERVICE_NAME="VoxCPM2 TTS"
 PORT=8049
 VENV="venv_voxcpm2"
@@ -20,7 +28,8 @@ if [ ! -d "$HF_HOME/hub/models--openbmb--VoxCPM2" ]; then
     exit 1
 fi
 
-gpu_preflight "$PORT"
+vram_preflight || exit 1   # refuses if VRAM/RAM short; relaunch with CLEAR=1 to stop other registered tools first
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -29,6 +38,8 @@ if ss -tlnp | grep -q ":${PORT} "; then
     echo "✓ Already running on port $PORT"
 else
     nohup python3 scripts/voxcpm2_server.py > "$LOG" 2>&1 &
+    VOXCPM2_PID=$!
+    register_tool "$VOXCPM2_PID"
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 120; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
