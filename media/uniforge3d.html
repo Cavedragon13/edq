@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UniForge3D Studio</title>
+<script>
+  // Apply the saved theme before first paint (dark by default).
+  try { document.documentElement.dataset.theme = localStorage.getItem("uniforge3d-theme") || "dark"; } catch (e) {}
+</script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.3.1/dist/model-viewer.min.js"
+        integrity="sha384-cprcVQt7wbUl0xngF3PGP6yBB7n4/t+4AoAMG9biiMCGFiWOdzUH10Ie2COTqFNW" crossorigin="anonymous"></script>
+<style>
+  :root[data-theme="dark"] {
+    --bg: #1e1e1e; --panel: #2d2d2d; --text: #e0e0e0; --muted: #9aa3ad;
+    --border: #4a5568; --accent: #8b5cf6; --good: #34d399; --bad: #f87171; --input: #1a1a1a;
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f4f6; --panel: #ffffff; --text: #1f2328; --muted: #5b6470;
+    --border: #cfd4dc; --accent: #7c3aed; --good: #059669; --bad: #dc2626; --input: #ffffff;
+  }
+  * { box-sizing: border-box; transition: background-color .3s ease, color .3s ease, border-color .3s ease; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, sans-serif; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+  h1 { font-size: 18px; margin: 0; }
+  #theme { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; font-size: 16px; transition: transform .3s ease; }
+  #theme:hover { transform: rotate(25deg); }
+  main { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; padding: 16px 20px; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  label { display: block; margin: 10px 0 4px; color: var(--muted); font-size: 12px; }
+  input[type=text], input[type=number] { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--input); color: var(--text); }
+  button.go { width: 100%; margin-top: 14px; padding: 10px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; }
+  button.go:disabled { opacity: .5; cursor: default; }
+  #drop { border: 2px dashed var(--border); border-radius: 8px; padding: 18px; text-align: center; color: var(--muted); cursor: pointer; }
+  #drop.over { border-color: var(--accent); color: var(--text); }
+  #thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+  #thumbs img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+  model-viewer { width: 100%; height: 520px; background: var(--input); border-radius: 8px; }
+  #msg { margin-top: 10px; color: var(--muted); min-height: 1.4em; }
+  #msg.bad { color: var(--bad); } #msg.good { color: var(--good); }
+  #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 10px; }
+  #gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; }
+  a { color: var(--accent); }
+  .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>UniForge3D Studio <span style="color:var(--muted);font-weight:400">· multi-view → textured GLB</span></h1>
+  <button id="theme" title="Toggle theme" aria-label="Toggle theme">☾</button>
+</header>
+<main>
+  <section class="panel">
+    <div id="drop">Drop 1–8 views of <b>one object</b> here, or click to choose</div>
+    <input id="file" type="file" accept="image/*" multiple hidden>
+    <div id="thumbs"></div>
+    <label for="name">Name</label><input id="name" type="text" placeholder="object">
+    <label for="seed">Seed (-1 = random)</label><input id="seed" type="number" value="-1">
+    <label><input id="lowvram" type="checkbox" checked> Low-VRAM mode (swap stages to CPU; needed on 16GB)</label>
+    <button class="go" id="go" disabled>Generate</button>
+    <div id="msg"></div>
+    <div class="note">Research weights: CC BY-NC 4.0 (VGGT-derived) + BRIA RMBG-2.0 — personal / non-commercial use only. Unposed views, similar framing; more views preserve more observed detail.</div>
+  </section>
+  <section class="panel">
+    <model-viewer id="viewer" camera-controls auto-rotate shadow-intensity="1" exposure="1.1" environment-image="neutral" alt="Generated 3D asset"></model-viewer>
+    <div id="links"></div>
+    <div id="gallery"></div>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let files = [];
+
+  const themeBtn = $("theme");
+  const paint = () => { themeBtn.textContent = document.documentElement.dataset.theme === "dark" ? "☾" : "☀"; };
+  themeBtn.onclick = () => {
+    const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem("uniforge3d-theme", t); } catch (e) {}
+    paint();
+  };
+  paint();
+
+  function setFiles(list) {
+    files = [...list].filter((f) => f.type.startsWith("image/")).slice(0, 8);
+    $("thumbs").innerHTML = "";
+    files.forEach((f) => { const i = new Image(); i.src = URL.createObjectURL(f); $("thumbs").appendChild(i); });
+    $("go").disabled = files.length < 1;
+  }
+  $("drop").onclick = () => $("file").click();
+  $("file").onchange = (e) => setFiles(e.target.files);
+  $("drop").ondragover = (e) => { e.preventDefault(); $("drop").classList.add("over"); };
+  $("drop").ondragleave = () => $("drop").classList.remove("over");
+  $("drop").ondrop = (e) => { e.preventDefault(); $("drop").classList.remove("over"); setFiles(e.dataTransfer.files); };
+
+  const say = (t, cls = "") => { $("msg").textContent = t; $("msg").className = cls; };
+
+  function show(glb, folder) {
+    $("viewer").src = glb;
+    $("links").innerHTML = `<p><a href="${glb}" download>Download GLB</a> · <code>~/ai_generated/uniforge3d/${folder}/</code></p>`;
+  }
+
+  let poll = null;
+  $("go").onclick = async () => {
+    const fd = new FormData();
+    files.forEach((f) => fd.append("files", f));
+    fd.append("name", $("name").value);
+    fd.append("seed", $("seed").value);
+    fd.append("low_vram", $("lowvram").checked);
+    $("go").disabled = true;
+    say("Starting…");
+    poll = setInterval(async () => {
+      try {
+        const s = (await (await fetch("/api/status")).json()).progress;
+        if (s.stage === "loading" || s.stage === "running") say(`${s.stage}… ${s.elapsed}s — ${s.message}`);
+      } catch (e) {}
+    }, 2000);
+    try {
+      const r = await fetch("/api/generate", { method: "POST", body: fd });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.detail || j.error || r.statusText);
+      say(`Done in ${j.seconds}s`, "good");
+      show(j.glb, j.folder);
+      loadGallery();
+    } catch (e) {
+      say(String(e.message || e), "bad");
+    } finally {
+      clearInterval(poll);
+      $("go").disabled = files.length < 1;
+    }
+  };
+
+  async function loadGallery() {
+    try {
+      const items = await (await fetch("/api/gallery")).json();
+      $("gallery").innerHTML = "";
+      items.forEach((it) => {
+        const i = new Image(); i.src = it.thumb || ""; i.title = it.folder;
+        i.onclick = () => show(it.glb, it.folder);
+        $("gallery").appendChild(i);
+      });
+    } catch (e) {}
+  }
+  loadGallery();
+</script>
+</body>
+</html>

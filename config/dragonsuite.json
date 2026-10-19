@@ -1352,7 +1352,7 @@
                 "Multi-instrument"
             ],
             "stop_command": "pkill -f 'muscriptor_server.py' || true",
-            "vram_gb": 12.0,
+            "vram_gb": 13.5,
             "output_dir": "/home/edq/ai_generated/muscriptor"
         },
         {
@@ -1698,6 +1698,46 @@
                 "PNG alpha and GLB exports",
                 "Standalone macOS and Linux builds"
             ]
+        },
+        {
+            "id": "moss-image",
+            "name": "MOSS-Image",
+            "description": "5B DiT text-to-image with strong text rendering, 4K-token prompts and JSON layout control",
+            "category": "image",
+            "port": 8074,
+            "path": "/",
+            "icon": "&#128221;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_moss_image.sh",
+            "project_path": "/srv/containers/edq/projects/MOSS-Image",
+            "features": [
+                "Text rendering",
+                "Layout-to-image (bbox JSON)",
+                "Long prompts",
+                "Base + SFT models"
+            ],
+            "stop_command": "pkill -f '[m]oss_image_app.py' || true",
+            "vram_gb": 3.0,
+            "output_dir": "/home/edq/ai_generated/moss-image"
+        },
+        {
+            "id": "uniforge3d",
+            "name": "UniForge3D Studio",
+            "description": "Sparse unposed multi-view images of one object to a textured GLB (non-commercial weights)",
+            "category": "vision",
+            "port": 8075,
+            "path": "/",
+            "icon": "&#129521;",
+            "launch_command": "cd /srv/containers/edq && bash scripts/start_uniforge3d.sh",
+            "project_path": "/srv/containers/edq/projects/UniForge3D",
+            "features": [
+                "Multi-view to 3D",
+                "Textured GLB",
+                "GLB viewer",
+                "Gallery"
+            ],
+            "stop_command": "pkill -f 'uniforge3d_server[.]py' || true",
+            "vram_gb": 13.5,
+            "output_dir": "/home/edq/ai_generated/uniforge3d"
         }
     ],
     "categories": {
