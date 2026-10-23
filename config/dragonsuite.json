@@ -838,24 +838,6 @@
       "stop_command": null
     },
     {
-      "id": "justdubit",
-      "name": "JustDubit",
-      "description": "Video Dubbing + Lip Sync + Audio-Visual Diffusion",
-      "category": "audio",
-      "port": 8022,
-      "path": null,
-      "icon": "&#127909;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_justdubit.sh",
-      "project_path": "/srv/containers/edq/projects/just-dub-it",
-      "features": [
-        "Video Dub",
-        "Lip Sync",
-        "Multilingual"
-      ],
-      "stop_command": "pkill -f \"justdubit_gradio.py\" || true",
-      "output_dir": "/home/edq/ai_generated/justdubit"
-    },
-    {
       "id": "soulxsinger",
       "name": "SoulX-Singer",
       "description": "Zero-Shot Singing Voice Synthesis + Voice Cloning",
@@ -893,25 +875,6 @@
       "stop_command": "pkill -f \"deepgen_diffusers_gradio.py\" || true; pkill -f \"deepgen_gradio.py\" || true",
       "vram_gb": 14,
       "output_dir": "/home/edq/ai_generated/deepgen"
-    },
-    {
-      "id": "dolphin-vision",
-      "name": "Dolphin Vision 7B",
-      "description": "Uncensored vision-language model for unrestricted image Q&A",
-      "category": "vision",
-      "port": 8025,
-      "path": "/",
-      "icon": "&#128065;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_dolphin_vision_native.sh",
-      "project_path": null,
-      "features": [
-        "Uncensored VLM",
-        "Image Q&A",
-        "Visual Analysis"
-      ],
-      "stop_command": "pkill -f \"dolphin_vision_server.py\" || true",
-      "vram_gb": 8,
-      "output_dir": "/home/edq/ai_generated/dolphin-vision"
     },
     {
       "id": "audio-tools",
@@ -1005,24 +968,6 @@
       "stop_command": "pkill -f lms || true"
     },
     {
-      "id": "dragonclawd",
-      "name": "Dragonclawd",
-      "description": "Personal AI agent — Telegram bot for service control & AI pipelines",
-      "category": "automation",
-      "port": null,
-      "path": null,
-      "icon": "&#129409;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_dragonclawd.sh",
-      "project_path": null,
-      "features": [
-        "Telegram bot",
-        "Claude Haiku",
-        "Service control",
-        "AI pipelines"
-      ],
-      "stop_command": "pkill -f dragonclawd_server.py || true"
-    },
-    {
       "id": "the-movies",
       "name": "The Movies",
       "description": "AI film studio sim — cast, budget, and watch Veo-generated short films",
@@ -1040,25 +985,6 @@
       ],
       "stop_command": "pkill -f the_movies_server.py || true",
       "output_dir": "/home/edq/ai_generated/the-movies"
-    },
-    {
-      "id": "tada-tts",
-      "name": "TADA TTS",
-      "description": "Hume AI generative TTS — voice cloning with 1:1 token alignment",
-      "category": "audio",
-      "port": 8037,
-      "path": null,
-      "icon": "&#127908;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_tada.sh",
-      "project_path": null,
-      "features": [
-        "Voice Clone",
-        "9 Languages",
-        "Generative Prosody"
-      ],
-      "stop_command": "pkill -f tada_gradio.py || true",
-      "vram_gb": 6,
-      "output_dir": "/home/edq/ai_generated/tada"
     },
     {
       "id": "matanyone2",
@@ -1110,16 +1036,6 @@
       "project_path": "/srv/containers/edq/projects/ai-toolkit",
       "vram_gb": 12,
       "output_dir": "/home/edq/ai_generated/ai-toolkit"
-    },
-    {
-      "id": "voxtral-tts",
-      "name": "Voxtral TTS",
-      "description": "Mistral Voxtral-4B-TTS-2603 — 20 voices, 9 languages, 24kHz",
-      "port": 8042,
-      "category": "audio",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_voxtral.sh",
-      "stop_command": "pkill -f 'venv_voxtral/bin/vllm' || true; pkill -f 'voxtral_server.py' || true; rm -f /tmp/voxtral_backend.pid",
-      "output_dir": "/home/edq/ai_generated/voxtral-tts"
     },
     {
       "id": "voxcpm2",
@@ -1316,25 +1232,6 @@
       "stop_command": "pkill -f 'app.py.*hidream-o1-dev' || pkill -f 'start_hidream_o1' || true",
       "vram_gb": 16.0,
       "output_dir": "/home/edq/ai_generated/hidream-o1"
-    },
-    {
-      "id": "odysseus",
-      "name": "Odysseus",
-      "description": "Self-hosted AI workspace for chat, agents, research, documents, email, notes, calendar, and local model workflows",
-      "category": "llm",
-      "port": 8057,
-      "path": "/",
-      "icon": "&#128506;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_odysseus.sh",
-      "project_path": "/srv/containers/edq/projects/odysseus",
-      "features": [
-        "Chat + Agents",
-        "Deep Research",
-        "Documents",
-        "Cookbook"
-      ],
-      "stop_command": "cd /srv/containers/edq && bash scripts/stop_odysseus.sh",
-      "output_dir": "/home/edq/ai_generated/odysseus"
     },
     {
       "id": "muscriptor",
