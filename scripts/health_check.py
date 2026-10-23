@@ -49,7 +49,8 @@ ALWAYS_ON = {
     4533: ("minidragon", "Navidrome"),
     9000: ("minidragon", "Portainer"),
     25600: ("minidragon", "Komga"),
-    8123: ("minidragon", "Home Assistant"),
+    8123: ("udragon", "Home Assistant"),
+    8081: ("udragon", "Pi-hole admin"),
     8222: ("minidragon", "Vaultwarden"),
 }
 
