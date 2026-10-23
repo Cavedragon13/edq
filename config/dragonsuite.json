@@ -1077,7 +1077,7 @@
         "Fine Detail"
       ],
       "stop_command": "pkill -f 'matanyone2.*app.py' || true",
-      "vram_gb": 6,
+      "vram_gb": 7,
       "output_dir": "/home/edq/ai_generated/matanyone2"
     },
     {

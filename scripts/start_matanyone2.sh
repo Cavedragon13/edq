@@ -5,6 +5,11 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+TOOL_NAME="matanyone2"
+REQ_VRAM_MIB=7200          # measured peak ~6.86GB (image matting smoke test), 2026-10-23
+REQ_RAM_MIB=3500           # measured RSS ~2.4GB, 2026-10-23
+source scripts/vram_guard.sh
+
 SERVICE_NAME="MatAnyone 2"
 PORT=8038
 VENV="venv_matanyone2"
@@ -27,7 +32,8 @@ if [ ! -f "$CHECKPOINTS_DIR/sam_vit_h_4b8939.pth" ] || [ ! -f "$CHECKPOINTS_DIR/
     exit 1
 fi
 
-gpu_preflight "$PORT"
+vram_preflight || exit 1   # refuses if VRAM/RAM short; relaunch with CLEAR=1 to stop other registered tools first
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 mkdir -p "$OUTPUT_DIR"
@@ -40,6 +46,8 @@ else
     nohup bash -c "cd '$APP_DIR' && python app.py --port $PORT" > /tmp/matanyone2.log 2>&1 &
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 60; then
+        server_pid=$(ss -tlnp "sport = :$PORT" | grep -oP 'pid=\K[0-9]+' | head -1)
+        [ -n "$server_pid" ] && register_tool "$server_pid"
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
     else
         echo "❌ Service did not start in time — check /tmp/matanyone2.log"
