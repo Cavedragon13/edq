@@ -31,8 +31,8 @@ service at least as good as you found it, and write the morning report.
 
 ## Never (report instead)
 
-- AuK and MiniMax Music 3 dedupe tests are deferred to a supervised session with Ed.
-  Do not launch these services or finalize their backups during unattended runs.
+- The MiniMax Music 3 dedupe test is deferred to a supervised session with Ed.
+  Do not launch it or finalize its backups during unattended runs.
 - GPU room is handled for you (Ed, 2026-10-23: anything idle between midnight and 04:00
   may be stopped as long as it comes back). Before you start, the supervisor checks the
   GPU is idle, stops every running GPU service (Krea2 included), unloads Ollama models,

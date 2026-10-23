@@ -1392,26 +1392,6 @@
       "output_dir": "/home/edq/ai_generated/yue2"
     },
     {
-      "id": "auk",
-      "name": "AuK",
-      "description": "Tencent 1.5B speech generation + editing: TTS, content/pitch/speed edits, emotion, enhancement, separation",
-      "category": "audio",
-      "port": 8065,
-      "path": "/?__theme=dark",
-      "icon": "&#127897;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_auk.sh",
-      "project_path": "/srv/containers/edq/projects/AuK",
-      "features": [
-        "Zero-shot TTS",
-        "Content editing",
-        "Enhancement",
-        "Separation"
-      ],
-      "stop_command": "pkill -f 'auk_gradio[.]py' || true",
-      "vram_gb": 14.0,
-      "output_dir": "/home/edq/ai_generated/auk"
-    },
-    {
       "id": "marigold-v2",
       "name": "Marigold V2",
       "description": "Depth, surface normals, and albedo from one image (Qwen-Image-Edit LoRA, single step) via ComfyUI",

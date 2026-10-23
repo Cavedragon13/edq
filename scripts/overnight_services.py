@@ -14,7 +14,7 @@ import time
 import urllib.request
 
 BASE = "http://127.0.0.1:8100"
-EXCLUDED_TESTS = ("auk", "minimax-music3")  # deferred to a supervised session with Ed
+EXCLUDED_TESTS = ("minimax-music3",)  # deferred to a supervised session with Ed
 
 
 def api(path, post=False):

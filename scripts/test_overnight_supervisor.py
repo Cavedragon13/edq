@@ -65,7 +65,7 @@ class SafetyTests(unittest.TestCase):
         self.assertEqual(stops, ["/api/stop/test"])
 
     def test_excluded_dedupe_services(self):
-        for sid in ("auk", "minimax-music3"):
+        for sid in ("minimax-music3",):
             with patch.object(services, "api", return_value={"services": [{"id": sid}]}):
                 with self.assertRaises(RuntimeError):
                     services.start(self.journal, sid)
