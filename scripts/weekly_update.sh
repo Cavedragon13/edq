@@ -128,6 +128,15 @@ log "--- Dragonsuite services: auto-update + launch-verify ---"
 UPDATED_ROWS=""
 ATTENTION_ROWS=""
 
+# Ed's rule (2026-10-23): anything may be stopped for updates as long as it comes
+# back. Launch-verify stops GPU services after checking them, so remember what was
+# running now and restart whatever is down once the update pass finishes.
+dashboard_running() {
+    curl -s --max-time 20 http://127.0.0.1:8100/api/status | python3 -c \
+        'import json,sys; print("\n".join(s["id"] for s in json.load(sys.stdin)["services"] if s["running"]))' 2>/dev/null
+}
+RUNNING_BEFORE=$(dashboard_running)
+
 SERVICES_TSV=$(mktemp)
 DRAGONSUITE_JSON="$DRAGONSUITE_JSON" python3 - > "$SERVICES_TSV" <<'PYEOF'
 import json
@@ -349,6 +358,31 @@ while IFS=$'\t' read -r svc_id svc_name project_path port launch_cmd stop_cmd sv
     launch_verify
 done < "$SERVICES_TSV"
 rm -f "$SERVICES_TSV"
+
+# Bring back everything that was running before the update pass.
+if [ -n "$RUNNING_BEFORE" ]; then
+    log ""
+    log "--- Restoring services that were running before updates ---"
+    running_now=$(dashboard_running)
+    for sid in $RUNNING_BEFORE; do
+        grep -qx "$sid" <<< "$running_now" && continue
+        reply=$(curl -s --max-time 25 -X POST "http://127.0.0.1:8100/api/start/$sid")
+        if grep -q '"vram_warning"' <<< "$reply"; then
+            reply=$(curl -s --max-time 25 -X POST "http://127.0.0.1:8100/api/start/$sid?force=true")
+        fi
+        back=""
+        for _ in $(seq 1 60); do
+            if grep -qx "$sid" <<< "$(dashboard_running)"; then back=1; break; fi
+            sleep 3
+        done
+        if [ -n "$back" ]; then
+            log "  ✅ $sid — restarted after updates"
+        else
+            log "  ❌ $sid — was running before updates, did not come back ($reply)"
+            ATTENTION_ROWS+="| $sid | was running before updates, failed to restart | see /tmp/dragonsuite_${sid}.log |\n"
+        fi
+    done
+fi
 
 # -------------------------------------------------------
 # 3. Pip outdated packages (log only, unchanged from before)
