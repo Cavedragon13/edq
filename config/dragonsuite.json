@@ -1618,26 +1618,6 @@
       "output_dir": "/home/edq/ai_generated/mira-scene"
     },
     {
-      "id": "open-dots",
-      "name": "Open Dots",
-      "description": "Personal AI workspace with local Gemma 4 through Ollama",
-      "category": "utility",
-      "port": 8007,
-      "path": "/app",
-      "icon": "&#10022;",
-      "launch_command": "cd /srv/containers/edq && bash scripts/start_open_dots.sh",
-      "project_path": "/srv/containers/edq/projects/open-dots",
-      "github_url": "https://github.com/Anil-matcha/Open-Dots",
-      "features": [
-        "Gemma 4 default",
-        "Local Ollama",
-        "Saved conversations",
-        "Isolated computer workspace",
-        "Approval gateway"
-      ],
-      "stop_command": "cd /srv/containers/edq && bash scripts/stop_open_dots.sh"
-    },
-    {
       "id": "battle-cars",
       "name": "Battle Cars",
       "description": "3D post-apocalyptic car combat racer. 9 levels, 18 tracks, bosses, upgrades, 2-player split screen",
