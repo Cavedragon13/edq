@@ -163,7 +163,8 @@ def check_update_path(svc: dict) -> tuple[list[str], list[str]]:
     own = (not remote) or any(m in remote for m in OWN_REMOTE_MARKERS)
     upstream = _git(path, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
     if not own and not upstream:
-        if sid in PINNED_OK:
+        # A deliberate pin documents its reason in .git/PINNED_REASON (see weekly_update notes).
+        if sid in PINNED_OK or (dotgit / "PINNED_REASON").is_file():
             pass
         else:
             issues.append(f"[update] third-party checkout has no upstream tracking branch (detached/pinned) — never auto-updated ({remote})")
