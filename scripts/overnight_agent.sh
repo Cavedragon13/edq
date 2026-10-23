@@ -1,7 +1,8 @@
 #!/bin/bash
 # Overnight conformance agent — runs an unattended Claude Code session that works
 # through ~/knowledge-base/Dragonsuite/Conformance.md using config/agent/overnight_runbook.md.
-# Cron: 05:00 daily (after the 04:30 health/conformance check).
+# Cron: 00:30 daily (after the 00:15 health/conformance check), inside Ed's midnight-04:00
+# window. The supervisor stops idle GPU services for room and restarts them afterwards.
 #
 #   bash scripts/overnight_agent.sh            # normal run
 #   DRY_RUN=1 bash scripts/overnight_agent.sh  # read-only: plan + report, change nothing
@@ -19,8 +20,8 @@ mkdir -p "$LOG_DIR" "$REPORT_DIR"
 exec 9>"$LOG_DIR/.lock"
 flock -n 9 || { echo "$(date '+%F %T') already running — skip" >> "$LOG"; exit 0; }
 
-# The supervisor snapshots running services and refuses unknown GPU state.
-# Running Krea2 is preserved; the agent may do work that needs no GPU.
+# The supervisor checks the GPU is idle, stops running GPU services (incl. Krea2) and
+# restarts them afterwards. If the GPU is busy it stops nothing and GPU tests defer.
 export OVERNIGHT_SERVICE_JOURNAL="$LOG_DIR/$DATE.services.json"
 export OVERNIGHT_REPORT="$REPORT_DIR/$DATE.md"
 
@@ -34,7 +35,9 @@ $PROMPT"
 fi
 
 echo "$(date '+%F %T') starting (dry_run=${DRY_RUN:-0})" >> "$LOG"
-python3 scripts/overnight_supervisor.py claude -p "$PROMPT" \
+# --no-session-persistence: no transcript in ~/.claude/projects, so the ChatGPT app's
+# Claude import never sees this run. Full output is in $LOG.
+python3 scripts/overnight_supervisor.py claude -p "$PROMPT" --no-session-persistence \
     --permission-mode dontAsk \
     --allowedTools "Read" "Edit" "Write" "Glob" "Grep" "Bash" \
     --disallowedTools "Bash(sudo:*)" "Bash(rm -rf:*)" "Bash(git push:*)" "Bash(crontab:*)" \

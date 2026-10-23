@@ -7,7 +7,7 @@ service at least as good as you found it, and write the morning report.
 ## First, read
 
 1. `/srv/containers/edq/CLAUDE.md` and `/srv/containers/edq/tasks/lessons.md` (apply every rule).
-2. `~/knowledge-base/Dragonsuite/Conformance.md` — tonight's to-do list (rewritten at 04:30).
+2. `~/knowledge-base/Dragonsuite/Conformance.md` — tonight's to-do list (rewritten at 00:15).
 3. The two reference launchers that show the standard: `scripts/start_fish_speech.sh`
    (converted 2026-09-24) and `scripts/start_ace_step.sh`, plus `scripts/vram_guard.sh`.
 
@@ -33,10 +33,14 @@ service at least as good as you found it, and write the morning report.
 
 - AuK and MiniMax Music 3 dedupe tests are deferred to a supervised session with Ed.
   Do not launch these services or finalize their backups during unattended runs.
-- Preserve all services running at entry, especially Krea2. Krea2 may remain running
-  during downloads and other maintenance. If a test needs competing GPU memory,
-  defer that unit; never close Krea2 to make room. Nightly checkpoints and weekly
-  updates remain separate jobs and are not disabled by this policy.
+- GPU room is handled for you (Ed, 2026-10-23: anything idle between midnight and 04:00
+  may be stopped as long as it comes back). Before you start, the supervisor checks the
+  GPU is idle, stops every running GPU service (Krea2 included), unloads Ollama models,
+  and lists what it stopped as `evicted` in the journal; it restarts them when you finish.
+  Do not stop services to make room yourself, and do not restart evicted ones.
+  If nothing was evicted because the GPU was busy, someone is working: defer GPU tests
+  and do non-GPU units only.
+- Never delete `logs/overnight_agent/*.services.json` (the supervisor's journal).
 - All test launches MUST use `python3 scripts/overnight_services.py start
   "$OVERNIGHT_SERVICE_JOURNAL" <service-id>` (on one command line). This records
   ownership before the dashboard launch so the external supervisor can clean up.
@@ -52,9 +56,7 @@ service at least as good as you found it, and write the morning report.
 - Only one GPU service at a time; stop it via `curl -s -X POST http://127.0.0.1:8100/api/stop/<id>`
   and confirm VRAM returns to baseline before starting the next.
 - If Ed starts new GPU work during a test, stop only your own test services and
-  write the report. Services already running at entry (including Krea2) may stay
-  running while you do non-GPU maintenance; never interpret cleanup as permission
-  to stop Ed's services.
+  write the report. Never stop a running service that was not evicted.
 
 ## Verify every unit
 
