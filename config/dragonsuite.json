@@ -1210,7 +1210,7 @@
         "Natural Language Prompts"
       ],
       "stop_command": "pkill -f 'zanime_gradio.py' || true",
-      "vram_gb": 8.0,
+      "vram_gb": 2.7,
       "output_dir": "/home/edq/ai_generated/zanime"
     },
     {
