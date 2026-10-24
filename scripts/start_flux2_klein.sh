@@ -5,13 +5,21 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). Measured 2026-10-24: default model is
+# FLUX.2-klein-4B (txt2img, 1024x1024, 4 steps) — peak ~1.8GB VRAM / ~8.4GB RSS.
+TOOL_NAME="dragonflux-klein"
+REQ_VRAM_MIB=2400
+REQ_RAM_MIB=9000
+source scripts/vram_guard.sh
+
 SERVICE_NAME="DragonFlux Klein"
 PORT=8001
 VENV="venv_flux2"
 SCRIPT="scripts/flux2_klein_gradio.py"
 
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -39,6 +47,7 @@ if pgrep -f "flux2_klein_gradio.py" > /dev/null; then
         pkill -f "flux2_klein_gradio.py" || true
         sleep 2
         nohup python "$SCRIPT" > /tmp/flux2_klein.log 2>&1 &
+        register_tool $!
         echo "⏳ Waiting for service..."
         if wait_for_port "$PORT" 60; then
             echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
@@ -50,6 +59,7 @@ if pgrep -f "flux2_klein_gradio.py" > /dev/null; then
     fi
 else
     nohup python "$SCRIPT" > /tmp/flux2_klein.log 2>&1 &
+    register_tool $!
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 60; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"

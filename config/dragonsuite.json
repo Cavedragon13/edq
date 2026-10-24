@@ -120,7 +120,7 @@
         "LoRA"
       ],
       "stop_command": "pkill -f 'flux2_klein_gradio.py' || true",
-      "vram_gb": 12,
+      "vram_gb": 2.4,
       "output_dir": "/home/edq/ai_generated/flux2-klein"
     },
     {
