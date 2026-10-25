@@ -5,6 +5,11 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+TOOL_NAME="wan-1b"
+REQ_VRAM_MIB=6000
+REQ_RAM_MIB=8000
+source scripts/vram_guard.sh
+
 SERVICE_NAME="Wan2.1-T2V-1.3B"
 PORT=8016
 VENV="venv_wan_1b"
@@ -22,7 +27,8 @@ if [ ! -d "$MODEL_DIR/transformer" ]; then
     exit 1
 fi
 
-gpu_preflight "$PORT"
+vram_preflight || exit 1
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -32,6 +38,7 @@ if pgrep -f "wan_1b_gradio.py" > /dev/null; then
     echo "✓ Already running on port $PORT"
 else
     nohup python "$SCRIPT" > /tmp/wan_1b.log 2>&1 &
+    register_tool $!
     echo "⏳ Waiting for service to start..."
     if wait_for_port "$PORT" 60; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
