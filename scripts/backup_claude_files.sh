@@ -3,14 +3,22 @@
 # Includes: CLAUDE.md files, memory files, conversation history, plan files
 # Runs as part of nightly cron job at 0210 (2:10 AM)
 # Also scrubs known credentials from all agent transcripts (scrub_transcripts.py) and locks file permissions.
+#
+# If ancalagon can't be mounted, the backup still runs, but into a local folder that
+# survives reboots (not /tmp), the run is logged as FAILED, and an attention row is
+# written so the next session / overnight report surfaces it. (Ed, 2026-10-25: the old
+# /tmp fallback silently reported "Backup complete!" for days while the NAS was down.)
 
 set -e
 
 source /srv/containers/edq/.env
 
 BACKUP_DATE=$(date +%Y-%m-%d)
-BACKUP_ROOT="/mnt/ancalagon_backup/Cavedragon/Drive/sys/claude"
-BACKUP_DIR="$BACKUP_ROOT/$BACKUP_DATE"
+NAS_ROOT="/mnt/ancalagon_backup/Cavedragon/Drive/sys/claude"
+LOCAL_ROOT="/srv/containers/edq/backups/claude-local"
+ATTENTION="/srv/containers/edq/logs/weekly_update_attention.md"
+BACKUP_ROOT="$NAS_ROOT"
+NAS_OK=1
 
 # --- Step 1: Scrub known credentials from all agent transcripts ---
 # Claude, Codex, Gemini/Antigravity, OpenCode, Grok, Kimi, Hermes.
@@ -32,16 +40,18 @@ if ! mountpoint -q /mnt/ancalagon_backup; then
   if sudo mount -t cifs //192.168.7.160/homes -o username=admin,password="${ANCALAGON_SSH_PASS}",uid=edq,gid=edq /mnt/ancalagon_backup 2>/dev/null; then
     echo "[$(date)] Mounted via IP (192.168.7.160)"
   else
-    echo "[$(date)] Warning: Could not mount ancalagon. Using local fallback..."
-    BACKUP_ROOT="/tmp/claude_backups/claude"
-    BACKUP_DIR="$BACKUP_ROOT/$BACKUP_DATE"
+    NAS_OK=0
+    BACKUP_ROOT="$LOCAL_ROOT"
+    echo "[$(date)] ❌ ERROR: could not mount ancalagon (//192.168.7.160/homes)."
+    echo "[$(date)]    Backing up to $LOCAL_ROOT instead (survives reboots, NOT off-machine)."
   fi
 fi
+BACKUP_DIR="$BACKUP_ROOT/$BACKUP_DATE"
 
 # Create backup directory
 mkdir -p "$BACKUP_DIR"
 
-echo "[$(date)] Starting Claude Code backup to ancalagon..."
+echo "[$(date)] Starting Claude Code backup to $([ "$NAS_OK" = 1 ] && echo ancalagon || echo 'LOCAL FALLBACK')..."
 
 # Backup 1: Project CLAUDE.md and docs/
 echo "  • Backing up /srv/containers/edq/CLAUDE.md and docs/..."
@@ -72,11 +82,6 @@ cp /home/edq/.claude/settings.json "$BACKUP_DIR/" 2>/dev/null || true
 BACKUP_SIZE=$(du -sh "$BACKUP_DIR" | cut -f1)
 FILE_COUNT=$(find "$BACKUP_DIR" -type f | wc -l)
 
-echo "[$(date)] Backup complete!"
-echo "  Location: $BACKUP_DIR"
-echo "  Size: $BACKUP_SIZE"
-echo "  Files: $FILE_COUNT"
-
 # Keep only last 14 days of daily backups
 echo "  • Cleaning old backups (keeping last 14 days)..."
 find "$BACKUP_ROOT" -maxdepth 1 -type d -name "20[0-9][0-9]-*" -mtime +14 -exec rm -rf {} \; 2>/dev/null || true
@@ -84,4 +89,25 @@ find "$BACKUP_ROOT" -maxdepth 1 -type d -name "20[0-9][0-9]-*" -mtime +14 -exec 
 # Unmount
 sudo umount /mnt/ancalagon_backup 2>/dev/null || true
 
-echo "[$(date)] Claude Code backup finished."
+if [ "$NAS_OK" = 1 ]; then
+  # Clear any earlier fallback alert now that the NAS is reachable again.
+  [ -f "$ATTENTION" ] && sed -i '/| Claude backup |/d' "$ATTENTION"
+  echo "[$(date)] Backup complete!"
+  echo "  Location: $BACKUP_DIR"
+  echo "  Size: $BACKUP_SIZE"
+  echo "  Files: $FILE_COUNT"
+  echo "[$(date)] Claude Code backup finished."
+  exit 0
+fi
+
+# Fallback path: say so loudly and leave an attention row (one per day, no duplicates).
+row="- | Claude backup | ancalagon unreachable — nightly backup went to $LOCAL_ROOT (on udragon, not off-machine) since $BACKUP_DATE | check the NAS is on and at 192.168.7.160 |"
+if [ ! -f "$ATTENTION" ]; then
+  printf '# Needs attention\n\nAuto-generated. Rows clear themselves once resolved.\n\n' > "$ATTENTION"
+fi
+grep -q '| Claude backup |' "$ATTENTION" || echo "$row" >> "$ATTENTION"
+echo "[$(date)] ❌ Backup FAILED to reach ancalagon — local copy only."
+echo "  Location: $BACKUP_DIR"
+echo "  Size: $BACKUP_SIZE"
+echo "  Files: $FILE_COUNT"
+exit 1
