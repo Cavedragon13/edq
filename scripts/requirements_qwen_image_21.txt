@@ -1,0 +1,14 @@
+# Qwen-Image 2.1 Studio (Dragonsuite 8076) — pinned.
+# torch/torchvision come from the cu128 index first (see scripts/setup_qwen_image_21_env.sh).
+# Diffusers is pinned to a main-branch commit: QwenImage21Pipeline and Turbo's
+# pipeline-configured sample_sigmas (diffusers PR #14950) postdate the 0.40 release.
+diffusers @ git+https://github.com/huggingface/diffusers@aaf57d03a3edfbd9de457d2872417a92f149a91d
+transformers==5.20.1
+accelerate==1.15.0
+bitsandbytes==0.49.1
+gradio==6.30.0
+huggingface_hub==1.33.0
+safetensors==0.8.0
+pillow==12.3.0
+numpy==2.5.2
+psutil==7.1.3

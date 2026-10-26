@@ -5,6 +5,12 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). Measured during a real generation — see docs/venvs.md.
+TOOL_NAME="heartmula"
+REQ_VRAM_MIB=12800
+REQ_RAM_MIB=6000
+source scripts/vram_guard.sh
+
 SERVICE_NAME="HeartMuLa"
 PORT=8004
 VENV="venv_heartmula"
@@ -12,7 +18,8 @@ HEARTMULA_DIR="$DRAGONSUITE_ROOT/projects/heartmula"
 MODEL_DIR="$HEARTMULA_DIR/ckpt"
 
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -28,8 +35,9 @@ if pgrep -f "$HEARTMULA_DIR/app_local.py" > /dev/null && ss -ltn "( sport = :$PO
 else
     cd "$HEARTMULA_DIR"
     nohup python "$HEARTMULA_DIR/app_local.py" > /tmp/heartmula.log 2>&1 &
-    echo "⏳ Waiting for service..."
-    if wait_for_port "$PORT" 30; then
+    register_tool $!
+    echo "⏳ Waiting for service (model load)..."
+    if wait_for_port "$PORT" 120; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
     else
         echo "❌ Service did not start in time — check /tmp/heartmula.log"

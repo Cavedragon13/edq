@@ -1595,6 +1595,27 @@
       "stop_command": "pkill -f 'uniforge3d_server[.]py' || true",
       "vram_gb": 13.5,
       "output_dir": "/home/edq/ai_generated/uniforge3d"
+    },
+    {
+      "id": "qwen-image-21",
+      "name": "Qwen-Image 2.1 Studio",
+      "description": "Qwen-Image 2.1 + Turbo: text-to-image, multi-reference editing and native transparent PNGs (non-commercial license)",
+      "category": "image",
+      "port": 8076,
+      "path": "/",
+      "icon": "&#127912;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_qwen_image_21.sh",
+      "project_path": null,
+      "output_dir": "/home/edq/ai_generated/qwen-image-21",
+      "features": [
+        "Turbo 8-step + Base 40-step",
+        "Multi-reference editing",
+        "Transparent RGBA PNG",
+        "2K aspect presets",
+        "NF4 on 16GB"
+      ],
+      "stop_command": "pkill -f '[q]wen_image_21_gradio.py' || true",
+      "vram_gb": 9
     }
   ],
   "categories": {
