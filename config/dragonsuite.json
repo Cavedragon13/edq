@@ -432,7 +432,7 @@
         "Voice Clone"
       ],
       "stop_command": "pkill -f 'qwen3_audiobook_gradio.py' || true",
-      "vram_gb": 6,
+      "vram_gb": 0,
       "output_dir": "/home/edq/ai_generated/qwen3-audiobook"
     },
     {
