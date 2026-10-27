@@ -10,8 +10,18 @@ PORT=8011
 VENV="venv_zimage"
 SCRIPT="scripts/zimage_base_gradio.py"
 
+# Honest footprint (vram_guard). Measured via a real generation at default
+# UI settings (Base model, 1024x1024, 30 steps, CFG 7.0), 2026-10-27: peak
+# ~3.0GB VRAM (sequential CPU offload keeps most of the 6B model in system
+# RAM) / ~18.3GB RSS. Headroom applied above both measured peaks.
+TOOL_NAME="zimage"
+REQ_VRAM_MIB=3500
+REQ_RAM_MIB=19500
+source scripts/vram_guard.sh
+
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -46,6 +56,7 @@ if pgrep -f "zimage_base_gradio.py" > /dev/null; then
         pkill -f "zimage_base_gradio.py" || true
         sleep 2
         nohup python "$SCRIPT" > /tmp/zimage.log 2>&1 &
+        register_tool $!
         echo "⏳ Waiting for service..."
         if wait_for_port "$PORT" 30; then
             echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
@@ -57,6 +68,7 @@ if pgrep -f "zimage_base_gradio.py" > /dev/null; then
     fi
 else
     nohup python "$SCRIPT" > /tmp/zimage.log 2>&1 &
+    register_tool $!
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 30; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"

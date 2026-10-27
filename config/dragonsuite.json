@@ -140,7 +140,7 @@
         "LoRA"
       ],
       "stop_command": "pkill -f 'zimage_base_gradio.py' || true",
-      "vram_gb": 10,
+      "vram_gb": 4,
       "output_dir": "/home/edq/ai_generated/zimage"
     },
     {
