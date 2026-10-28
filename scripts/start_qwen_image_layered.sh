@@ -5,24 +5,31 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). Measured during a real decomposition run — see docs/venvs.md.
+TOOL_NAME="qwen-image-layered"
+REQ_VRAM_MIB=9000
+REQ_RAM_MIB=6000
+source scripts/vram_guard.sh
+
 SERVICE_NAME="Qwen-Image-Layered"
 PORT=8013
 VENV="venv_qwen_image_layered"
 SCRIPT="scripts/qwen_image_layered_gradio.py"
 
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1   # refuses if VRAM/RAM short; relaunch with CLEAR=1 to stop other registered tools first
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
 mkdir -p "$HOME/ai_generated/qwen-layered"
 echo "🚀 Starting $SERVICE_NAME..."
-echo "   VRAM: ~14-16GB with CPU offloading"
 
 if pgrep -f "qwen_image_layered_gradio.py" > /dev/null; then
     echo "✓ Already running on port $PORT"
 else
     nohup python "$SCRIPT" > /tmp/qwen_image_layered.log 2>&1 &
+    register_tool $!
     echo "⏳ Waiting for service..."
     if wait_for_port "$PORT" 60; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
