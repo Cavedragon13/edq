@@ -873,7 +873,7 @@
         "CPU Offload"
       ],
       "stop_command": "pkill -f \"deepgen_diffusers_gradio.py\" || true; pkill -f \"deepgen_gradio.py\" || true",
-      "vram_gb": 14,
+      "vram_gb": 9.0,
       "output_dir": "/home/edq/ai_generated/deepgen"
     },
     {

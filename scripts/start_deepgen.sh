@@ -4,6 +4,13 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Honest footprint (vram_guard). Measured 2026-10-30 during a 512x512, 30-step
+# text-to-image generation (UI defaults) — see docs/venvs.md.
+TOOL_NAME="deepgen"
+REQ_VRAM_MIB=8800
+REQ_RAM_MIB=14400
+source scripts/vram_guard.sh
+
 SERVICE_NAME="DeepGen 1.0"
 PORT=8024
 VENV_PATH="/srv/containers/edq/venv_deepgen"
@@ -30,37 +37,20 @@ if find "$MODELS_DIR" -path '*/.cache/huggingface/download/*' -name '*.incomplet
     exit 1
 fi
 
-gpu_preflight "$PORT"
+vram_preflight || exit 1   # refuses if VRAM/RAM short; relaunch with CLEAR=1 to stop other registered tools first
+clear_port "$PORT"
 source "$VENV_PATH/bin/activate"
 set_pytorch_env
 mkdir -p "$HOME/ai_generated/deepgen"
 
 echo "🚀 Starting $SERVICE_NAME..."
-if pgrep -f "deepgen_diffusers_gradio.py" > /dev/null; then
-    if curl -s --max-time 2 "http://127.0.0.1:$PORT/" > /dev/null 2>&1; then
-        echo "✓ Already running on port $PORT"
-    else
-        echo "⚠️  Found stale DeepGen process without a listening port; stopping it..."
-        pkill -f "deepgen_diffusers_gradio.py" || true
-        sleep 2
-        nohup python "$SCRIPT" > /tmp/deepgen.log 2>&1 &
-        echo "⏳ Waiting for service..."
-        if wait_for_port "$PORT" 120; then
-            echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
-        else
-            echo "❌ Not up in time — check /tmp/deepgen.log"
-            tail -30 /tmp/deepgen.log
-            exit 1
-        fi
-    fi
+nohup python "$SCRIPT" > /tmp/deepgen.log 2>&1 &
+register_tool $!
+echo "⏳ Waiting for service..."
+if wait_for_port "$PORT" 120; then
+    echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
 else
-    nohup python "$SCRIPT" > /tmp/deepgen.log 2>&1 &
-    echo "⏳ Waiting for service..."
-    if wait_for_port "$PORT" 120; then
-        echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
-    else
-        echo "❌ Not up in time — check /tmp/deepgen.log"
-        tail -30 /tmp/deepgen.log
-        exit 1
-    fi
+    echo "❌ Not up in time — check /tmp/deepgen.log"
+    tail -30 /tmp/deepgen.log
+    exit 1
 fi
