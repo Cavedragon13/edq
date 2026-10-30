@@ -892,7 +892,7 @@
         "ASR (EN/ZH/YUE)"
       ],
       "stop_command": "pkill -f \"audio_tools_server.py\" || true",
-      "vram_gb": 4,
+      "vram_gb": 0.5,
       "output_dir": "/home/edq/ai_generated/audio-tools"
     },
     {
