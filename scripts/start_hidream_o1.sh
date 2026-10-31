@@ -25,7 +25,16 @@ if [ ! -f "$MODEL_PATH/config.json" ]; then
     exit 1
 fi
 
-gpu_preflight "$PORT"
+# Honest footprint (vram_guard). 8B bf16 unified T2I model; device_map="auto"
+# offloads overflow layers to CPU, so VRAM stays bounded. Measured during a
+# real generation — see docs/venvs.md.
+TOOL_NAME="hidream-o1"
+REQ_VRAM_MIB=15500
+REQ_RAM_MIB=10000
+source scripts/vram_guard.sh
+
+vram_preflight || exit 1
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -47,6 +56,7 @@ nohup python app.py \
     --host 0.0.0.0 \
     --port $PORT \
     > /tmp/hidream_o1.log 2>&1 &
+register_tool $!
 
 echo "⏳ Loading 8B model into VRAM (may take 30-60s)..."
 if wait_for_port "$PORT" 180; then
