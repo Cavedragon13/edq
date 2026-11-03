@@ -1133,7 +1133,7 @@
         "FFmpeg",
         "Quality Scoring"
       ],
-      "vram_gb": 6
+      "vram_gb": 0
     },
     {
       "id": "port-whisperer",
