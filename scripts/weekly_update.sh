@@ -398,7 +398,6 @@ declare -A VENVS=(
     ["zimage"]="$PROJECT_DIR/venv_zimage"
     ["qwen_image_layered"]="$PROJECT_DIR/venv_qwen_image_layered"
     ["deepgen"]="$PROJECT_DIR/venv_deepgen"
-    ["hidream_o1"]="$PROJECT_DIR/venv_hidream_o1"
     ["dragonsuite"]="$PROJECT_DIR/venv_dragonsuite"
     ["wan_1b"]="$PROJECT_DIR/venv_wan_1b"
     ["ltxvideo"]="$PROJECT_DIR/venv_ltxvideo"
