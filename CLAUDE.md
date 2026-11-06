@@ -36,7 +36,7 @@ For live running/stopped state (a static list can't show this), use the `dragons
 **Not tracked in dragonsuite.json** (genuinely external, not derivable from the registry):
 
 - `ballpark-fingerprint` (port 8056) — personal FastAPI project on a Mac (192.168.7.131), started manually, not part of Dragonsuite
-- **minidragon** (`192.168.7.114`): **dead since 2026-10-20** (kernel panic, not being repaired). Its Immich 2283, Navidrome 4533, Jellyfin 8096, Portainer 9000 and Komga 25600 are offline until re-homed; dashboard links for them still point at .114.
+- **minidragon** (`192.168.7.114`): **dead since 2026-10-20, retired.** Ed retired its Immich, Navidrome, Jellyfin, Komga, Portainer and LiveSync CouchDB on 2026-11-06 (Apple/Google services cover them); their data is still on minidragon's internal disk. Only Vaultwarden, Pi-hole and Home Assistant matter, all on udragon.
 - **udragon always-on infra**: Ollama API 11434 (systemd), RustDesk Server 21115-21119 (Docker), Pi-hole DNS 53 + admin 8081 (Docker, `docker/pihole/`, start with `--env-file /srv/containers/edq/.env`), Home Assistant 8123 (Docker, host network, `docker/homeassistant/`) — both moved from minidragon 2026-10-20
 
 ## Quick Start

@@ -44,19 +44,14 @@ GENERATIVE_CATEGORIES = {"image", "video", "audio", "music"}
 
 ALWAYS_ON = {
     11434: ("udragon", "Ollama API"),
-    8096: ("minidragon", "Jellyfin"),
-    2283: ("minidragon", "Immich"),
-    4533: ("minidragon", "Navidrome"),
-    9000: ("minidragon", "Portainer"),
-    25600: ("minidragon", "Komga"),
     8123: ("udragon", "Home Assistant"),
     8081: ("udragon", "Pi-hole admin"),
-    8222: ("minidragon", "Vaultwarden"),
+    # minidragon died 2026-10-20; Ed retired Jellyfin/Immich/Navidrome/Komga/Portainer on 2026-11-06.
+    # Vaultwarden is udragon's snap (127.0.0.1:8000, not registered) — automation_check.py watches it.
 }
 
 ALWAYS_ON_HOSTS = {
     "udragon": "127.0.0.1",
-    "minidragon": "192.168.7.114",
 }
 
 VISION_GENERATIVE = {

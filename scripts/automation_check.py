@@ -186,8 +186,47 @@ def check_git() -> list[tuple[str, str]]:
     return out
 
 
+def check_core_services() -> list[tuple[str, str]]:
+    """The home services Ed called important (2026-11-06): Vaultwarden, Pi-hole, Home Assistant.
+    Checked by using them, not by an open port. None of them is a Dragonsuite registry service with a
+    launcher, so nothing else watched Vaultwarden at all."""
+    import socket
+    import urllib.request
+    out = []
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8000/alive", timeout=5) as r:
+            if r.status != 200:
+                raise OSError(f"HTTP {r.status}")
+    except Exception as e:
+        out.append(("core:vaultwarden", f"**Vaultwarden** (udragon snap, 127.0.0.1:8000) is not answering: {e} — "
+                                        "`sudo snap restart vaultwarden`; the password vault is down"))
+    # Pi-hole: send a real DNS query for a stable name to udragon's LAN address.
+    q = b"\x12\x34\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x06google\x03com\x00\x00\x01\x00\x01"
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(5)
+        s.sendto(q, ("192.168.7.226", 53))
+        resp = s.recv(512)
+        if resp[:2] != b"\x12\x34" or (resp[3] & 0x0F) != 0:
+            raise OSError(f"bad DNS reply (rcode {resp[3] & 0x0F})")
+    except Exception as e:
+        out.append(("core:pihole", f"**Pi-hole** DNS on 192.168.7.226:53 failed: {e} — "
+                                   "`docker compose --env-file /srv/containers/edq/.env up -d` in docker/pihole/"))
+    finally:
+        s.close()
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8123/manifest.json", timeout=5) as r:
+            if r.status != 200:
+                raise OSError(f"HTTP {r.status}")
+    except Exception as e:
+        out.append(("core:homeassistant", f"**Home Assistant** (8123) is not answering: {e} — "
+                                          "`docker compose up -d` in docker/homeassistant/"))
+    return out
+
+
 def collect() -> list[tuple[str, str]]:
-    return check_protected() + check_jobs() + check_overnight_agent() + check_backup() + check_git()
+    return (check_protected() + check_core_services() + check_jobs() + check_overnight_agent()
+            + check_backup() + check_git())
 
 
 def with_age(problems: list[tuple[str, str]]) -> list[str]:
