@@ -240,8 +240,13 @@ while IFS=$'\t' read -r service_id project_path; do
         attention "$service_id" "unrelated files are already staged in the shared Git checkout"
         continue
     fi
+    # Project checkpoints stay local unless the repo opts in with `git config dragonsuite.push true`
+    # (only for PRIVATE remotes, e.g. docker/homeassistant -> Cavedragon13/homeassistant-config).
+    project_push_mode=local
+    [ "$(git -C "$repo_root" config --get dragonsuite.push 2>/dev/null)" = "true" ] && project_push_mode=push
     if [ -z "$(git -C "$repo_root" status --porcelain --untracked-files=all -- "$project_scope")" ]; then
         log "[$service_id] Clean"
+        if [ "$project_push_mode" = push ]; then (cd "$repo_root" && push_if_ahead "dragonsuite/$service_id" push); fi
         continue
     fi
     if ! git -C "$repo_root" symbolic-ref -q HEAD >/dev/null; then
@@ -283,7 +288,7 @@ while IFS=$'\t' read -r service_id project_path; do
     if git diff --cached --quiet; then
         log "[$service_id] No eligible source files to commit"
     else
-        commit_staged "dragonsuite/$service_id" local
+        commit_staged "dragonsuite/$service_id" "$project_push_mode"
     fi
 done < "$SERVICE_TSV"
 rm -f "$SERVICE_TSV"

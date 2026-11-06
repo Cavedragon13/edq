@@ -152,6 +152,17 @@ def check_git() -> list[tuple[str, str]]:
         if age_d > 1.2:
             out.append(("git:unpushed", f"**edq repo**: {len(oldest)} commit(s) not on GitHub, oldest "
                                         f"{age_d:.0f} days — nightly push not happening"))
+    # Project repos that opted in to nightly push (git config dragonsuite.push true) must stay pushed too.
+    for repo in (BASE / "docker").glob("*/.git"):
+        r = repo.parent
+        if subprocess.run(["git", "-C", str(r), "config", "--get", "dragonsuite.push"],
+                          capture_output=True, text=True).stdout.strip() != "true":
+            continue
+        pending = subprocess.run(["git", "-C", str(r), "log", "--format=%ct", "--reverse", "origin/master..master"],
+                                 capture_output=True, text=True).stdout.split()
+        if pending and (time.time() - int(pending[0])) / 86400 > 1.2:
+            out.append((f"git:unpushed:{r.name}", f"**{r.relative_to(BASE)}**: {len(pending)} commit(s) not pushed "
+                                                  "to its private remote — nightly push not happening"))
     n_untracked = len(_git("ls-files", "--others", "--exclude-standard").splitlines())
     if n_untracked > 5000:
         out.append(("git:untracked", f"**edq repo**: {n_untracked:,} untracked files — gstack /verify times out "

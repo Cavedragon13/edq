@@ -170,3 +170,7 @@ yarn-error.log*
 # (used by /verify) time out, so /verify could not run at all in this repo.
 conda_envs/
 opt/
+
+# Home Assistant config lives in its own PRIVATE repo (Cavedragon13/homeassistant-config,
+# Ed 2026-11-06). Never commit it here: Cavedragon13/edq is public.
+docker/homeassistant/
