@@ -30,7 +30,7 @@ MACHINES = [
     ("cdragon",    "Main Mac, perma-docked (\"c\" = couch). Client/editor",           "mac",      "cdragon"),
     ("odragon",    "Mac Mini. Client/editor",                                          "mac",      "odragon"),
     ("adragon",    "Travel MacBook Air",                                               "mac",      "adragon"),
-    ("minidragon", "Home services: Pi-hole, Home Assistant, Vaultwarden",              "linux",    "minidragon"),
+    ("minidragon", "RETIRED — died 2026-10-20; Pi-hole/HA/Vaultwarden now on udragon",  "linux",    "minidragon"),
     ("ancalagon",  "Synology NAS (JBOD file server, nightly backups)",                 "synology", "ancalagon"),
 ]
 
