@@ -1616,6 +1616,48 @@
       ],
       "stop_command": "pkill -f '[q]wen_image_21_gradio.py' || true",
       "vram_gb": 9
+    },
+    {
+      "id": "unlimited-ocr",
+      "name": "Unlimited OCR 2",
+      "description": "Baidu Unlimited OCR 2: images & PDFs of any length to Markdown with tables, formulas and figure crops",
+      "category": "vision",
+      "port": 8007,
+      "path": "/",
+      "icon": "&#128196;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_unlimited_ocr.sh",
+      "project_path": null,
+      "output_dir": "/home/edq/ai_generated/unlimited-ocr",
+      "features": [
+        "PDF & image input",
+        "Whole-document pass",
+        "Tables + LaTeX",
+        "Figure crops & layout boxes",
+        "MIT license"
+      ],
+      "stop_command": "pkill -f '[u]nlimited_ocr_app.py' || true",
+      "vram_gb": 7.3
+    },
+    {
+      "id": "glb-3d-coder",
+      "name": "GLB-3D-Coder Studio",
+      "description": "CCORE Qwen3.5-4B: text prompt to low-poly Three.js asset with GLB export for Godot",
+      "category": "game",
+      "port": 8022,
+      "path": "/",
+      "icon": "&#129513;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_glb_3d_coder.sh",
+      "project_path": "/srv/containers/edq/projects/llama.cpp",
+      "output_dir": "/home/edq/ai_generated/glb-3d-coder",
+      "features": [
+        "Text to 3D asset",
+        "Live Three.js preview",
+        "GLB auto-saved",
+        "Animated assets",
+        "Apache 2.0"
+      ],
+      "stop_command": "pkill -f '[g]lb_3d_coder_app.py' || true; pkill -f '[Q]wen3.5-4B-GLB-3D-Coder-Q8_0.gguf' || true",
+      "vram_gb": 7.8
     }
   ],
   "categories": {
