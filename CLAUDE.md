@@ -85,7 +85,7 @@ Central `.env` at `/srv/containers/edq/.env` — load with `from dotenv import l
 
 **Model downloads:** NEVER let first launch download models. Create `scripts/download_<service>_models.sh` using `snapshot_download()`, run to completion before declaring done. See `docs/sop-model-downloads.md`.
 
-**Weekly update flags:** at session start, check whether `logs/weekly_update_attention.md` exists — if so, Sunday's auto-update hit something needing a human decision (failed launch-verify, merge conflict, etc.). Mention it proactively without being asked. The file clears itself automatically once the underlying issue resolves.
+**Weekly update flags:** at session start, check whether `logs/weekly_update_attention.md` or `logs/nightly_commit_attention.md` exists — if so, Sunday's auto-update or the 02:00 nightly commit hit something needing a human decision (failed launch-verify, merge conflict, secret blocked, a tracked file deleted, a protected file like this one restored from git). Mention it proactively without being asked. The files clear themselves once the underlying issue resolves.
 
 **Conformance:** `~/knowledge-base/Dragonsuite/Conformance.md` (Obsidian) is rewritten nightly (04:30) by `scripts/health_check.py --all`, with a trend line vs. yesterday / last week, and lists every service that is off the Dragonsuite standard (updatable, vram_guard launcher, download script, output wiring, venv). When touching a service, clear its entries; when adding a standard, add the rule to `health_check.py` rather than doing a manual sweep.
 

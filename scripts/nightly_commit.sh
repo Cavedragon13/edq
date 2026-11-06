@@ -64,6 +64,34 @@ PYEOF
     return 1
 }
 
+# Push local commits made by others (the overnight agent commits but may not push) even on a
+# night with nothing new to commit. Before 2026-11-06 they sat unpushed until some later night
+# happened to have its own changes.
+push_if_ahead() {
+    local label="$1" push_mode="$2" ahead
+    [ "$push_mode" = "push" ] || return 0
+    git remote get-url origin > /dev/null 2>&1 || return 0
+    ahead=$(git rev-list --count origin/master..master 2>/dev/null || echo 0)
+    [ "$ahead" -gt 0 ] || return 0
+    git push origin master >> "$LOG" 2>&1 && log "[$label] Pushed $ahead earlier local commit(s) to GitHub" \
+        || log "[$label] WARNING: push of $ahead local commit(s) failed"
+}
+
+# Files whose disappearance must never be committed. If one is missing from disk, restore it
+# from HEAD and flag it (the 2026-10-30/31 loss of CLAUDE.md + AGENTS.md went unnoticed for a week,
+# and also broke backup_claude_files.sh every night).
+PROTECTED_FILES=(CLAUDE.md AGENTS.md .mcp.json config/dragonsuite.json tasks/lessons.md)
+guard_protected_files() {
+    local f
+    for f in "${PROTECTED_FILES[@]}"; do
+        if git cat-file -e "HEAD:$f" 2>/dev/null && [ ! -e "$f" ]; then
+            git checkout HEAD -- "$f"
+            log "[edq] PROTECTED FILE MISSING: $f — restored from HEAD, deletion NOT committed"
+            attention "edq" "protected file $f was missing from disk; restored from HEAD — find out what removed it"
+        fi
+    done
+}
+
 # Commit whatever is staged in the current repo, after the secret gate.
 # Second argument "push-if-remote" only pushes when an origin exists.
 commit_staged() {
@@ -72,14 +100,23 @@ commit_staged() {
 
     if git diff --cached --quiet; then
         log "[$label] Nothing to commit"
+        push_if_ahead "$label" "$push_mode"
         return 0
     fi
 
     secret_gate "$label" || return 0
 
-    local CHANGED
+    local CHANGED DELETED MSG
     CHANGED=$(git diff --cached --name-only | wc -l)
-    local MSG="chore: nightly auto-commit ($(date '+%Y-%m-%d'), $CHANGED file(s))"
+    # Deletions are never silent (2026-11-06: CLAUDE.md/AGENTS.md vanished from disk and this
+    # script committed the deletion with no trace). Name them in the commit and the attention file.
+    DELETED=$(git diff --cached --diff-filter=D --name-only)
+    MSG="chore: nightly auto-commit ($(date '+%Y-%m-%d'), $CHANGED file(s))"
+    if [ -n "$DELETED" ]; then
+        MSG+=$'\n\nDeleted tracked files (no session claimed these; confirm they were intended):\n'"$DELETED"
+        log "[$label] WARNING: committing $(echo "$DELETED" | wc -l) deletion(s): $(echo "$DELETED" | tr '\n' ' ')"
+        attention "$label" "nightly commit deleted tracked file(s) — confirm intended: $(echo "$DELETED" | tr '\n' ' ')"
+    fi
     git commit -m "$MSG" >> "$LOG" 2>&1
     log "[$label] Committed $CHANGED file(s)"
 
@@ -99,6 +136,7 @@ cd /srv/containers/edq
 git rev-parse --git-dir > /dev/null 2>&1 || { log "[edq] Not a git repo, skipping"; exit 0; }
 
 if [ "${NIGHTLY_COMMIT_SCOPE:-all}" != "dragonsuite" ]; then
+guard_protected_files
 shopt -s nullglob
 git add \
     CLAUDE.md \
@@ -212,7 +250,11 @@ while IFS=$'\t' read -r service_id project_path; do
         continue
     fi
 
-    git -C "$repo_root" add -u -- "$project_scope"
+    # A scope with no tracked files yet (e.g. docker/homeassistant) makes `add -u` fail with
+    # "pathspec did not match"; under set -e that killed the whole loop every night from
+    # ~2026-10-20 to 11-06, so later services were never checkpointed and the attention file
+    # went stale. No tracked files simply means nothing to update.
+    git -C "$repo_root" add -u -- "$project_scope" 2>/dev/null || true
     UNTRACKED_TSV=$(mktemp)
     git -C "$repo_root" ls-files --others --exclude-standard -z -- "$project_scope" > "$UNTRACKED_TSV"
     while IFS= read -r -d '' candidate; do

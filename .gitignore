@@ -165,3 +165,8 @@ yarn-error.log*
 !.cursorrules
 !PINOKIO.md
 .gstack/
+
+# Local toolchains / conda envs (2026-11-06): ~200K untracked files here made gstack-wtree
+# (used by /verify) time out, so /verify could not run at all in this repo.
+conda_envs/
+opt/

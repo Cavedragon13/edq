@@ -56,7 +56,10 @@ echo "[$(date)] Starting Claude Code backup to $([ "$NAS_OK" = 1 ] && echo ancal
 # Backup 1: Project CLAUDE.md and docs/
 echo "  • Backing up /srv/containers/edq/CLAUDE.md and docs/..."
 mkdir -p "$BACKUP_DIR/srv-containers-edq"
-cp /srv/containers/edq/CLAUDE.md "$BACKUP_DIR/srv-containers-edq/"
+# Missing file = loud warning, not an abort: with set -e this one cp failing stopped the WHOLE
+# backup (memory, conversations, plans) every night from 2026-10-31 to 11-06.
+cp /srv/containers/edq/CLAUDE.md /srv/containers/edq/AGENTS.md "$BACKUP_DIR/srv-containers-edq/" \
+    || echo "  ⚠️ WARNING: project CLAUDE.md/AGENTS.md missing — continuing with the rest of the backup"
 cp -r /srv/containers/edq/docs "$BACKUP_DIR/srv-containers-edq/" 2>/dev/null || true
 
 # Backup 2: Memory files

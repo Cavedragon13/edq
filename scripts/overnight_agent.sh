@@ -36,15 +36,35 @@ fi
 
 echo "$(date '+%F %T') starting (dry_run=${DRY_RUN:-0})" >> "$LOG"
 # --no-session-persistence: no transcript in ~/.claude/projects, so the ChatGPT app's
-# Claude import never sees this run. Full output is in $LOG.
+# Claude import never sees this run. The full tool-call record goes to $TRANSCRIPT instead
+# (stream-json); the final summary is copied into $LOG. Added 2026-11-06: CLAUDE.md and
+# AGENTS.md vanished during the 2026-10-31 run window and there was no record of what any
+# unattended run had done.
+TRANSCRIPT="$LOG_DIR/$DATE.jsonl"
 python3 scripts/overnight_supervisor.py claude -p "$PROMPT" --no-session-persistence \
     --permission-mode dontAsk \
     --allowedTools "Read" "Edit" "Write" "Glob" "Grep" "Bash" \
     --disallowedTools "Bash(sudo:*)" "Bash(rm -rf:*)" "Bash(git push:*)" "Bash(crontab:*)" \
                       "Bash(systemctl:*)" "Bash(dd:*)" "Bash(mkfs:*)" "Bash(shutdown:*)" "Bash(reboot:*)" \
     --add-dir /home/edq/knowledge-base /home/edq/ai_generated \
-    --output-format text >> "$LOG" 2>&1
+    --output-format stream-json --verbose > "$TRANSCRIPT" 2>> "$LOG"
 rc=$?
+python3 - "$TRANSCRIPT" >> "$LOG" 2>&1 <<'PYEOF' || true
+import json, sys
+calls, result = 0, None
+for line in open(sys.argv[1], errors="ignore"):
+    try:
+        ev = json.loads(line)
+    except ValueError:
+        print(line.rstrip())          # supervisor messages and anything non-JSON pass through
+        continue
+    if ev.get("type") == "assistant":
+        calls += sum(1 for c in ev.get("message", {}).get("content", []) if c.get("type") == "tool_use")
+    if ev.get("type") == "result":
+        result = ev.get("result")
+print(result or "(no final result in transcript)")
+print(f"[transcript: {calls} tool calls in {sys.argv[1]}]")
+PYEOF
 echo "$(date '+%F %T') finished rc=$rc" >> "$LOG"
 if [[ "$rc" != 0 ]]; then
     printf '\nOvernight wrapper failed (rc=%s); inspect %s before retrying.\n' \
