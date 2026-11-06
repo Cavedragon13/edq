@@ -374,13 +374,19 @@ def _trend(count: int) -> str:
     return f"**{count} services off-standard**" + (f" — was {', '.join(parts)}" if parts else "")
 
 
-def write_conformance_snapshot(ts: str, by_rule: dict, fails_detail: list) -> None:
+def write_conformance_snapshot(ts: str, by_rule: dict, fails_detail: list,
+                               automation: list[str] | None = None) -> None:
     """Overwrite Dragonsuite/Conformance.md: the current list of off-standard services."""
     off = {n for rule, items in by_rule.items() if rule != "basic" for n, _ in items}
     out = [f"# Dragonsuite conformance — {ts}", "",
            _trend(len(off)), "",
            "Auto-generated nightly by `scripts/health_check.py --all` on udragon (rules in its docstring).",
            "This is the live to-do list: fix a service and it drops off the next night.", ""]
+    if automation:
+        # Outcome checks of the cron jobs themselves (scripts/automation_check.py). First on the
+        # page and first in the overnight agent's queue: a broken automation fails silently otherwise.
+        out += [f"## [automation] Automations failing ({len(automation)}) — fix these first", ""]
+        out += [f"- {a}" for a in automation] + [""]
     if fails_detail:
         out += ["## FAIL", ""] + [f"- **{n}** — " + "; ".join(d) for n, d in fails_detail] + [""]
     for rule in ("stuck", "update", "vram", "download", "output", "venv"):
@@ -464,7 +470,18 @@ def run(categories: list[str] | None, check_all: bool) -> int:
     print(report)
 
     if check_all:
-        write_conformance_snapshot(ts, by_rule, fails_detail)
+        automation: list[str] = []
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import automation_check
+            automation = automation_check.with_age(automation_check.collect())
+            automation_check.write_attention(automation)
+        except Exception as e:   # the checker itself breaking must not be silent either
+            automation = [f"**automation_check.py crashed**: `{type(e).__name__}: {e}`"]
+        if automation:
+            lines.append("Automations failing:\n" + "\n".join(f"  - {a}" for a in automation))
+            print(lines[-1])
+        write_conformance_snapshot(ts, by_rule, fails_detail, automation)
 
     LOG_DIR.mkdir(exist_ok=True)
     with open(LOG_FILE, "a") as f:

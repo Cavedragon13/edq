@@ -13,6 +13,18 @@ service at least as good as you found it, and write the morning report.
 
 ## Queue — do at most 3 units of work tonight, in this priority order
 
+0. **[automation] items at the top of Conformance.md — always first, and they do not count
+   toward the 3 units.** These are cron jobs that ran but did not do their job (no success line,
+   empty NAS backup, unpushed commits, a protected file missing, a stale attention file). Ed cannot
+   see them: nothing reaches him unless you fix or report them. For each item: read the end of
+   the job's log, find the real cause, fix the script (`bash -n` / `py_compile` it), and prove it by
+   re-running the job when that is safe (`nightly_commit.sh`, `backup_claude_files.sh`,
+   `cleanup_test_artifacts.sh`, `sync_skills.sh`, `kb_compiler.py`, `gen_machine_inventory.py` are;
+   `weekly_update.sh` is not — fix the script and let Sunday run it), then run
+   `python3 scripts/automation_check.py` and confirm that item is gone. If the fix needs something
+   on the Never list (sudo, crontab, systemd, fstab, git push, network), put it under **Needs Ed**
+   with the exact command to run and why. An item marked "failing N days" with N ≥ 2 that you
+   cannot fix goes at the very top of the morning report, not buried in a list.
 1. **[vram] launchers still on `gpu_preflight`.** Convert one service = one unit, exactly like
    `start_fish_speech.sh`: add `TOOL_NAME` / `REQ_VRAM_MIB` / `REQ_RAM_MIB` + `source scripts/vram_guard.sh`,
    replace `gpu_preflight "$PORT"` with `vram_preflight || exit 1` + `clear_port "$PORT"`,

@@ -302,3 +302,6 @@ if [ -n "$ATTENTION_ROWS" ]; then
 else
     rm -f "$ATTENTION_FILE"
 fi
+# Success marker checked by scripts/automation_check.py. If set -e kills the script anywhere
+# above, this line never appears and the failure shows up in Conformance.md the next night.
+log "nightly_commit finished"
