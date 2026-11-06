@@ -31,6 +31,7 @@ LOGS = BASE / "logs"
 ATTENTION = LOGS / "automation_attention.md"
 STATE = LOGS / "automation_state.json"          # {problem key: first-seen date}
 NAS_BACKUPS = Path("/mnt/ancalagon/Cavedragon/Drive/sys/claude")   # same share the backup mounts
+VAULT_BACKUPS = Path("/mnt/ancalagon/Cavedragon/Drive/sys/vaultwarden")
 DAY = 26          # hours: a daily cron job's log must be fresher than this
 MIN_BACKUP_MB = 10
 
@@ -42,6 +43,8 @@ JOBS = [
      "scripts/nightly_commit.sh died before its last step — read the end of the log for the failing command"),
     ("claude backup", "nightly_backup_cron.log", DAY, r"Claude Code backup finished",
      "scripts/backup_claude_files.sh aborted — read the end of the log"),
+    ("vaultwarden backup", "vaultwarden_backup_cron.log", DAY, r"vaultwarden backup finished",
+     "scripts/backup_vaultwarden.sh (02:20) — the password vault has NO other backup"),
     ("sync_skills", "sync_skills_cron.log", DAY, r"Skills sync complete", "scripts/sync_skills.sh"),
     ("kb_compiler", "kb_compiler.log", DAY, r"KB Compiler done", "scripts/kb_compiler.py"),
     ("cleanup_test_artifacts", "cleanup_artifacts.log", DAY, r"cleanup_test_artifacts done",
@@ -133,11 +136,19 @@ def check_backup() -> list[tuple[str, str]]:
             break
     if not good:
         return [("backup:empty", f"**claude backup**: no backup ≥{MIN_BACKUP_MB}MB in the last 10 folders on the NAS")]
+    out = []
     age_days = (dt.date.today() - dt.date.fromisoformat(good[0])).days
     if age_days > 1:
-        return [("backup:old", f"**claude backup**: newest complete NAS backup is {good[0]} ({age_days} days old); "
-                               "newer folders are empty or missing")]
-    return []
+        out.append(("backup:old", f"**claude backup**: newest complete NAS backup is {good[0]} ({age_days} days old); "
+                                  "newer folders are empty or missing"))
+    vw = sorted(VAULT_BACKUPS.glob("vaultwarden_*.tar.gz.gpg"), key=lambda p: p.stat().st_mtime) \
+        if VAULT_BACKUPS.is_dir() else []
+    if not vw:
+        out.append(("backup:vault-none", f"**vaultwarden backup**: no archives in {VAULT_BACKUPS}"))
+    elif _age_h(vw[-1]) > DAY or vw[-1].stat().st_size < 10_000:
+        out.append(("backup:vault-old", f"**vaultwarden backup**: newest archive `{vw[-1].name}` is "
+                                        f"{_age_h(vw[-1]):.0f}h old / {vw[-1].stat().st_size:,} bytes"))
+    return out
 
 
 def _git(*args) -> str:
