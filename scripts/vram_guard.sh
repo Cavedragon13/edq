@@ -61,6 +61,65 @@ register_tool() {   # call with the launched server's PID; records a pidfile (no
   echo "$1" > "$RUN_DIR/${TOOL_NAME}.pid"
 }
 
+_tree_pids() {      # pid plus all its descendants (children first-found order)
+  local p c
+  for p in "$@"; do
+    echo "$p"
+    for c in $(pgrep -P "$p" 2>/dev/null); do _tree_pids "$c"; done
+  done
+}
+
+stop_registered() { # name — stop the tool recorded in <name>.pid; never matches command lines
+  # This is what Dragonsuite stop_commands call (via scripts/stop_tool.sh) instead of
+  # `pkill -f <pattern>`, which also killed any shell whose command line merely mentioned
+  # the script name (exit 144, 2026-09-23/09-30/11-06).
+  #   setsid launch  (pid is its own group leader) -> TERM the whole process group
+  #   plain launch   (shares a group with its launcher) -> TERM the pid and its descendants
+  # Waits up to 10s, then KILLs whatever is left. Returns 0 if nothing was running.
+  local name="$1" pf pid pgid mypgid start mtime n p alive targets
+  pf="$RUN_DIR/${name}.pid"
+  [[ -f "$pf" ]] || { echo "[stop_tool] ${name}: no pidfile — not running (or not started by its launcher)"; return 0; }
+  pid="$(head -n1 "$pf" 2>/dev/null | tr -dc '0-9')"
+  if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
+    echo "[stop_tool] ${name}: stale pidfile (pid ${pid:-?} gone) — removed"; rm -f "$pf"; return 0
+  fi
+  # PID-reuse guard: the registered process started before register_tool wrote the file.
+  # A process that started well AFTER the pidfile was written is an unrelated reuse of the number.
+  start=$(( $(date +%s) - $(ps -o etimes= -p "$pid" | tr -dc '0-9') ))
+  mtime="$(stat -c %Y "$pf")"
+  if (( start > mtime + 5 )); then
+    echo "[stop_tool] ${name}: pid ${pid} was reused by an unrelated process — not touching it; pidfile removed"
+    rm -f "$pf"; return 0
+  fi
+  pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')"
+  mypgid="$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')"
+  if [[ "$pgid" == "$pid" && "$pgid" != "$mypgid" ]]; then
+    echo "[stop_tool] ${name}: TERM process group ${pgid}"
+    kill -TERM -- "-$pgid" 2>/dev/null || true
+    for n in 1 2 3 4 5 6 7 8 9 10; do kill -0 -- "-$pgid" 2>/dev/null || break; sleep 1; done
+    if kill -0 -- "-$pgid" 2>/dev/null; then
+      echo "[stop_tool] ${name}: still alive after 10s — KILL group ${pgid}"
+      kill -KILL -- "-$pgid" 2>/dev/null || true; sleep 1
+    fi
+  else
+    targets="$(_tree_pids "$pid" | grep -vx "$$" | tr '\n' ' ')"
+    echo "[stop_tool] ${name}: TERM pid ${pid} and descendants (${targets% })"
+    # shellcheck disable=SC2086
+    kill -TERM $targets 2>/dev/null || true
+    for n in 1 2 3 4 5 6 7 8 9 10; do
+      alive=""; for p in $targets; do kill -0 "$p" 2>/dev/null && alive+="$p "; done
+      [[ -z "$alive" ]] && break; sleep 1
+    done
+    if [[ -n "$alive" ]]; then
+      echo "[stop_tool] ${name}: still alive after 10s — KILL ${alive% }"
+      # shellcheck disable=SC2086
+      kill -KILL $alive 2>/dev/null || true; sleep 1
+    fi
+  fi
+  rm -f "$pf"
+  return 0
+}
+
 clear_tools() {     # stop tools we started, gracefully: TERM, escalate to KILL only if ignored
   shopt -s nullglob
   local pf pid n

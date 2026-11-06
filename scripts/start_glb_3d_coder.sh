@@ -69,6 +69,7 @@ fi
 clear_port "$PORT"
 echo "🚀 Starting $SERVICE_NAME UI..."
 setsid nohup "$DRAGONSUITE_ROOT/$VENV/bin/python" "$APP" < /dev/null > "$LOG" 2>&1 &
+TOOL_NAME="glb-3d-coder-ui" register_tool $!   # UI pidfile too, so stop_tool.sh stops it by PID
 echo "⏳ Waiting for UI..."
 if wait_for_port "$PORT" 60; then
     echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"

@@ -309,6 +309,23 @@ def check_service(svc: dict, port_registry: dict, stuck: dict | None = None) -> 
     if not svc.get("stop_command") and port and has_launch:
         warnings.append("no stop_command (dashboard will kill by port)")
 
+    # pkill -f also kills any unrelated shell whose command line mentions the pattern
+    # (exit 144, 2026-09-23/09-30/11-06). A launcher that calls register_tool has a
+    # pidfile, so stop it by PID instead.
+    stop_cmd = svc.get("stop_command") or ""
+    if "pkill" in stop_cmd:
+        for token in launch_cmd.split():
+            if token.endswith(".sh"):
+                sp = Path(token) if token.startswith("/") else BASE / token
+                try:
+                    registers = "register_tool" in sp.read_text(errors="ignore")
+                except OSError:
+                    registers = False
+                if registers:
+                    warnings.append("stop_command uses pkill -f but the launcher registers a pidfile "
+                                    "— use: bash scripts/stop_tool.sh <TOOL_NAME>")
+                break
+
     if needs_output_dir(svc):
         od = svc.get("output_dir")
         if not od:

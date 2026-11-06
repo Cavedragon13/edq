@@ -670,7 +670,8 @@ async def stop_service(service_id: str):
 
     try:
         if stop_command:
-            subprocess.run(stop_command, shell=True, cwd="/srv/containers/edq", timeout=15)
+            # stop_tool.sh waits up to ~12s per tool before KILL; 15s was too tight
+            subprocess.run(stop_command, shell=True, cwd="/srv/containers/edq", timeout=40)
             if port:
                 kill_all_on_port(port)  # clean up anything still on the primary port
             return {"status": "stopped", "message": f"Stopped {service['name']}"}
