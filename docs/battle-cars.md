@@ -21,14 +21,14 @@
 
 ## Code map
 
-| File | Role |
-| --- | --- |
-| `js/tracks.js` | Procedural track generation (pure data; `node validate_tracks.mjs` checks all 18) |
-| `js/world.js` | Builds the scene: road, barriers, scenery, sky, pickups |
-| `js/car.js`, `js/ai.js` | Arcade physics, wall handling, AI driving and firing |
-| `js/race.js` | Race engine: weapons, damage, pickups, cameras, split screen, HUD |
-| `js/data.js` | Cars, bosses, weapons, upgrade costs, level themes (balance knobs live here) |
-| `js/ui.js` | Menus, garage, versus setup, results, campaign progression |
+| File                    | Role                                                                              |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| `js/tracks.js`          | Procedural track generation (pure data; `node validate_tracks.mjs` checks all 18) |
+| `js/world.js`           | Builds the scene: road, barriers, scenery, sky, pickups                           |
+| `js/car.js`, `js/ai.js` | Arcade physics, wall handling, AI driving and firing                              |
+| `js/race.js`            | Race engine: weapons, damage, pickups, cameras, split screen, HUD                 |
+| `js/data.js`            | Cars, bosses, weapons, upgrade costs, level themes (balance knobs live here)      |
+| `js/ui.js`              | Menus, garage, versus setup, results, campaign progression                        |
 
 ## Testing hooks
 

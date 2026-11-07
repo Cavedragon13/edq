@@ -12,8 +12,16 @@ WAN2GP_DIR="$DRAGONSUITE_ROOT/projects/Wan2GP"
 OUTPUT_DIR="$HOME/ai_generated/wan2gp"
 LOG_FILE="/tmp/wan2gp.log"
 
+# Honest footprint (vram_guard) — measured 2026-11-01 (see docs/venvs.md).
+# Wan 2.2 Ovi (quanto int8, the UI's recommended fastest model for 16GB cards).
+TOOL_NAME="wan2gp"
+REQ_VRAM_MIB=8000
+REQ_RAM_MIB=10000
+source scripts/vram_guard.sh
+
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -37,6 +45,7 @@ if pgrep -f "python.*wgp.py" > /dev/null; then
     echo "✓ Already running on port $PORT"
 else
     nohup python "$WAN2GP_DIR/wgp.py" --server-name 0.0.0.0 --server-port "$PORT" > "$LOG_FILE" 2>&1 &
+    register_tool $!
     echo "⏳ Waiting for service (log: $LOG_FILE)..."
     if wait_for_port "$PORT" 180; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"

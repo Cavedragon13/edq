@@ -20,14 +20,14 @@ Top-down roguelike dungeon crawler, playable at `http://192.168.7.226:8072/`. St
 
 ## Code map
 
-| File | Role |
-| --- | --- |
-| `js/data.js` | All balance knobs: classes, enemies, tracks, floors, difficulty, meta, shop prices |
-| `js/game.js` | State, combat, enemy and boss AI, pickups, leveling, rendering, test bot |
-| `js/dungeon.js` | Floor graph and room tile layouts |
-| `js/sprites.js` | Procedural pixel art (heroes, enemies, bosses, tiles) |
-| `js/ui.js`, `js/main.js`, `js/input.js`, `js/audio.js`, `js/save.js` | Overlays, wiring, input, WebAudio sfx, save |
-| `dev/sprite-sheet.html` | Shows every sprite; `#3` previews gear tier 3 |
+| File                                                                 | Role                                                                               |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `js/data.js`                                                         | All balance knobs: classes, enemies, tracks, floors, difficulty, meta, shop prices |
+| `js/game.js`                                                         | State, combat, enemy and boss AI, pickups, leveling, rendering, test bot           |
+| `js/dungeon.js`                                                      | Floor graph and room tile layouts                                                  |
+| `js/sprites.js`                                                      | Procedural pixel art (heroes, enemies, bosses, tiles)                              |
+| `js/ui.js`, `js/main.js`, `js/input.js`, `js/audio.js`, `js/save.js` | Overlays, wiring, input, WebAudio sfx, save                                        |
+| `dev/sprite-sheet.html`                                              | Shows every sprite; `#3` previews gear tier 3                                      |
 
 ## Testing
 
