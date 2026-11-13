@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Pause Pi-hole (5 min)
+Comment=Turn ad blocking off for 5 minutes; it re-enables itself
+Exec=/srv/containers/edq/scripts/pause_pihole.sh
+Icon=media-playback-pause
+Terminal=false
+Categories=Utility;

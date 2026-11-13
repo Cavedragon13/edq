@@ -1,7 +1,9 @@
 #!/bin/bash
 # scrub_remote_macs.sh — run the transcript scrubber on every Mac from udragon.
 #
-# The secrets list stays on udragon only. For each Mac this script:
+# The secrets list (hand-kept ~/.claude/scrub-credentials.txt + values from the
+# udragon .env files, merged by scrub_transcripts.py --print-creds) stays on
+# udragon only. For each Mac this script:
 #   1. copies scrub_transcripts.py to ~/.cache/dragon-scrub/ (so the Mac always
 #      runs the same version as udragon), then
 #   2. runs it over SSH with the credentials piped into stdin (--creds-stdin).
@@ -26,8 +28,10 @@ REMOTE_RUN='for p in /opt/homebrew/bin/python3 /usr/local/bin/python3 /usr/bin/p
 done
 echo "  ERROR: no working python3 found" >&2; exit 3'
 
-if [ ! -r "$CREDS" ]; then
-    echo "  ERROR: $CREDS not readable; skipping Mac scrub"
+# The list sent to the Macs is the merge of $CREDS and the udragon .env files,
+# produced by `scrub_transcripts.py --print-creds`. Refuse to continue if it is empty.
+if [ "$(python3 "$SCRIPT" --print-creds 2>/dev/null | wc -l)" -eq 0 ]; then
+    echo "  ERROR: no secrets found ($CREDS and .env files); skipping Mac scrub"
     exit 1
 fi
 
@@ -55,7 +59,7 @@ for host in "${HOSTS[@]}"; do
         continue
     fi
 
-    if ! ssh "${SSH_OPTS[@]}" "$target" "$REMOTE_RUN" < "$CREDS" 2>&1 | sed "s/^/  [$host] /"; then
+    if ! python3 "$SCRIPT" --print-creds | ssh "${SSH_OPTS[@]}" "$target" "$REMOTE_RUN" 2>&1 | sed "s/^/  [$host] /"; then
         failures=$((failures + 1))
     fi
 done

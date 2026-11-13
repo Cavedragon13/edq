@@ -1525,7 +1525,7 @@
       "id": "glb-3d-coder",
       "name": "GLB-3D-Coder Studio",
       "description": "CCORE Qwen3.5-4B: text prompt to low-poly Three.js asset with GLB export for Godot",
-      "category": "game",
+      "category": "vision",
       "port": 8022,
       "path": "/",
       "icon": "&#129513;",
@@ -1541,6 +1541,26 @@
       ],
       "stop_command": "bash scripts/stop_tool.sh glb-3d-coder glb-3d-coder-ui",
       "vram_gb": 7.8
+    },
+    {
+      "id": "freshrss",
+      "name": "FreshRSS",
+      "description": "Self-hosted RSS reader — 21 AI, security and tech-news feeds, auto-refreshed twice an hour (udragon Docker)",
+      "category": "utility",
+      "port": 8087,
+      "url": "http://192.168.7.226:8087",
+      "always_on": true,
+      "path": null,
+      "icon": "&#128240;",
+      "launch_command": null,
+      "project_path": "/srv/containers/edq/docker/freshrss",
+      "features": [
+        "RSS / Atom reader",
+        "Auto-refresh",
+        "OPML import/export",
+        "Mobile API"
+      ],
+      "stop_command": null
     }
   ],
   "categories": {
