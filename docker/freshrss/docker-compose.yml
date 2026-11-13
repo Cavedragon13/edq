@@ -1,0 +1,41 @@
+# FreshRSS on udragon — always-on Docker service on :8087 (LAN + Tailscale), listed on the Dragonsuite dashboard as always_on.
+# Docs: https://github.com/FreshRSS/FreshRSS/blob/edge/Docker/README.md
+# FRESHRSS_INSTALL / FRESHRSS_USER only run on the very first start (empty data volume).
+services:
+  freshrss:
+    image: freshrss/freshrss:latest
+    container_name: freshrss
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+    ports:
+      - "8087:80"
+    environment:
+      TZ: America/New_York
+      CRON_MIN: "13,43"
+      FRESHRSS_ENV: production
+      FRESHRSS_INSTALL: |-
+        --api-enabled
+        --base-url http://192.168.7.226:8087
+        --default-user admin
+        --language en
+      FRESHRSS_USER: |-
+        --user admin
+        --password ${ADMIN_PASSWORD}
+        --language en
+    volumes:
+      - freshrss_data:/var/www/FreshRSS/data
+      - freshrss_extensions:/var/www/FreshRSS/extensions
+    healthcheck:
+      test: ["CMD", "cli/health.php"]
+      timeout: 10s
+      start_period: 60s
+      start_interval: 11s
+      interval: 75s
+      retries: 3
+
+volumes:
+  freshrss_data:
+  freshrss_extensions:
