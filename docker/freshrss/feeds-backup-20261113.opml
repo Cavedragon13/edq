@@ -1,0 +1,40 @@
+<opml xmlns:frss="https://freshrss.org/opml" version="2.0">
+  <head>
+    <title>FreshRSS</title>
+    <dateCreated>Fri, 13 Nov 2026 11:14:27 -0500</dateCreated>
+  </head>
+  <body>
+    <outline text="AI - Official / Primary">
+      <outline text="Hugging Face Blog" type="rss" xmlUrl="https://huggingface.co/blog/feed.xml" htmlUrl="https://huggingface.co/blog" description="The Hugging Face blog"/>
+      <outline text="Microsoft Official Blog" type="rss" xmlUrl="https://blogs.microsoft.com/feed/" htmlUrl="https://blogs.microsoft.com/"/>
+      <outline text="NVIDIA Developer Blog" type="rss" xmlUrl="https://developer.nvidia.com/blog/feed/" htmlUrl="https://developer.nvidia.com/blog/" description="News and tutorials for developers, data scientists, and IT admins"/>
+      <outline text="NVIDIA Press Room" type="rss" xmlUrl="https://nvidianews.nvidia.com/rss.xml" htmlUrl="https://nvidianews.nvidia.com/" description="Main site feed"/>
+    </outline>
+    <outline text="Fast Tech / Discovery">
+      <outline text="Ars Technica" type="rss" xmlUrl="https://feeds.arstechnica.com/arstechnica/index" htmlUrl="https://arstechnica.com/" description="Serving the Technologist since 1998. News, reviews, and analysis."/>
+      <outline text="MakeUseOf (MUO)" type="rss" xmlUrl="https://www.makeuseof.com/feed/" htmlUrl="https://www.makeuseof.com/" description="MUO is your guide to modern tech. Learn how to make use of the tech and gadgets around you, and discover cool stuff on the internet."/>
+      <outline text="TechCrunch" type="rss" xmlUrl="https://techcrunch.com/feed/" htmlUrl="https://techcrunch.com/" description="Startup and Technology News"/>
+      <outline text="The Register" type="rss" xmlUrl="https://www.theregister.com/headlines.atom" htmlUrl="https://www.theregister.com/" description="Articles from www.theregister.com"/>
+      <outline text="XDA News" type="rss" xmlUrl="https://www.xda-developers.com/feed/news/" htmlUrl="https://www.xda-developers.com/" description="Searching for the latest on Windows, AI, or computing news? XDA has you covered with all the details."/>
+    </outline>
+    <outline text="Science / Research Discovery">
+      <outline text="arXiv - Artificial Intelligence" type="rss" xmlUrl="https://export.arxiv.org/rss/cs.AI" htmlUrl="https://arxiv.org/list/cs.AI/recent" description="cs.AI updates on the arXiv.org e-print archive."/>
+      <outline text="arXiv - Cryptography &amp; Security" type="rss" xmlUrl="https://export.arxiv.org/rss/cs.CR" htmlUrl="https://arxiv.org/list/cs.CR/recent" description="cs.CR updates on the arXiv.org e-print archive."/>
+      <outline text="arXiv - Machine Learning" type="rss" xmlUrl="https://export.arxiv.org/rss/cs.LG" htmlUrl="https://arxiv.org/list/cs.LG/recent" description="cs.LG updates on the arXiv.org e-print archive."/>
+      <outline text="ScienceDaily - Strange &amp; Offbeat" type="rss" xmlUrl="https://www.sciencedaily.com/rss/strange_offbeat.xml" htmlUrl="https://www.sciencedaily.com/news/strange_offbeat/" description="Quirky stories from all of ScienceDaily's health, technology, environment, and society sections."/>
+      <outline text="ScienceDaily - Top Science" type="rss" xmlUrl="https://www.sciencedaily.com/rss/top/science.xml" htmlUrl="https://www.sciencedaily.com/news/top/science/" description="Top science stories featured on ScienceDaily's home page."/>
+      <outline text="ScienceDaily - Top Technology" type="rss" xmlUrl="https://www.sciencedaily.com/rss/top/technology.xml" htmlUrl="https://www.sciencedaily.com/news/top/technology/" description="Top stories featured on ScienceDaily's Space &amp; Time, Matter &amp; Energy, and Computers &amp; Math sections."/>
+    </outline>
+    <outline text="Government / Regulation / Security">
+      <outline text="DOJ News" type="rss" xmlUrl="https://www.justice.gov/news/rss" htmlUrl="https://www.justice.gov/news"/>
+      <outline text="FTC Competition" type="rss" xmlUrl="https://www.ftc.gov/feeds/press-release-competition.xml" htmlUrl="https://www.ftc.gov/news-events/news/press-releases"/>
+      <outline text="FTC Press Releases" type="rss" xmlUrl="https://www.ftc.gov/feeds/press-release.xml" htmlUrl="https://www.ftc.gov/news-events/news/press-releases"/>
+      <outline text="NIST Cybersecurity" type="rss" xmlUrl="https://www.nist.gov/news-events/cybersecurity/rss.xml" htmlUrl="https://www.nist.gov/topics/cybersecurity"/>
+      <outline text="NIST Cybersecurity Insights" type="rss" xmlUrl="https://www.nist.gov/blogs/cybersecurity-insights/rss.xml" htmlUrl="https://www.nist.gov/blogs/cybersecurity-insights" description="Cybersecurity Insights blog posts"/>
+      <outline text="SEC Press Releases" type="rss" xmlUrl="https://www.sec.gov/news/pressreleases.rss" htmlUrl="https://www.sec.gov/newsroom/press-releases" description="Official announcements highlighting recent actions taken by the SEC and other newsworthy information."/>
+    </outline>
+    <outline text="Uncategorized">
+      <outline text="FreshRSS releases" type="rss" xmlUrl="https://github.com/FreshRSS/FreshRSS/releases.atom" htmlUrl="https://github.com/FreshRSS/FreshRSS/" description="FreshRSS releases @ GitHub"/>
+    </outline>
+  </body>
+</opml>
