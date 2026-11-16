@@ -27,19 +27,24 @@ export OVERNIGHT_REPORT="$REPORT_DIR/$DATE.md"
 
 PREAMBLE="You are running unattended right now via cron, with no human available to answer
 questions or clarify intent. Do not ask what to work on or wait for a reply — the runbook
-below IS the instruction. Begin immediately with step 0 and work through the queue yourself,
-using your own judgment per the 'Needs Ed' escalation path for anything genuinely blocked.
-Always finish by writing the morning report file, even if you did nothing.
+below IS the instruction. Always finish by writing the morning report file, even if you
+did nothing.
 
 "
-PROMPT="$PREAMBLE$(cat "$RUNBOOK")"
 if [[ "${DRY_RUN:-0}" == 1 ]]; then
-    PROMPT="DRY RUN — do NOT change, launch or stop anything. Read the files listed under
-'First, read', decide the 3 units you WOULD do tonight and how, then write the morning
-report with a 'Dry run — planned' section instead of Done.
+    PREAMBLE="$PREAMBLE"'DRY RUN — do NOT change, launch or stop anything, and do not treat
+"begin immediately with step 0" below as license to act. Read the files listed under
+"First, read", decide the 3 units you WOULD do tonight and how, then write the morning
+report with a "Dry run — planned" section instead of Done.
 
-$PROMPT"
+'
+else
+    PREAMBLE="$PREAMBLE"'Begin immediately with step 0 and work through the queue yourself,
+using your own judgment per the '"'"'Needs Ed'"'"' escalation path for anything genuinely blocked.
+
+'
 fi
+PROMPT="$PREAMBLE$(cat "$RUNBOOK")"
 
 echo "$(date '+%F %T') starting (dry_run=${DRY_RUN:-0})" >> "$LOG"
 # --no-session-persistence: no transcript in ~/.claude/projects, so the ChatGPT app's
