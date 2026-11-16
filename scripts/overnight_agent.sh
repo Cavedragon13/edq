@@ -25,7 +25,14 @@ flock -n 9 || { echo "$(date '+%F %T') already running — skip" >> "$LOG"; exit
 export OVERNIGHT_SERVICE_JOURNAL="$LOG_DIR/$DATE.services.json"
 export OVERNIGHT_REPORT="$REPORT_DIR/$DATE.md"
 
-PROMPT="$(cat "$RUNBOOK")"
+PREAMBLE="You are running unattended right now via cron, with no human available to answer
+questions or clarify intent. Do not ask what to work on or wait for a reply — the runbook
+below IS the instruction. Begin immediately with step 0 and work through the queue yourself,
+using your own judgment per the 'Needs Ed' escalation path for anything genuinely blocked.
+Always finish by writing the morning report file, even if you did nothing.
+
+"
+PROMPT="$PREAMBLE$(cat "$RUNBOOK")"
 if [[ "${DRY_RUN:-0}" == 1 ]]; then
     PROMPT="DRY RUN — do NOT change, launch or stop anything. Read the files listed under
 'First, read', decide the 3 units you WOULD do tonight and how, then write the morning
