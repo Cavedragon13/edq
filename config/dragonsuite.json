@@ -1561,6 +1561,25 @@
         "Mobile API"
       ],
       "stop_command": null
+    },
+    {
+      "id": "house-planner",
+      "name": "House Planner",
+      "description": "Floor plans, furniture rearranging and auto art-hanging for the house; imports iPhone LiDAR (RoomPlan) scans",
+      "category": "utility",
+      "port": 8025,
+      "path": "/",
+      "icon": "&#127968;",
+      "launch_command": "cd /srv/containers/edq && bash scripts/start_house_planner.sh",
+      "project_path": "/srv/containers/edq/projects/house-planner",
+      "features": [
+        "Floor plan editor",
+        "Furniture conflict check",
+        "Auto art hanging",
+        "RoomPlan import"
+      ],
+      "stop_command": "bash scripts/stop_tool.sh house-planner",
+      "output_dir": "/home/edq/ai_generated/house-planner"
     }
   ],
   "categories": {
