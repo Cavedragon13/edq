@@ -93,6 +93,20 @@ The payload includes:
 - Use OpenAI-compatible local endpoints for LM Studio and llama.cpp when available.
 - Query Ollama installed models instead of assuming names.
 
+### Hugging Face Inference Providers now route through OpenRouter (2026-11-16)
+
+Source: https://huggingface.co/blog/openrouter. Not yet wired into `provider_models.py`; note for when HF is added as a provider.
+
+- **LLM calls** to HF Inference Providers now go through OpenRouter's router (80+ providers, picks on live price/speed/reliability, retries on another provider if one fails). Same HF token, same API, code unchanged.
+- **API shapes:** OpenAI Chat Completions, OpenAI Responses, and Anthropic Messages, for every chat model. HF publishes setup guides for Claude Code, Codex, OpenCode, Pi and Hermes Agent.
+- **Routing suffixes on the model id:** `org/model` (balanced), `:fastest`, `:cheapest`, `:<provider>` (e.g. `zai-org/GLM-5.3:novita`).
+- **Prompt cache:** send a stable UUID per conversation in the `X-HF-Session-Id` header to keep it on the same provider.
+- **Billing:** provider price on the HF bill, no HF markup. PRO = $2/month credit.
+- **Breaking change:** your own provider API keys (BYOK) no longer work for language models; everything is billed via HF. BYOK still works for image/video providers.
+- **Image, video, audio generation** is unchanged and does *not* go through OpenRouter.
+- Providers can be disabled per account/org in HF settings. Coming next: linking an OpenRouter account to HF.
+- Practical upshot: an HF token is now a second way into the OpenRouter open-weight catalog. Our direct OpenRouter key path stays the default for text; use HF when consolidating billing on the HF account or using PRO credits.
+
 ## Migrated Apps
 
 - FrameForge: uses shared provider discovery for OpenAI and Google prompt/image dropdowns.
