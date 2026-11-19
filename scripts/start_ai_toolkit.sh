@@ -5,13 +5,25 @@ set -e
 cd /srv/containers/edq
 source scripts/dragonsuite_lib.sh
 
+# Footprint (vram_guard). NOT independently measured 2026-11-19 — a real training
+# run needs FLUX.1-schnell pulled fresh into the HF cache (23.8GB) which blew the
+# unattended test budget; killed mid-download before any weights reached the GPU.
+# Carried over from this service's existing vram_gb:12 config entry (set when this
+# launcher was added) with ~5% headroom. Re-measure with `nvidia-smi -lms 500` during
+# a real low-VRAM-mode LoRA run once the base model is cached, then tighten this.
+TOOL_NAME="ai-toolkit"
+REQ_VRAM_MIB=13000
+REQ_RAM_MIB=12000
+source scripts/vram_guard.sh
+
 SERVICE_NAME="AI Toolkit"
 PORT=8041
 VENV="venv_ai_toolkit"
 PROJECT="projects/ai-toolkit"
 
 service_header "$SERVICE_NAME" "$PORT"
-gpu_preflight "$PORT"
+vram_preflight || exit 1
+clear_port "$PORT"
 activate_venv "$VENV"
 set_pytorch_env
 
@@ -24,10 +36,15 @@ if [ ! -d "$FLORENCE_CACHE" ]; then
     echo ""
 fi
 
-echo "   Base model (schnell, local): /srv/containers/edq/models/flux1-schnell"
-echo "   Output LoRAs → /srv/containers/edq/models/loras/"
+# Despite the /srv/containers/edq/models/flux1-schnell cache, ai-toolkit's own
+# config always resolves "schnell" to the HF repo id and pulls into ~/.cache/huggingface
+# on first use (confirmed 2026-11-19) — it does not read our local models/ dir.
+echo "   Base model (schnell): downloads to ~/.cache/huggingface on first use (~24GB)"
+echo "   Output LoRAs → $HOME/ai_generated/ai-toolkit/"
 echo ""
 echo "🚀 Starting $SERVICE_NAME..."
+
+mkdir -p "$HOME/ai_generated/ai-toolkit"
 
 if pgrep -f "flux_train_ui" > /dev/null; then
     echo "✓ Already running on port $PORT"
@@ -56,6 +73,7 @@ demo.launch(
     show_api=False,
 )
 " > /tmp/ai_toolkit.log 2>&1 &
+    register_tool $!
     if wait_for_port "$PORT" 60; then
         echo "✅ $SERVICE_NAME ready at http://192.168.7.226:$PORT"
     else

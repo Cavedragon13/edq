@@ -935,7 +935,7 @@
       "port": 8041,
       "category": "image",
       "launch_command": "cd /srv/containers/edq && bash scripts/start_ai_toolkit.sh",
-      "stop_command": "pkill -f 'flux_train_ui' || pkill -f 'start_ai_toolkit' || true",
+      "stop_command": "bash scripts/stop_tool.sh ai-toolkit",
       "project_path": "/srv/containers/edq/projects/ai-toolkit",
       "vram_gb": 12,
       "output_dir": "/home/edq/ai_generated/ai-toolkit"
