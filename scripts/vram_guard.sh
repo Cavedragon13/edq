@@ -207,7 +207,15 @@ make_room() {       # free just enough: ComfyUI cache first, then registered too
     return 0
   fi
   shopt -s nullglob
-  local pf name pid
+  local pf name pid pidfiles
+  pidfiles=("$RUN_DIR"/*.pid)
+  shopt -u nullglob
+  # Zero pidfiles is a normal, common state (nothing registered right now) — must
+  # return here. `ls -1tr "$RUN_DIR"/*.pid` with an empty nullglob match passes NO
+  # arguments to ls, which then lists the CURRENT DIRECTORY instead of nothing; the
+  # loop below would then `rm -f` every file name it saw there (discovered 2026-11-19
+  # when this deleted CLAUDE.md/AGENTS.md from the repo root during a routine launch).
+  (( ${#pidfiles[@]} == 0 )) && return 1
   # oldest pidfile first = the tool launched longest ago
   while IFS= read -r pf; do
     name="$(basename "$pf" .pid)"
@@ -221,7 +229,7 @@ make_room() {       # free just enough: ComfyUI cache first, then registered too
     _stop_tool "$name" "$pid"
     rm -f "$pf"
     _fits && return 0
-  done < <(ls -1tr "$RUN_DIR"/*.pid 2>/dev/null)
+  done < <(ls -1tr "${pidfiles[@]}" 2>/dev/null)
   return 1
 }
 
